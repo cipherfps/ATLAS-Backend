@@ -47,6 +47,22 @@ If you prefer to install manually:
    bun run src/index.ts
    ```
 
+### How To Connect To Someone Else's ATLAS Server
+
+1. **Install [Reboot Launcher](https://github.com/Auties00/Reboot-Launcher/releases/latest)
+
+2. **Head over to the Backend tab.**
+- Change the type to :
+   ```bash
+   Remote
+   ```
+- Enter your Friend's [Radmin VPN](https://www.radmin-vpn.com/) IP in the **Host** box.
+- Change the port to **3551** (if they haven't manually changed the port)
+
+3. **Test it by pressing *Start Backend*. **
+- If it replies **"The backend was started correctly"**, then it worked! You're free to launch Fortnite.
+- If it replies **"Cannot ping the remote backend"**, then it didn't work; You either have the wrong IP or port.
+
 ## Credits
 
 - [andr1ww](https://github.com/andr1ww) ATLAS is a fork of [Nexa](https://github.com/andr1ww/Nexa)
@@ -56,4 +72,6 @@ If you prefer to install manually:
 - CurveTable Presets
 - Arena Points
 - Friend Config Importer
-### Feel free to give any suggestions on how to improve ATLAS
+- Fix applying MCP
+
+### Feel free to give any suggestions on how to improve ATLAS!
