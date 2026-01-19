@@ -53,7 +53,7 @@ If you prefer to install manually:
 - [Ralzify](https://github.com/Ralzify) ATLAS uses the CurveTable and Straight Bloom code from [FortBackend](https://github.com/Ralzify/FortBackend)
 
 ## To Do List
-### Feel free to give any suggestions on how to improve ATLAS
 - CurveTable Presets
 - Arena Points
 - Friend Config Importer
+### Feel free to give any suggestions on how to improve ATLAS
