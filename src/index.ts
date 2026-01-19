@@ -144,6 +144,227 @@ async function toggleStraightBloom() {
   }
 }
 
+// Function to import CurveTables from DefaultGame.ini
+async function importCurveTables() {
+  try {
+    const importsDir = path.join(__dirname, '../imports');
+    
+    // Check if imports directory exists
+    if (!fs.existsSync(importsDir)) {
+      fs.mkdirSync(importsDir, { recursive: true });
+    }
+    
+    // Look for DefaultGame.ini files in imports folder
+    const files = fs.readdirSync(importsDir);
+    const defaultGameFiles = files.filter(file => file.toLowerCase().includes('defaultgame') && file.toLowerCase().endsWith('.ini'));
+    
+    if (defaultGameFiles.length === 0) {
+      lastStatusMessage = '\x1b[33m✗ No DefaultGame.ini files found in imports folder. Please add a file first.\x1b[0m';
+      return;
+    }
+    
+    // Show available files
+    console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\x1b[36m            Available DefaultGame.ini Files\x1b[0m');
+    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    defaultGameFiles.forEach((file, index) => {
+      console.log(`  \x1b[32m(${index + 1})\x1b[0m ${file}`);
+    });
+    console.log('  \x1b[32m(BACK)\x1b[0m Cancel and go back');
+    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m\n');
+    
+    const fileResponse = await prompts({
+      type: 'text',
+      name: 'fileIndex',
+      message: '\x1b[32mSelect a file to import from:\x1b[0m',
+      validate: (value) => {
+        if (value.toLowerCase() === 'back') return true;
+        const index = parseInt(value) - 1;
+        return (index >= 0 && index < defaultGameFiles.length) ? true : 'Please enter a valid file number or BACK';
+      }
+    });
+    
+    if (!fileResponse.fileIndex || fileResponse.fileIndex.toLowerCase() === 'back') {
+      lastStatusMessage = '\x1b[33mImport cancelled.\x1b[0m';
+      return;
+    }
+    
+    const selectedFile = defaultGameFiles[parseInt(fileResponse.fileIndex) - 1];
+    const importFilePath = path.join(importsDir, selectedFile);
+    const importContent = fs.readFileSync(importFilePath, 'utf-8');
+    
+    // Extract all CurveTable lines
+    const curveTableRegex = /^\+CurveTable=(.+?);RowUpdate;(.+?);(\d+);(.+)$/gm;
+    const matches = [...importContent.matchAll(curveTableRegex)];
+    
+    if (matches.length === 0) {
+      lastStatusMessage = '\x1b[33m✗ No curvetables found in the selected file.\x1b[0m';
+      return;
+    }
+    
+    // Show found curvetables with better formatting
+    console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log(`\x1b[36m          Found ${matches.length} CurveTable(s) to Import\x1b[0m`);
+    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    matches.forEach((match, index) => {
+      const key = match[2];
+      const value = match[4];
+      const displayKey = key.length > 45 ? '...' + key.slice(-42) : key;
+      console.log(`  \x1b[90m${String(index + 1).padStart(2, ' ')}.\x1b[0m \x1b[96m${displayKey}\x1b[0m`);
+      console.log(`      \x1b[90mValue:\x1b[0m ${value}`);
+    });
+    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m\n');
+    
+    const confirmResponse = await prompts({
+      type: 'text',
+      name: 'confirm',
+      message: `\x1b[32mImport all ${matches.length} curvetable(s)? (Y/N):\x1b[0m`,
+      validate: (value) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
+    });
+    
+    if (!confirmResponse.confirm || confirmResponse.confirm.toUpperCase() !== 'Y') {
+      lastStatusMessage = '\x1b[33mImport cancelled.\x1b[0m';
+      return;
+    }
+    
+    // Read current backend's DefaultGame.ini and curves.json
+    const iniPath = path.join(__dirname, '../static/hotfixes/DefaultGame.ini');
+    const curvesPath = path.join(__dirname, '../responses/curves.json');
+    let content = fs.readFileSync(iniPath, 'utf-8');
+    const curves = JSON.parse(fs.readFileSync(curvesPath, 'utf-8'));
+    
+    let importedCount = 0;
+    let updatedCount = 0;
+    let enabledCount = 0;
+    let skippedCount = 0;
+    let customsAdded = 0;
+    
+    // Build a map of existing default curves by key
+    const defaultCurvesByKey = new Map();
+    Object.entries(curves).forEach(([id, curve]: any) => {
+      defaultCurvesByKey.set(curve.key, { id, curve });
+    });
+    
+    // Import each curvetable
+    matches.forEach(match => {
+      const fullLine = match[0];
+      const pathPart = match[1];
+      const key = match[2];
+      const value = match[4];
+      
+      // Check if this exact line already exists in INI (avoid duplicates)
+      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const exactLineRegex = new RegExp(`^\\+CurveTable=.*;RowUpdate;${escapedKey};\\d+;${escapedValue}$`, 'gm');
+      
+      if (exactLineRegex.test(content)) {
+        // Exact line already exists, skip it
+        skippedCount++;
+        return;
+      }
+      
+      // Check if this is a default ATLAS curve
+      if (defaultCurvesByKey.has(key)) {
+        const defaultEntry = defaultCurvesByKey.get(key);
+        const defaultCurve = defaultEntry.curve;
+        
+        // Check if line with this key exists in INI
+        const keyExistsRegex = new RegExp(`^\\+CurveTable=.*;RowUpdate;${escapedKey};\\d+;.*$`, 'gm');
+        
+        if (keyExistsRegex.test(content)) {
+          // Update existing value
+          content = content.replace(keyExistsRegex, fullLine);
+          updatedCount++;
+        } else {
+          // Enable this default curve with the imported value
+          const assetHotfixIndex = content.indexOf('[AssetHotfix]');
+          if (assetHotfixIndex !== -1) {
+            const insertPoint = content.indexOf('\n', assetHotfixIndex) + 1;
+            content = content.slice(0, insertPoint) + fullLine + '\n' + content.slice(insertPoint);
+            enabledCount++;
+          }
+          
+          // Clear deleted state if it exists
+          if (defaultCurve.isDeleted) {
+            delete defaultCurve.isDeleted;
+            delete defaultCurve.deletedLine;
+            curves[defaultEntry.id] = defaultCurve;
+          }
+        }
+      } else {
+        // This is a custom curve not in default list
+        // Check if it already exists in INI with different value
+        const keyExistsRegex = new RegExp(`^\\+CurveTable=.*;RowUpdate;${escapedKey};\\d+;.*$`, 'gm');
+        
+        if (keyExistsRegex.test(content)) {
+          // Update existing custom curve
+          content = content.replace(keyExistsRegex, fullLine);
+          updatedCount++;
+        } else {
+          // Add as new custom curve with auto-generated name
+          // Generate a readable name from the key
+          const autoName = key
+            .split('.')
+            .pop() // Get last part after final dot
+            .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+            .trim();
+          
+          // Find next available ID
+          const maxId = Math.max(...Object.keys(curves).map(k => parseInt(k)).filter(n => !isNaN(n)), 0);
+          const newId = String(maxId + 1);
+          
+          // Add to curves.json
+          curves[newId] = {
+            name: `Imported: ${autoName}`,
+            key: key,
+            value: value,
+            pathPart: pathPart,
+            type: 'custom',
+            isCustom: true
+          };
+          
+          // Add to INI file
+          const assetHotfixIndex = content.indexOf('[AssetHotfix]');
+          if (assetHotfixIndex !== -1) {
+            const insertPoint = content.indexOf('\n', assetHotfixIndex) + 1;
+            content = content.slice(0, insertPoint) + fullLine + '\n' + content.slice(insertPoint);
+            customsAdded++;
+          }
+        }
+      }
+    });
+    
+    // Save updated INI and curves
+    fs.writeFileSync(iniPath, content);
+    fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
+    
+    // Build status message
+    const statusParts = [];
+    if (enabledCount > 0) statusParts.push(`${enabledCount} enabled`);
+    if (customsAdded > 0) statusParts.push(`${customsAdded} custom added`);
+    if (updatedCount > 0) statusParts.push(`${updatedCount} updated`);
+    if (skippedCount > 0) statusParts.push(`${skippedCount} skipped (duplicates)`);
+    
+    lastStatusMessage = `\x1b[32m✓ Import complete! ${statusParts.join(', ')}.\x1b[0m`;
+    
+    // Optional: Ask if user wants to delete the imported file
+    const deleteResponse = await prompts({
+      type: 'text',
+      name: 'delete',
+      message: '\x1b[32mDelete the imported file? (Y/N):\x1b[0m',
+      validate: (value) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
+    });
+    
+    if (deleteResponse.delete && deleteResponse.delete.toUpperCase() === 'Y') {
+      fs.unlinkSync(importFilePath);
+      lastStatusMessage += ' \x1b[90m(File deleted)\x1b[0m';
+    }
+    
+  } catch (error) {
+    lastStatusMessage = `\x1b[31m✗ Failed to import curvetables: ${error.message}\x1b[0m`;
+  }
+}
+
 // Function to modify CurveTables
 async function modifyCurveTables() {
   let continueLoop = true;
@@ -203,15 +424,16 @@ async function modifyCurveTables() {
     console.log('\x1b[32m(2)\x1b[0m Delete CurveTable');
     console.log('\x1b[32m(3)\x1b[0m List Current Values');
     console.log('\x1b[32m(4)\x1b[0m Add Custom CurveTable');
-    console.log('\x1b[32m(5)\x1b[0m Clear All CurveTables');
+    console.log('\x1b[32m(5)\x1b[0m Import CurveTables from DefaultGame.ini');
+    console.log('\x1b[32m(6)\x1b[0m Clear All CurveTables');
     console.log('\x1b[32m(BACK)\x1b[0m Go Back To Main Menu');
     console.log('');
     
     const actionResponse = await prompts({
       type: 'text',
       name: 'action',
-      message: '\x1b[32mSelect an option (1/2/3/4/5/BACK):\x1b[0m',
-      validate: (value) => (['1', '2', '3', '4', '5'].includes(value) || value.toLowerCase() === 'back') ? true : 'Please enter 1, 2, 3, 4, 5, or BACK'
+      message: '\x1b[32mSelect an option (1/2/3/4/5/6/BACK):\x1b[0m',
+      validate: (value) => (['1', '2', '3', '4', '5', '6'].includes(value) || value.toLowerCase() === 'back') ? true : 'Please enter 1, 2, 3, 4, 5, 6, or BACK'
     });
     
     const action = actionResponse.action?.toLowerCase();
@@ -318,6 +540,21 @@ async function modifyCurveTables() {
     }
     
     if (action === '5') {
+      // Import CurveTables from DefaultGame.ini
+      await importCurveTables();
+      
+      // Wait for user to press enter before returning to submenu
+      await prompts({
+        type: 'text',
+        name: 'continue',
+        message: '\x1b[90mPress Enter to continue...\x1b[0m'
+      });
+      
+      // Continue loop to show submenu again
+      continue;
+    }
+    
+    if (action === '6') {
       // Clear all curvetables with confirmation
       const confirmResponse = await prompts({
         type: 'text',
