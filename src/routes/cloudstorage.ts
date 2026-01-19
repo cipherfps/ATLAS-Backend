@@ -4,16 +4,22 @@ import fs from "node:fs";
 import path from "node:path";
 import getVersion from "../utils/handlers/getVersion";
 
+// Cache for hotfix files to avoid repeated disk reads
+const hotfixCache = new Map<string, string>();
+
 export default function () {
   app.get("/fortnite/api/cloudstorage/system", async (c) => {
     try {
       const hotfixesDir = path.join(__dirname, "../../static/hotfixes");
       const csFiles: any = [];
 
-      fs.readdirSync(hotfixesDir).forEach((file) => {
+      const files = await fs.promises.readdir(hotfixesDir);
+      for (const file of files) {
         const filePath = path.join(hotfixesDir, file);
-        const f = fs.readFileSync(filePath);
-        const fileStat = fs.statSync(filePath);
+        const [f, fileStat] = await Promise.all([
+          fs.promises.readFile(filePath),
+          fs.promises.stat(filePath)
+        ]);
 
         csFiles.push({
           uniqueFilename: file,
@@ -27,7 +33,7 @@ export default function () {
           storageIds: {},
           doNotCache: true,
         });
-      });
+      }
 
       return c.json(csFiles);
     } catch (err) {
@@ -41,10 +47,13 @@ export default function () {
       const hotfixesDir = path.join(__dirname, "../../static/hotfixes");
       const csFiles: any = [];
 
-      fs.readdirSync(hotfixesDir).forEach((file) => {
+      const files = await fs.promises.readdir(hotfixesDir);
+      for (const file of files) {
         const filePath = path.join(hotfixesDir, file);
-        const f = fs.readFileSync(filePath);
-        const fileStat = fs.statSync(filePath);
+        const [f, fileStat] = await Promise.all([
+          fs.promises.readFile(filePath),
+          fs.promises.stat(filePath)
+        ]);
 
         csFiles.push({
           uniqueFilename: file,
@@ -58,7 +67,7 @@ export default function () {
           storageIds: {},
           doNotCache: true,
         });
-      });
+      }
 
       return c.json(csFiles);
     } catch (err) {
@@ -70,14 +79,24 @@ export default function () {
   app.get("/fortnite/api/cloudstorage/system/:file", async (c) => {
     try {
       const version = getVersion(c);
+      const fileName = c.req.param("file");
       const filePath = path.join(
         __dirname,
         "../../static/hotfixes",
-        c.req.param("file")
+        fileName
       );
-      let fileContent = fs.readFileSync(filePath, { encoding: "utf8" });
+      
+      // Check cache first
+      let fileContent: string;
+      if (hotfixCache.has(fileName)) {
+        fileContent = hotfixCache.get(fileName)!;
+      } else {
+        // Load from disk and cache
+        fileContent = await fs.promises.readFile(filePath, { encoding: "utf8" });
+        hotfixCache.set(fileName, fileContent);
+      }
 
-      if (c.req.param("file") === "DefaultGame.ini") {
+      if (fileName === "DefaultGame.ini") {
         const replacements: {
           [key: number]: { find: string; replace: string };
         } = {
