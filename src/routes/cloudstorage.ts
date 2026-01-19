@@ -18,8 +18,8 @@ export default function () {
         csFiles.push({
           uniqueFilename: file,
           filename: file,
-          hash: crypto.createHash("sha1").update(f).digest("hex"),
-          hash256: crypto.createHash("sha256").update(f).digest("hex"),
+          hash: crypto.createHash("sha1").update(f as any).digest("hex"),
+          hash256: crypto.createHash("sha256").update(f as any).digest("hex"),
           length: fileStat.size,
           contentType: "application/octet-stream",
           uploaded: new Date().toISOString(),
@@ -49,8 +49,8 @@ export default function () {
         csFiles.push({
           uniqueFilename: file,
           filename: file,
-          hash: crypto.createHash("sha1").update(f).digest("hex"),
-          hash256: crypto.createHash("sha256").update(f).digest("hex"),
+          hash: crypto.createHash("sha1").update(f as any).digest("hex"),
+          hash256: crypto.createHash("sha256").update(f as any).digest("hex"),
           length: fileStat.size,
           contentType: "application/octet-stream",
           uploaded: new Date().toISOString(),
@@ -155,7 +155,7 @@ export default function () {
         "ClientSettings",
         accountId
       );
-      if (!fs.existsSync(clientSettingsPath)) fs.mkdirSync(clientSettingsPath, { recursive: true });
+      await fs.promises.mkdir(clientSettingsPath, { recursive: true });
 
       const ver = getVersion(c);
 
@@ -164,9 +164,9 @@ export default function () {
         `ClientSettings-${ver.season}.Sav`
       );
 
-      if (fs.existsSync(file)) {
-        const ParsedFile = fs.readFileSync(file, "latin1");
-        const ParsedStats = fs.statSync(file);
+      try {
+        const ParsedFile = await fs.promises.readFile(file, "latin1");
+        const ParsedStats = await fs.promises.stat(file);
 
         return c.json([
           {
@@ -186,9 +186,10 @@ export default function () {
             doNotCache: false,
           },
         ]);
+      } catch {
+        // File doesn't exist
+        return c.json([]);
       }
-
-      return c.json([]);
     } catch (err) {
       console.error("Error fetching user cloudstorage:", err);
       c.status(500);
@@ -208,8 +209,7 @@ export default function () {
         "ClientSettings",
         accountId
       );
-      if (!fs.existsSync(clientSettingsPath)) fs.mkdirSync(clientSettingsPath, { recursive: true });
-
+    
     if (filename.toLowerCase() !== "clientsettings.sav") {
       return c.json([]);
     }
@@ -223,10 +223,17 @@ export default function () {
 
     try {
       const body = await c.req.arrayBuffer();
+      const buffer = Buffer.from(body);
 
-      fs.writeFileSync(file, Buffer.from(body), "latin1");
+      // Respond immediately, save in background
+      const response = c.json([]);
+      
+      // Save file asynchronously without blocking
+      fs.promises.mkdir(clientSettingsPath, { recursive: true })
+        .then(() => fs.promises.writeFile(file, buffer as any, "latin1"))
+        .catch(error => console.error("Error writing ClientSettings:", error));
 
-      return c.json([]);
+      return response;
     } catch (error) {
       console.error("Error writing the file:", error);
 
@@ -244,7 +251,7 @@ export default function () {
         "ClientSettings",
         accountId
       );
-      if (!fs.existsSync(clientSettingsPath)) fs.mkdirSync(clientSettingsPath, { recursive: true });
+    await fs.promises.mkdir(clientSettingsPath, { recursive: true });
 
     const ver = getVersion(c);
 
@@ -253,8 +260,11 @@ export default function () {
       `ClientSettings-${ver.season}.Sav`
     );
 
-    if (fs.existsSync(file)) return c.body(fs.readFileSync(file) as any);
-
-    return c.json([]);
+    try {
+      const data = await fs.promises.readFile(file);
+      return c.body(data as any);
+    } catch {
+      return c.json([]);
+    }
   });
 }

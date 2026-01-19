@@ -6,6 +6,9 @@ import { v4 as uuidv4 } from "uuid";
 const userpath = new Set();
 const profilesDir = path.join(__dirname, "..", "..", "static", "profiles");
 
+// In-memory cache to avoid repeated file reads
+const profileCache = new Map();
+
 export default function () {
   app.post(
     "/fortnite/api/game/v2/profile/:accountId/:type/:operation",
@@ -26,63 +29,61 @@ export default function () {
       const profileId = query.profileId;
 
       const accountProfilesDir = path.join(profilesDir, accountId);
-      if (!fs.existsSync(accountProfilesDir)) {
-        fs.mkdirSync(accountProfilesDir, { recursive: true });
-      }
-
-      const templateFiles = fs
-        .readdirSync(profilesDir)
-        .filter((f) => f.endsWith(".json"));
-
-      templateFiles.forEach((file) => {
-        const templatePath = path.join(profilesDir, file);
-        const accountProfilePath = path.join(accountProfilesDir, file);
-
-        if (!fs.existsSync(accountProfilePath)) {
-          fs.copyFileSync(templatePath, accountProfilePath);
-        }
-      });
-
       const profilePath = path.join(
         accountProfilesDir,
         `profile_${profileId}.json`
       );
 
-      if (!fs.existsSync(profilePath)) {
-        const templatePath = path.join(
-          profilesDir,
-          `profile_${profileId}.json`
-        );
-        if (fs.existsSync(templatePath)) {
-          fs.copyFileSync(templatePath, profilePath);
-        } else if (templateFiles.length > 0) {
-          fs.copyFileSync(
-            path.join(profilesDir, templateFiles[0]),
-            profilePath
-          );
-        } else {
-          fs.writeFileSync(
-            profilePath,
-            JSON.stringify(
-              {
-                rvn: 0,
-                items: {},
-                stats: { attributes: {} },
-                commandRevision: 0,
-              },
-              null,
-              2
-            )
-          );
+      const cacheKey = `${accountId}_${profileId}`;
+      
+      // Check cache first
+      if (profileCache.has(cacheKey)) {
+        profile = JSON.parse(JSON.stringify(profileCache.get(cacheKey))); // Deep clone
+      } else {
+        // Load from disk only if not cached
+        try {
+          const profileData = await fs.promises.readFile(profilePath, "utf8");
+          profile = JSON.parse(profileData);
+          profileCache.set(cacheKey, profile);
+        } catch (err) {
+          // Profile doesn't exist, create it
+          await fs.promises.mkdir(accountProfilesDir, { recursive: true });
+          
+          const templatePath = path.join(profilesDir, `profile_${profileId}.json`);
+          try {
+            const templateData = await fs.promises.readFile(templatePath, "utf8");
+            profile = JSON.parse(templateData);
+          } catch {
+            // No template, create empty
+            profile = {
+              rvn: 0,
+              items: {},
+              stats: { attributes: {} },
+              commandRevision: 0,
+            };
+          }
+          
+          // Save and cache the new profile
+          await fs.promises.writeFile(profilePath, JSON.stringify(profile, null, 2));
+          profileCache.set(cacheKey, profile);
         }
+        
+        profile = JSON.parse(JSON.stringify(profile)); // Deep clone for this request
       }
-
-      profile = JSON.parse(fs.readFileSync(profilePath, "utf8"));
       if (!profile.rvn) profile.rvn = 0;
       if (!profile.items) profile.items = {};
       if (!profile.stats) profile.stats = {};
       if (!profile.stats.attributes) profile.stats.attributes = {};
       if (!profile.commandRevision) profile.commandRevision = 0;
+
+      // Build template ID index for fast lookups
+      const templateIdIndex = new Map();
+      for (const itemId in profile.items) {
+        const templateId = profile.items[itemId]?.templateId;
+        if (templateId) {
+          templateIdIndex.set(templateId.toLowerCase(), itemId);
+        }
+      }
 
       BaseRevision = profile ? profile.rvn : 0;
 
@@ -305,13 +306,9 @@ export default function () {
             let itemToSlot = body.itemToSlot;
             let itemToSlotID = "";
 
+            // Use indexed lookup instead of linear search
             if (body.itemToSlot) {
-              for (let itemId in profile.items) {
-                if (profile.items[itemId]?.templateId?.toLowerCase() == body.itemToSlot.toLowerCase()) {
-                  itemToSlotID = itemId;
-                  break;
-                }
-              }
+              itemToSlotID = templateIdIndex.get(body.itemToSlot.toLowerCase()) || "";
             }
 
             let Variants = body.variantUpdates;
@@ -524,12 +521,13 @@ export default function () {
           break;
       }
 
-      profileChanges.push({
-        changeType: "fullProfileUpdate",
-        profile: profile,
-      });
-
-      fs.writeFileSync(profilePath, JSON.stringify(profile, null, 2));
+      // For QueryProfile or if no changes were made, send full profile
+      if (c.req.param("operation") === "QueryProfile" || profileChanges.length === 0) {
+        profileChanges = [{
+          changeType: "fullProfileUpdate",
+          profile: profile,
+        }];
+      }
 
       const response = {
         profileRevision: profile ? profile.rvn || 0 : 0,
@@ -541,6 +539,11 @@ export default function () {
         multiUpdate: MultiUpdate,
         responseVersion: 1,
       };
+
+      // Update cache and save profile asynchronously
+      profileCache.set(cacheKey, JSON.parse(JSON.stringify(profile)));
+      fs.promises.writeFile(profilePath, JSON.stringify(profile, null, 2))
+        .catch(err => console.error(`[MCP] Failed to save profile for ${accountId}:`, err));
 
       userpath.add(profileId);
 
@@ -555,62 +558,47 @@ export default function () {
       const query = c.req.query();
       const accountId = c.req.param("accountId");
 
-      console.log(`[PUBLIC PROFILE] Request for account: ${accountId}, profileId: ${query.profileId}`);
-
       if (!query.profileId) {
         return c.text("Profile ID not found", 404);
       }
 
       const profileId = query.profileId;
-      const accountProfilesDir = path.join(profilesDir, accountId);
-      const profilePath = path.join(
-        accountProfilesDir,
-        `profile_${profileId}.json`
-      );
-
+      const cacheKey = `${accountId}_${profileId}`;
       let profile: any;
 
-      // If player's profile exists, use it; otherwise return default template
-      if (fs.existsSync(profilePath)) {
-        profile = JSON.parse(fs.readFileSync(profilePath, "utf8"));
-        console.log(`[PUBLIC PROFILE] Found profile for ${accountId}`);
+      // Check cache first
+      if (profileCache.has(cacheKey)) {
+        profile = profileCache.get(cacheKey);
       } else {
-        // Return default template profile
-        const templatePath = path.join(
-          profilesDir,
-          `profile_${profileId}.json`
-        );
-        if (fs.existsSync(templatePath)) {
-          profile = JSON.parse(fs.readFileSync(templatePath, "utf8"));
-          console.log(`[PUBLIC PROFILE] Using template for ${accountId}`);
-        } else {
-          profile = {
-            rvn: 0,
-            items: {},
-            stats: { attributes: {} },
-            commandRevision: 0,
-          };
-          console.log(`[PUBLIC PROFILE] No profile found for ${accountId}, returning empty`);
+        // Load from disk
+        const accountProfilesDir = path.join(profilesDir, accountId);
+        const profilePath = path.join(accountProfilesDir, `profile_${profileId}.json`);
+
+        try {
+          const profileData = await fs.promises.readFile(profilePath, "utf8");
+          profile = JSON.parse(profileData);
+          profileCache.set(cacheKey, profile);
+        } catch {
+          // No profile found, use template
+          const templatePath = path.join(profilesDir, `profile_${profileId}.json`);
+          try {
+            const templateData = await fs.promises.readFile(templatePath, "utf8");
+            profile = JSON.parse(templateData);
+          } catch {
+            profile = { rvn: 0, items: {}, stats: { attributes: {} }, commandRevision: 0 };
+          }
         }
       }
 
-      // Return public profile data with full profile update
-      const response = {
+      return c.json({
         profileRevision: profile.rvn || 0,
         profileId: profileId,
         profileChangesBaseRevision: profile.rvn || 0,
-        profileChanges: [
-          {
-            changeType: "fullProfileUpdate",
-            profile: profile,
-          },
-        ],
+        profileChanges: [{ changeType: "fullProfileUpdate", profile: profile }],
         profileCommandRevision: profile.commandRevision || 0,
         serverTime: new Date().toISOString(),
         responseVersion: 1,
-      };
-
-      return c.json(response);
+      });
     }
   );
 
@@ -621,62 +609,47 @@ export default function () {
       const query = c.req.query();
       const accountId = c.req.param("accountId");
 
-      console.log(`[PUBLIC PROFILE GET] Request for account: ${accountId}, profileId: ${query.profileId}`);
-
       if (!query.profileId) {
         return c.text("Profile ID not found", 404);
       }
 
       const profileId = query.profileId;
-      const accountProfilesDir = path.join(profilesDir, accountId);
-      const profilePath = path.join(
-        accountProfilesDir,
-        `profile_${profileId}.json`
-      );
-
+      const cacheKey = `${accountId}_${profileId}`;
       let profile: any;
 
-      // If player's profile exists, use it; otherwise return default template
-      if (fs.existsSync(profilePath)) {
-        profile = JSON.parse(fs.readFileSync(profilePath, "utf8"));
-        console.log(`[PUBLIC PROFILE GET] Found profile for ${accountId}`);
+      // Check cache first
+      if (profileCache.has(cacheKey)) {
+        profile = profileCache.get(cacheKey);
       } else {
-        // Return default template profile
-        const templatePath = path.join(
-          profilesDir,
-          `profile_${profileId}.json`
-        );
-        if (fs.existsSync(templatePath)) {
-          profile = JSON.parse(fs.readFileSync(templatePath, "utf8"));
-          console.log(`[PUBLIC PROFILE GET] Using template for ${accountId}`);
-        } else {
-          profile = {
-            rvn: 0,
-            items: {},
-            stats: { attributes: {} },
-            commandRevision: 0,
-          };
-          console.log(`[PUBLIC PROFILE GET] No profile found for ${accountId}, returning empty`);
+        // Load from disk
+        const accountProfilesDir = path.join(profilesDir, accountId);
+        const profilePath = path.join(accountProfilesDir, `profile_${profileId}.json`);
+
+        try {
+          const profileData = await fs.promises.readFile(profilePath, "utf8");
+          profile = JSON.parse(profileData);
+          profileCache.set(cacheKey, profile);
+        } catch {
+          // No profile found, use template
+          const templatePath = path.join(profilesDir, `profile_${profileId}.json`);
+          try {
+            const templateData = await fs.promises.readFile(templatePath, "utf8");
+            profile = JSON.parse(templateData);
+          } catch {
+            profile = { rvn: 0, items: {}, stats: { attributes: {} }, commandRevision: 0 };
+          }
         }
       }
 
-      // Return public profile data with full profile update
-      const response = {
+      return c.json({
         profileRevision: profile.rvn || 0,
         profileId: profileId,
         profileChangesBaseRevision: profile.rvn || 0,
-        profileChanges: [
-          {
-            changeType: "fullProfileUpdate",
-            profile: profile,
-          },
-        ],
+        profileChanges: [{ changeType: "fullProfileUpdate", profile: profile }],
         profileCommandRevision: profile.commandRevision || 0,
         serverTime: new Date().toISOString(),
         responseVersion: 1,
-      };
-
-      return c.json(response);
+      });
     }
   );
 }
