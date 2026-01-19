@@ -5,6 +5,7 @@ This backend has features such as the following:
 - Straight Bloom Toggle
 - CurveTable Toggle
 - CurveTable Editor
+- CurveTable Importer
 
 If you want to contribute just fork this repository and make a pull request!
 
@@ -54,4 +55,3 @@ If you prefer to install manually:
 ## To Do List
 ### Feel free to give any suggestions on how to improve ATLAS
 - CurveTable Presets
-- CurveTables Imports
