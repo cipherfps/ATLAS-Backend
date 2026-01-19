@@ -52,4 +52,5 @@ If you prefer to install manually:
 
 # Credits
 
-- [andr1ww](https://github.com/andr1ww) ATLAS is a fork of [Nexa Backend](https://github.com/andr1ww/Nexa)
+- [andr1ww](https://github.com/andr1ww) ATLAS is a fork of [Nexa](https://github.com/andr1ww/Nexa)
+- [Ralzify](https://github.com/Ralzify) ATLAS uses the CurveTable and Straight Bloom code from [FortBackend](https://github.com/Ralzify/FortBackend)
