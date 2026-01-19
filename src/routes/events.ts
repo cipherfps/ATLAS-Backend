@@ -70,7 +70,7 @@ export default function () {
                     pendingPayouts: [],
                     pendingPenalties: {},
                     persistentScores: {
-                        Hype: 575,
+                        Hype: 0,
                     },
                     teams: {
                         [`epicgames_Arena_S${ver.season}_Solo:Arena_S${ver.season}_Division1_Solo`]: [accountId],
