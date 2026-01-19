@@ -74,6 +74,57 @@
                 "linkCode": "playlist_defaultduo",
                 "isFavorite": false
               },
+                        {
+                  "namespace": "fn",
+                  "accountId": "epic",
+                  "creatorName": "Epic",
+                  "mnemonic": "playlist_showdownalt_solo",
+                  "linkType": "BR:Playlist",
+                  "metadata": {
+                      "parent_set": "set_br_playlists",
+                      "favorite_override": "set_br_playlists",
+                      "play_history_override": "set_br_playlists",
+                      "alt_title": {
+                          "de": "Arena",
+                          "ru": "Арена",
+                          "ko": "투기장",
+                          "pt-BR": "Arena",
+                          "en": "Arena",
+                          "it": "Arena",
+                          "fr": "Arène",
+                          "zh-CN": "",
+                          "es": "Arena",
+                          "es-MX": "En trío",
+                          "zh": "",
+                          "ar": "アリーナ",
+                          "zh-Hant": "",
+                          "ja": "トリオ",
+                          "pl": "Arena",
+                          "es-419": "Arena",
+                          "tr": "Arena"
+                      },
+                      "image_url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
+                      "product_tag": "Product.BR.Build.Arena",
+                      "image_urls": {
+                          "url_s": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
+                          "url_xs": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
+                          "url_m": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
+                          "url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png"
+                      },
+                      "matchmaking": {
+                          "override_playlist": "playlist_showdown_solo"
+                      },
+                      "video_vuid": "",
+                      "title": "Arena"
+                  },
+                  "version": 95,
+                  "active": true,
+                  "disabled": false,
+                  "created": "2021-10-01T00:56:45.053Z",
+                  "published": "2023-11-03T08:28:43.403Z",
+                  "descriptionTags": [],
+                  "moderationStatus": "Unmoderated"
+              },
               {
                 "linkData": {
                   "namespace": "fn",
@@ -131,3 +182,5 @@
     ],
     "ModeSets": {}
   }
+  
+    

@@ -19,7 +19,8 @@
             "playlist_defaultsolo",
             "playlist_defaultduo",
             "playlist_trios",
-            "playlist_defaultsquad"
+            "playlist_defaultsquad",
+            "playlist_showdownalt_solo"
         ],
         "alt_title": {
             "de": "Battle Royale",
