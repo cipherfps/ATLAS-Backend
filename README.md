@@ -46,9 +46,9 @@ If you prefer to install manually:
    bun run src/index.ts
    ```
 
-**TO DO List**
+### TO DO List
 - CurveTable Presets
-- Importing CurveTables
+- CurveTables Imports
 
 # Credits
 
