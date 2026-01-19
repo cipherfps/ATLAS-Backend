@@ -9,7 +9,7 @@ import prompts from "prompts";
 import fs from "node:fs";
 import ini from "ini";
 
-const PORT = process.env.PORT || 5353;
+const PORT = process.env.PORT || 3551;
 const app = new Hono({ strict: false });
 
 // Store last status message

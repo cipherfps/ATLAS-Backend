@@ -547,4 +547,136 @@ export default function () {
       return c.json(response);
     }
   );
+
+  // Public profile endpoint - allows clients to see other players' cosmetics
+  app.post(
+    "/fortnite/api/game/v2/profile/:accountId/public/QueryProfile",
+    async (c) => {
+      const query = c.req.query();
+      const accountId = c.req.param("accountId");
+
+      console.log(`[PUBLIC PROFILE] Request for account: ${accountId}, profileId: ${query.profileId}`);
+
+      if (!query.profileId) {
+        return c.text("Profile ID not found", 404);
+      }
+
+      const profileId = query.profileId;
+      const accountProfilesDir = path.join(profilesDir, accountId);
+      const profilePath = path.join(
+        accountProfilesDir,
+        `profile_${profileId}.json`
+      );
+
+      let profile: any;
+
+      // If player's profile exists, use it; otherwise return default template
+      if (fs.existsSync(profilePath)) {
+        profile = JSON.parse(fs.readFileSync(profilePath, "utf8"));
+        console.log(`[PUBLIC PROFILE] Found profile for ${accountId}`);
+      } else {
+        // Return default template profile
+        const templatePath = path.join(
+          profilesDir,
+          `profile_${profileId}.json`
+        );
+        if (fs.existsSync(templatePath)) {
+          profile = JSON.parse(fs.readFileSync(templatePath, "utf8"));
+          console.log(`[PUBLIC PROFILE] Using template for ${accountId}`);
+        } else {
+          profile = {
+            rvn: 0,
+            items: {},
+            stats: { attributes: {} },
+            commandRevision: 0,
+          };
+          console.log(`[PUBLIC PROFILE] No profile found for ${accountId}, returning empty`);
+        }
+      }
+
+      // Return public profile data with full profile update
+      const response = {
+        profileRevision: profile.rvn || 0,
+        profileId: profileId,
+        profileChangesBaseRevision: profile.rvn || 0,
+        profileChanges: [
+          {
+            changeType: "fullProfileUpdate",
+            profile: profile,
+          },
+        ],
+        profileCommandRevision: profile.commandRevision || 0,
+        serverTime: new Date().toISOString(),
+        responseVersion: 1,
+      };
+
+      return c.json(response);
+    }
+  );
+
+  // Public profile endpoint (GET variant)
+  app.get(
+    "/fortnite/api/game/v2/profile/:accountId/public/QueryProfile",
+    async (c) => {
+      const query = c.req.query();
+      const accountId = c.req.param("accountId");
+
+      console.log(`[PUBLIC PROFILE GET] Request for account: ${accountId}, profileId: ${query.profileId}`);
+
+      if (!query.profileId) {
+        return c.text("Profile ID not found", 404);
+      }
+
+      const profileId = query.profileId;
+      const accountProfilesDir = path.join(profilesDir, accountId);
+      const profilePath = path.join(
+        accountProfilesDir,
+        `profile_${profileId}.json`
+      );
+
+      let profile: any;
+
+      // If player's profile exists, use it; otherwise return default template
+      if (fs.existsSync(profilePath)) {
+        profile = JSON.parse(fs.readFileSync(profilePath, "utf8"));
+        console.log(`[PUBLIC PROFILE GET] Found profile for ${accountId}`);
+      } else {
+        // Return default template profile
+        const templatePath = path.join(
+          profilesDir,
+          `profile_${profileId}.json`
+        );
+        if (fs.existsSync(templatePath)) {
+          profile = JSON.parse(fs.readFileSync(templatePath, "utf8"));
+          console.log(`[PUBLIC PROFILE GET] Using template for ${accountId}`);
+        } else {
+          profile = {
+            rvn: 0,
+            items: {},
+            stats: { attributes: {} },
+            commandRevision: 0,
+          };
+          console.log(`[PUBLIC PROFILE GET] No profile found for ${accountId}, returning empty`);
+        }
+      }
+
+      // Return public profile data with full profile update
+      const response = {
+        profileRevision: profile.rvn || 0,
+        profileId: profileId,
+        profileChangesBaseRevision: profile.rvn || 0,
+        profileChanges: [
+          {
+            changeType: "fullProfileUpdate",
+            profile: profile,
+          },
+        ],
+        profileCommandRevision: profile.commandRevision || 0,
+        serverTime: new Date().toISOString(),
+        responseVersion: 1,
+      };
+
+      return c.json(response);
+    }
+  );
 }
