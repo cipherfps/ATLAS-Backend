@@ -6,12 +6,13 @@ This backend has features such as the following:
 - CurveTable Toggle
 - CurveTable Editor
 - CurveTable Importer
+- Arena Playlist/Points (22.40 and under)
 
 If you want to contribute just fork this repository and make a pull request!
 
 > [!TIP]
 > Join the discord server for support and resources like this! https://discord.gg/G9MAF77V7R
-
+### Feel free to give any suggestions on how to improve ATLAS!
 > [!WARNING]
 > We do not accept any liability for the misuse of this program. Epic Games strictly prohibits the presence of cosmetics not bought from the game's official item shop on private servers, as it breaches the End User License Agreement (EULA).
 
@@ -70,8 +71,5 @@ If you prefer to install manually:
 
 ## To Do List
 - CurveTable Presets
-- Arena Points
-- Friend Config Importer
+- Arena for Latest Versions
 - Fix applying MCP
-
-### Feel free to give any suggestions on how to improve ATLAS!
