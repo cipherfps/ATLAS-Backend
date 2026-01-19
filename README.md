@@ -55,3 +55,5 @@ If you prefer to install manually:
 ## To Do List
 ### Feel free to give any suggestions on how to improve ATLAS
 - CurveTable Presets
+- Arena Points
+- Friend Config Importer
