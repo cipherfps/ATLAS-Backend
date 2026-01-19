@@ -1,0 +1,640 @@
+import { Hono } from "hono";
+import path from "node:path";
+import { loadRoutes } from "./utils/startup/loadRoutes";
+import { Atlas } from "./utils/handlers/errors";
+import logger from "./utils/logger/logger";
+import Logger from "./utils/logger/logger";
+import { cors } from "hono/cors";
+import prompts from "prompts";
+import fs from "node:fs";
+import ini from "ini";
+
+const PORT = process.env.PORT || 5353;
+const app = new Hono({ strict: false });
+
+// Store last status message
+let lastStatusMessage = '';
+
+// Export function to update status message from other modules
+export function setStatusMessage(message: string) {
+  lastStatusMessage = message;
+  // Status will be displayed on next menu refresh
+}
+
+export default app;
+
+app.use("*", cors());
+
+app.notFound((c) => c.json(Atlas.basic.notFound, 404));
+
+app.use(async (c, next) => {
+  if (c.req.path === "/images/icons/gear.png" || c.req.path === "/favicon.ico") await next();
+  else {
+    await next();
+    // Request logging disabled
+  }
+});
+
+await loadRoutes(path.join(__dirname, "routes"), app);
+
+// Show ATLAS logo immediately, centered in terminal
+// Function to add gray color to shadow characters
+const addShadows = (text: string) => {
+  return text
+    .replace(/╗/g, '\x1b[90m╗\x1b[96m')
+    .replace(/╔/g, '\x1b[90m╔\x1b[96m')
+    .replace(/═/g, '\x1b[90m═\x1b[96m')
+    .replace(/╚/g, '\x1b[90m╚\x1b[96m')
+    .replace(/╝/g, '\x1b[90m╝\x1b[96m')
+    .replace(/║/g, '\x1b[90m║\x1b[96m');
+};
+
+const addShadowsBackend = (text: string) => {
+  return text
+    .replace(/╗/g, '\x1b[90m╗\x1b[37m')
+    .replace(/╔/g, '\x1b[90m╔\x1b[37m')
+    .replace(/═/g, '\x1b[90m═\x1b[37m')
+    .replace(/╚/g, '\x1b[90m╚\x1b[37m')
+    .replace(/╝/g, '\x1b[90m╝\x1b[37m')
+    .replace(/║/g, '\x1b[90m║\x1b[37m');
+};
+
+const logo = `\x1b[96m${addShadows(` █████╗ ████████╗██╗      █████╗ ███████╗
+██╔══██╗╚══██╔══╝██║     ██╔══██╗██╔════╝
+███████║   ██║   ██║     ███████║███████╗
+██╔══██║   ██║   ██║     ██╔══██║╚════██║
+██║  ██║   ██║   ███████╗██║  ██║███████║
+╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝`)}
+                                         
+\x1b[37m${addShadowsBackend(`██████╗  █████╗  ██████╗██╗  ██╗███████╗███╗   ██╗██████╗ 
+██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██╔════╝████╗  ██║██╔══██╗
+██████╔╝███████║██║     █████╔╝ █████╗  ██╔██╗ ██║██║  ██║
+██╔══██╗██╔══██║██║     ██╔═██╗ ██╔══╝  ██║╚██╗██║██║  ██║
+██████╔╝██║  ██║╚██████╗██║  ██╗███████╗██║ ╚████║██████╔╝
+╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚═════╝ `)}
+                                                          
+\x1b[0m`;
+
+// Center the logo in terminal
+const terminalWidth = process.stdout.columns || 80;
+const lines = logo.split('\n');
+const centeredLogo = lines.map(line => {
+  const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+  return ' '.repeat(padding) + line;
+}).join('\n');
+
+console.log(centeredLogo);
+
+// Function to toggle Straight Bloom
+async function toggleStraightBloom() {
+  try {
+    const iniPath = path.join(__dirname, '../static/hotfixes/DefaultGame.ini');
+    const sniperPath = path.join(__dirname, '../responses/sniper.json');
+    
+    let content = fs.readFileSync(iniPath, 'utf-8');
+    const sniperData = JSON.parse(fs.readFileSync(sniperPath, 'utf-8'));
+    const sniperSpreadLines = sniperData.lines;
+    
+    // Check if any sniper lines exist in the INI
+    const hasLines = sniperSpreadLines.some(line => content.includes(line));
+    
+    if (hasLines) {
+      // Remove all sniper lines
+      sniperSpreadLines.forEach(line => {
+        content = content.replace(line + '\n', '').replace(line, '');
+      });
+      // Clean up extra newlines
+      content = content.replace(/\n\n+/g, '\n');
+      lastStatusMessage = '\x1b[32m✓ Straight Bloom disabled!\x1b[0m';
+    } else {
+      // Add all sniper lines - find the last [AssetHotfix] section which should contain # Straight Bloom
+      const lines = content.split('\n');
+      let lastAssetHotfixIndex = -1;
+      
+      // Find the last [AssetHotfix] section
+      for (let i = lines.length - 1; i >= 0; i--) {
+        if (lines[i].trim() === '[AssetHotfix]') {
+          lastAssetHotfixIndex = i;
+          break;
+        }
+      }
+      
+      if (lastAssetHotfixIndex !== -1) {
+        // Look for # Straight Bloom comment after this [AssetHotfix]
+        let straightBloomIndex = -1;
+        for (let i = lastAssetHotfixIndex + 1; i < lines.length; i++) {
+          if (lines[i].trim() === '# Straight Bloom') {
+            straightBloomIndex = i;
+            break;
+          }
+        }
+        
+        if (straightBloomIndex !== -1) {
+          // Insert after the # Straight Bloom comment
+          lines.splice(straightBloomIndex + 1, 0, ...sniperSpreadLines);
+          content = lines.join('\n');
+        }
+      }
+      lastStatusMessage = '\x1b[32m✓ Straight Bloom enabled!\x1b[0m';
+    }
+    
+    fs.writeFileSync(iniPath, content);
+  } catch (error) {
+    lastStatusMessage = `\x1b[31m✗ Failed to toggle Straight Bloom: ${error.message}\x1b[0m`;
+  }
+}
+
+// Function to modify CurveTables
+async function modifyCurveTables() {
+  let continueLoop = true;
+  
+  while (continueLoop) {
+    try {
+      // Clear console and redisplay logo
+    console.clear();
+    
+    // Redisplay centered logo
+    const terminalWidth = process.stdout.columns || 80;
+    const logoLines = `\x1b[96m${addShadows(` █████╗ ████████╗██╗      █████╗ ███████╗
+██╔══██╗╚══██╔══╝██║     ██╔══██╗██╔════╝
+███████║   ██║   ██║     ███████║███████╗
+██╔══██║   ██║   ██║     ██╔══██║╚════██║
+██║  ██║   ██║   ███████╗██║  ██║███████║
+╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝`)}
+                                         
+\x1b[37m${addShadowsBackend(`██████╗  █████╗  ██████╗██╗  ██╗███████╗███╗   ██╗██████╗ 
+██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██╔════╝████╗  ██║██╔══██╗
+██████╔╝███████║██║     █████╔╝ █████╗  ██╔██╗ ██║██║  ██║
+██╔══██╗██╔══██║██║     ██╔═██╗ ██╔══╝  ██║╚██╗██║██║  ██║
+██████╔╝██║  ██║╚██████╗██║  ██╗███████╗██║ ╚████║██████╔╝
+╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚═════╝ `)}
+                                                          
+\x1b[0m`;
+    
+    const lines = logoLines.split('\n');
+    const centeredLogo = lines.map(line => {
+      const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+      return ' '.repeat(padding) + line;
+    }).join('\n');
+    
+    console.log(centeredLogo);
+    console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on port ${PORT}`);
+    
+    // Display last status message if exists
+    if (lastStatusMessage) {
+      console.log(`\x1b[36m[BACKEND]\x1b[0m ${lastStatusMessage}`);
+    }
+    
+    const backupPath = path.join(__dirname, '../responses/modifications-backup.json');
+    
+    // Check if curvetables are toggled off
+    if (fs.existsSync(backupPath)) {
+      lastStatusMessage = '\x1b[33m✗ CurveTables are currently disabled. Toggle them on first to modify.\x1b[0m';
+      return;
+    }
+    
+    const curvesPath = path.join(__dirname, '../responses/curves.json');
+    const iniPath = path.join(__dirname, '../static/hotfixes/DefaultGame.ini');
+    const curves = JSON.parse(fs.readFileSync(curvesPath, 'utf-8'));
+    let content = fs.readFileSync(iniPath, 'utf-8');
+    
+    console.log('\n\x1b[36mCurveTable Management:\x1b[0m');
+    console.log('\x1b[32m(1)\x1b[0m Add CurveTable');
+    console.log('\x1b[32m(2)\x1b[0m Delete CurveTable');
+    console.log('\x1b[32m(3)\x1b[0m List Current Values');
+    console.log('\x1b[32m(4)\x1b[0m Add Custom CurveTable');
+    console.log('\x1b[32m(5)\x1b[0m Clear All CurveTables');
+    console.log('\x1b[32m(BACK)\x1b[0m Go Back To Main Menu');
+    console.log('');
+    
+    const actionResponse = await prompts({
+      type: 'text',
+      name: 'action',
+      message: '\x1b[32mSelect an option (1/2/3/4/5/BACK):\x1b[0m',
+      validate: (value) => (['1', '2', '3', '4', '5'].includes(value) || value.toLowerCase() === 'back') ? true : 'Please enter 1, 2, 3, 4, 5, or BACK'
+    });
+    
+    const action = actionResponse.action?.toLowerCase();
+    
+    if (!action || action === 'back') {
+      continueLoop = false;
+      break;
+    }
+    
+    if (action === '3') {
+      // List current CurveTable values
+      const curveTableRegex = /^\+CurveTable=(.+?);RowUpdate;(.+?);0;(.+)$/gm;
+      const matches = [...content.matchAll(curveTableRegex)];
+      
+      if (matches.length > 0) {
+        console.log('\n\x1b[36mCurrent CurveTable Values:\x1b[0m');
+        matches.forEach(match => {
+          console.log(`  \x1b[32m${match[2]}\x1b[0m = ${match[3]}`);
+          console.log(`    Path: ${match[1]}`);
+        });
+        lastStatusMessage = '\x1b[36mCurveTable list displayed.\x1b[0m';
+      } else {
+        console.log('\n\x1b[33mNo active CurveTable modifications found.\x1b[0m');
+        lastStatusMessage = '\x1b[33mNo active CurveTable modifications found.\x1b[0m';
+      }
+      console.log('');
+      
+      // Wait for user to press enter before returning to submenu
+      await prompts({
+        type: 'text',
+        name: 'continue',
+        message: '\x1b[90mPress Enter to continue...\x1b[0m'
+      });
+      
+      // Continue loop to show submenu again
+      continue;
+    }
+    
+    if (action === '4') {
+      // Add custom CurveTable
+      const nameResponse = await prompts({
+        type: 'text',
+        name: 'name',
+        message: '\x1b[32mEnter a name for this custom curvetable:\x1b[0m',
+        validate: (value) => value.length > 0 ? true : 'Name cannot be empty'
+      });
+      
+      if (!nameResponse.name) {
+        // User cancelled
+        continue;
+      }
+      
+      const pasteResponse = await prompts({
+        type: 'text',
+        name: 'paste',
+        message: '\x1b[32mPaste the curvetable string (e.g., +CurveTable=/Game/Athena/Balance/DataTables/AthenaGameData;RowUpdate;Default.TurboBuildInterval;0;0.002):\x1b[0m',
+        validate: (value) => value.startsWith('+CurveTable=') ? true : 'String must start with +CurveTable='
+      });
+      
+      if (!pasteResponse.paste) {
+        // User cancelled
+        continue;
+      }
+      
+      // Parse the curvetable string
+      const curveString = pasteResponse.paste.trim();
+      const match = curveString.match(/^\+CurveTable=(.+?);RowUpdate;(.+?);(\d+);(.+)$/);
+      
+      if (!match) {
+        lastStatusMessage = '\x1b[31m✗ Invalid curvetable format. Expected: +CurveTable=/path;RowUpdate;key;0;value\x1b[0m';
+        continue;
+      }
+      
+      const [_, path_part, key, zeroVal, value] = match;
+      
+      // Find next ID
+      const maxId = Math.max(...Object.keys(curves).map(k => parseInt(k)).filter(n => !isNaN(n)), 0);
+      const newId = String(maxId + 1);
+      
+      // Add to curves.json
+      curves[newId] = {
+        name: nameResponse.name,
+        key: key,
+        value: value,
+        pathPart: path_part,
+        type: 'custom',
+        isCustom: true
+      };
+      
+      fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
+      
+      // Add to INI file
+      const assetHotfixIndex = content.indexOf('[AssetHotfix]');
+      if (assetHotfixIndex !== -1) {
+        const insertPoint = content.indexOf('\n', assetHotfixIndex) + 1;
+        content = content.slice(0, insertPoint) + curveString + '\n' + content.slice(insertPoint);
+      }
+      
+      fs.writeFileSync(iniPath, content);
+      lastStatusMessage = '\x1b[32m✓ Custom curvetable added successfully!\x1b[0m';
+      
+      // Continue loop to show submenu again
+      continue;
+    }
+    
+    if (action === '5') {
+      // Clear all curvetables with confirmation
+      const confirmResponse = await prompts({
+        type: 'text',
+        name: 'confirm',
+        message: '\x1b[31mAre you sure you want to delete ALL curvetables? (Y/N):\x1b[0m',
+        validate: (value) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
+      });
+      
+      if (!confirmResponse.confirm) {
+        // User cancelled
+        lastStatusMessage = '\x1b[33mCancelled.\x1b[0m';
+        continue;
+      }
+      
+      if (confirmResponse.confirm?.toUpperCase() === 'Y') {
+        // Remove all CurveTable lines from INI
+        content = content.replace(/^\+CurveTable=.*$/gm, '');
+        content = content.replace(/^\s*\n/gm, '');
+        fs.writeFileSync(iniPath, content);
+        
+        // Remove all custom curvetables from JSON
+        const customEntries = Object.keys(curves).filter(key => curves[key].isCustom);
+        customEntries.forEach(key => {
+          delete curves[key];
+        });
+        fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
+        
+        lastStatusMessage = '\x1b[32m✓ All curvetables cleared!\x1b[0m';
+      } else {
+        lastStatusMessage = '\x1b[33mCancelled.\x1b[0m';
+      }
+      
+      // Continue loop to show submenu again
+      continue;
+    }
+    
+    // For Add (1) and Delete (2), show all curves including custom ones
+    const allCurves = Object.entries(curves);
+    
+    console.log('\n\x1b[33mAvailable Curve Modifications:\x1b[0m');
+    allCurves.forEach(([key, curve]: any) => {
+      // Check if curve is currently in the INI file
+      const escapedKey = curve.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`^\\+CurveTable=.*;RowUpdate;${escapedKey};0;.*$`, 'gm');
+      const isInUse = regex.test(content);
+      
+      const usageLabel = isInUse ? '\x1b[32m[USED]\x1b[0m' : '\x1b[90m[UNUSED]\x1b[0m';
+      const customLabel = curve.isCustom ? ' \x1b[33m[CUSTOM]\x1b[0m' : '';
+      console.log(`\x1b[36m(${key})\x1b[0m ${curve.name} ${usageLabel}${customLabel}`);
+    });
+    console.log('\x1b[36m(BACK)\x1b[0m Go back');
+    console.log('');
+    
+    const curveResponse = await prompts({
+      type: 'text',
+      name: 'curve',
+      message: '\x1b[32mChoose a curve:\x1b[0m',
+      validate: (value) => {
+        if (value.toLowerCase() === 'back') return true;
+        return Object.keys(Object.fromEntries(allCurves)).includes(value) ? true : 'Please enter a valid curve number or BACK';
+      }
+    });
+    
+    if (!curveResponse.curve || curveResponse.curve?.toLowerCase() === 'back') {
+      // Go back to submenu
+      continue;
+    }
+    
+    const selectedCurve = curves[curveResponse.curve];
+    
+    if (action === '2') {
+      // Delete: Remove the CurveTable line and store it
+      const escapedKey = selectedCurve.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`^\\+CurveTable=.*;RowUpdate;${escapedKey};0;.*$`, 'gm');
+      const match = content.match(regex);
+      
+      if (match && match[0]) {
+        // Store the deleted line in the curve definition
+        selectedCurve.deletedLine = match[0];
+        selectedCurve.isDeleted = true;
+        
+        // Remove from INI file
+        content = content.replace(regex, '').replace(/^\s*\n/gm, '');
+        
+        // Update curves.json to store the deleted state
+        curves[curveResponse.curve] = selectedCurve;
+        fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
+        
+        lastStatusMessage = '\x1b[32m✓ CurveTable removed successfully!\x1b[0m';
+      } else {
+        lastStatusMessage = '\x1b[33mCurveTable not found in INI file.\x1b[0m';
+      }
+    } else if (action === '1') {
+      // Add: Prompt for value and add/update the line
+      let newValue: string;
+      if (selectedCurve.type === 'static') {
+        newValue = selectedCurve.staticValue;
+        console.log(`\x1b[32mUsing static value: ${newValue}\x1b[0m`);
+      } else {
+        const valueResponse = await prompts({
+          type: 'text',
+          name: 'value',
+          message: `\x1b[32mEnter new value for ${selectedCurve.name}:\x1b[0m`,
+          validate: (value) => !isNaN(Number(value)) ? true : 'Please enter a valid number'
+        });
+        
+        if (!valueResponse.value && valueResponse.value !== '0') {
+          // User cancelled
+          continue;
+        }
+        
+        newValue = valueResponse.value;
+      }
+      
+      const pathPart = selectedCurve.pathPart || '/Game/Athena/Balance/DataTables/AthenaGameData';
+      const curveLine = `+CurveTable=${pathPart};RowUpdate;${selectedCurve.key};0;${newValue}`;
+      const escapedKey = selectedCurve.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const existingLineRegex = new RegExp(`\\+CurveTable=.*;RowUpdate;${escapedKey};0;.*`, 'g');
+      
+      if (existingLineRegex.test(content)) {
+        // Update existing
+        content = content.replace(existingLineRegex, curveLine);
+      } else {
+        // Add new
+        const assetHotfixIndex = content.indexOf('[AssetHotfix]');
+        if (assetHotfixIndex !== -1) {
+          const insertPoint = content.indexOf('\n', assetHotfixIndex) + 1;
+          content = content.slice(0, insertPoint) + curveLine + '\n' + content.slice(insertPoint);
+        }
+      }
+      
+      // Clear deleted state if it was previously deleted
+      if (selectedCurve.isDeleted) {
+        delete selectedCurve.isDeleted;
+        delete selectedCurve.deletedLine;
+        curves[curveResponse.curve] = selectedCurve;
+        fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
+      }
+      
+      lastStatusMessage = '\x1b[32m✓ CurveTable added/updated successfully!\x1b[0m';
+    }
+    
+      fs.writeFileSync(iniPath, content);
+      
+      // Continue loop to show submenu again after add/delete
+      continue;
+    } catch (error) {
+      lastStatusMessage = `\x1b[31m✗ Failed to modify CurveTables: ${error.message}\x1b[0m`;
+      continue;
+    }
+  }
+}
+
+// Function to toggle all curvetable modifications
+async function toggleAllModifications() {
+  try {
+    const iniPath = path.join(__dirname, '../static/hotfixes/DefaultGame.ini');
+    const backupPath = path.join(__dirname, '../responses/modifications-backup.json');
+    
+    let content = fs.readFileSync(iniPath, 'utf-8');
+    
+    // Check if backup exists
+    if (fs.existsSync(backupPath)) {
+      // Restore from backup
+      const backup = JSON.parse(fs.readFileSync(backupPath, 'utf-8'));
+      
+      // Restore curvetable lines
+      if (backup.curveTableLines && backup.curveTableLines.length > 0) {
+        backup.curveTableLines.forEach(line => {
+          content = content.replace(`;${line}`, line);
+        });
+      }
+      
+      fs.writeFileSync(iniPath, content);
+      fs.unlinkSync(backupPath);
+      lastStatusMessage = '\x1b[32m✓ CurveTables restored!\x1b[0m';
+    } else {
+      // Create backup and disable
+      const activeLines = {
+        curveTableLines: [] as string[]
+      };
+      
+      // Find and backup curvetable lines
+      const curveTableRegex = /^\+CurveTable=.*;RowUpdate;.*$/gm;
+      const matches = [...content.matchAll(curveTableRegex)];
+      matches.forEach(match => {
+        const line = match[0];
+        if (!line.startsWith(';')) {
+          activeLines.curveTableLines.push(line);
+          content = content.replace(new RegExp(`^${line.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'gm'), `;${line}`);
+        }
+      });
+      
+      fs.writeFileSync(iniPath, content);
+      fs.writeFileSync(backupPath, JSON.stringify(activeLines, null, 2));
+      lastStatusMessage = '\x1b[32m✓ CurveTables disabled! Backup created.\x1b[0m';
+    }
+  } catch (error) {
+    lastStatusMessage = `\x1b[31m✗ Failed to toggle modifications: ${error.message}\x1b[0m`;
+  }
+}
+
+// Function to check if modifications are enabled
+function areModificationsEnabled(): boolean {
+  try {
+    const backupPath = path.join(__dirname, '../responses/modifications-backup.json');
+    return !fs.existsSync(backupPath);
+  } catch {
+    return true;
+  }
+}
+
+async function runInteractiveCLI() {
+  while (true) {
+    // Clear console and redisplay logo
+    console.clear();
+  
+  // Redisplay centered logo
+  const terminalWidth = process.stdout.columns || 80;
+  const logoLines = `\x1b[96m${addShadows(` █████╗ ████████╗██╗      █████╗ ███████╗
+██╔══██╗╚══██╔══╝██║     ██╔══██╗██╔════╝
+███████║   ██║   ██║     ███████║███████╗
+██╔══██║   ██║   ██║     ██╔══██║╚════██║
+██║  ██║   ██║   ███████╗██║  ██║███████║
+╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝`)}
+                                         
+\x1b[37m${addShadowsBackend(`██████╗  █████╗  ██████╗██╗  ██╗███████╗███╗   ██╗██████╗ 
+██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██╔════╝████╗  ██║██╔══██╗
+██████╔╝███████║██║     █████╔╝ █████╗  ██╔██╗ ██║██║  ██║
+██╔══██╗██╔══██║██║     ██╔═██╗ ██╔══╝  ██║╚██╗██║██║  ██║
+██████╔╝██║  ██║╚██████╗██║  ██╗███████╗██║ ╚████║██████╔╝
+╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚═════╝ `)}
+                                                          
+\x1b[0m`;
+  
+  const lines = logoLines.split('\n');
+  const centeredLogo = lines.map(line => {
+    const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+    return ' '.repeat(padding) + line;
+  }).join('\n');
+  
+  console.log(centeredLogo);
+  console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on port ${PORT}`);
+  
+  // Display last status message if exists
+  if (lastStatusMessage) {
+    console.log(`\x1b[36m[BACKEND]\x1b[0m ${lastStatusMessage}`);
+  }
+  
+  const iniPath = path.join(__dirname, '../static/hotfixes/DefaultGame.ini');
+  const sniperPath = path.join(__dirname, '../responses/sniper.json');
+  const backupPath = path.join(__dirname, '../responses/modifications-backup.json');
+  const content = fs.readFileSync(iniPath, 'utf-8');
+  const sniperData = JSON.parse(fs.readFileSync(sniperPath, 'utf-8'));
+  const sniperSpreadLines = sniperData.lines;
+  
+  // Check if straight bloom is currently enabled
+  const hasUncommentedSniperLines = sniperSpreadLines.some(line => content.includes(line) && !content.includes(`;${line}`));
+  const bloomStatus = hasUncommentedSniperLines ? '\x1b[32m[ON]\x1b[0m' : '\x1b[31m[OFF]\x1b[0m';
+  
+  // Check if curvetables are enabled
+  const curveTablesEnabled = !fs.existsSync(backupPath);
+  const curveTableStatus = curveTablesEnabled ? '\x1b[32m[ON]\x1b[0m' : '\x1b[31m[OFF]\x1b[0m';
+
+  console.log('\n\x1b[36mAvailable Modifications:\x1b[0m');
+  console.log(`\x1b[32m(A)\x1b[0m Toggle Straight Bloom ${bloomStatus}`);
+  console.log(`\x1b[32m(B)\x1b[0m Toggle CurveTables ${curveTableStatus}`);
+  console.log('\x1b[32m(C)\x1b[0m Modify CurveTables');
+  console.log('\x1b[32m(D)\x1b[0m Exit');
+  console.log('\x1b[32m(E)\x1b[0m Refresh');
+  console.log('');
+
+  const response = await prompts({
+    type: 'text',
+    name: 'value',
+    message: '\x1b[32mSelect an option (A/B/C/D/E):\x1b[0m',
+    validate: (value) => ['a', 'A', 'b', 'B', 'c', 'C', 'd', 'D', 'e', 'E'].includes(value) ? true : 'Please enter A, B, C, D, or E'
+  });
+
+  const choice = response.value?.toUpperCase();
+
+  switch (choice) {
+    case 'A':
+      await toggleStraightBloom();
+      break;
+    case 'B':
+      await toggleAllModifications();
+      break;
+    case 'C':
+      await modifyCurveTables();
+      break;
+    case 'E':
+      // Just continue loop to refresh
+      break;
+    case 'D':
+      console.log('Exiting...');
+      process.exit(0);
+      break;
+  }
+
+  // Loop continues to show menu again
+  }
+}
+
+// Start the server with Bun
+const startServer = async () => {
+  Bun.serve({
+    port: PORT,
+    fetch: app.fetch,
+  });
+  
+  // Wait for Bun's startup message to print
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  await runInteractiveCLI();
+};
+
+// Main execution
+startServer();
+

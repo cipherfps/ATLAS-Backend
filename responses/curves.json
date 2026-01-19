@@ -1,0 +1,102 @@
+{
+  "1": {
+    "name": "Impulse Momentum",
+    "key": "Default.KnockGrenade.LaunchVelocity",
+    "type": "amount"
+  },
+  "2": {
+    "name": "Shockwave Momentum",
+    "key": "Default.ShockwaveGrenade.LaunchVelocity",
+    "type": "amount"
+  },
+  "3": {
+    "name": "Chiller Momentum",
+    "key": "Default.IceGrenade.LaunchVelocity",
+    "type": "amount"
+  },
+  "4": {
+    "name": "Flint-Knock Momentum",
+    "key": "Default.PistolFlintlock.KnockMagSelf",
+    "type": "amount"
+  },
+  "5": {
+    "name": "Dub Shotgun Momentum",
+    "key": "Default.Dub.KnockMagSelf",
+    "type": "amount"
+  },
+  "6": {
+    "name": "Horizontal Crash Pad Momentum",
+    "key": "Default.AppleSun.LaunchVelocity.HorizontalLaunch",
+    "type": "amount"
+  },
+  "7": {
+    "name": "Launch Pad Momentum",
+    "key": "Default.Launchpad.LaunchStrength",
+    "type": "amount"
+  },
+  "8": {
+    "name": "Floor Bouncer Momentum",
+    "key": "Default.BouncePad.Floor.Player.MaxVelocity",
+    "type": "amount"
+  },
+  "9": {
+    "name": "Wall Bouncer Momentum",
+    "key": "Default.BouncePad.Wall.Player.MaxLateralVelocity",
+    "type": "amount"
+  },
+  "10": {
+    "name": "Cube Launch Amount",
+    "key": "Default.Cube.Impulseamount",
+    "type": "amount"
+  },
+  "11": {
+    "name": "Glider Redeploy",
+    "key": "Default.GliderRedeploy.CanRedeploy",
+    "type": "static",
+    "staticValue": "1"
+  },
+  "12": {
+    "name": "Glider Speed",
+    "key": "Default.ParachuteControlGliderRedeploy.MaxLateralSpeed",
+    "type": "amount"
+  },
+  "13": {
+    "name": "Jules' Grappler Projectile Speed",
+    "key": "Default.GrapplingHoot.Speed",
+    "type": "amount"
+  },
+  "14": {
+    "name": "Disable Jules' Grappler Glider Redeploy",
+    "key": "Default.GrapplingHoot.DisableGliderDeploy",
+    "type": "static",
+    "staticValue": "1"
+  },
+  "15": {
+    "name": "Infinite Crashpad Lifespan",
+    "key": "Default.GrapplingHoot.DisableGliderDeploy",
+    "type": "static",
+    "staticValue": "99999999999999"
+  },
+  "16": {
+    "name": "Infinite Rift Duration",
+    "key": "Default.Rift.Item.ActiveDuration",
+    "type": "static",
+    "staticValue": "99999999999999",
+    "deletedLine": "+CurveTable=/Game/Athena/Balance/DataTables/AthenaGameData;RowUpdate;Default.Rift.Item.ActiveDuration;0;99999999999999",
+    "isDeleted": true
+  },
+  "17": {
+    "name": "Infinite Hop Flopper Duration",
+    "key": "Default.HopFlopper.Duration",
+    "type": "static",
+    "staticValue": "99999999999999",
+    "deletedLine": "+CurveTable=/Game/Athena/Balance/DataTables/AthenaGameData;RowUpdate;Default.HopFlopper.Duration;0;99999999999999",
+    "isDeleted": true
+  },
+  "18": {
+    "name": "Allow Neutral Editing",
+    "key": "AllowNeutralEditing",
+    "type": "static",
+    "staticValue": "1"
+  }
+}
