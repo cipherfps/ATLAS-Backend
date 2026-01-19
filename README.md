@@ -46,11 +46,12 @@ If you prefer to install manually:
    bun run src/index.ts
    ```
 
-### TO DO List
-- CurveTable Presets
-- CurveTables Imports
-
-# Credits
+## Credits
 
 - [andr1ww](https://github.com/andr1ww) ATLAS is a fork of [Nexa](https://github.com/andr1ww/Nexa)
 - [Ralzify](https://github.com/Ralzify) ATLAS uses the CurveTable and Straight Bloom code from [FortBackend](https://github.com/Ralzify/FortBackend)
+
+## To Do List
+### Feel free to give any suggestions on how to improve ATLAS
+- CurveTable Presets
+- CurveTables Imports
