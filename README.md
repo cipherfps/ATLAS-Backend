@@ -50,8 +50,6 @@ If you prefer to install manually:
 - CurveTable Presets
 - Importing CurveTables
 
-<img src="https://api.nitestats.com/v1/static/ns-logo.png" width="15" title="NiteStats-API"> [NiteStats API](https://nitestats.com/)
-
 # Credits
 
 - [andr1ww](https://github.com/andr1ww) ATLAS is a fork of [Nexa](https://github.com/andr1ww/Nexa)
