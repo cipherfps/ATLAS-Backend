@@ -156,10 +156,25 @@ async function importCurveTables() {
     
     // Look for DefaultGame.ini files in imports folder
     const files = fs.readdirSync(importsDir);
-    const defaultGameFiles = files.filter(file => file.toLowerCase().includes('defaultgame') && file.toLowerCase().endsWith('.ini'));
+    const defaultGameFiles = files.filter(file => {
+      const stats = fs.statSync(path.join(importsDir, file));
+      return stats.isFile() && file.toLowerCase().includes('defaultgame') && file.toLowerCase().endsWith('.ini');
+    });
     
     if (defaultGameFiles.length === 0) {
-      lastStatusMessage = '\x1b[33m✗ No DefaultGame.ini files found in imports folder. Please add a file first.\x1b[0m';
+      // Show what files were found for debugging
+      const allIniFiles = files.filter(file => {
+        const stats = fs.statSync(path.join(importsDir, file));
+        return stats.isFile() && file.toLowerCase().endsWith('.ini');
+      });
+      
+      if (allIniFiles.length > 0) {
+        console.log('\x1b[33m✗ Found .ini files but none contain "defaultgame" in the name:\x1b[0m');
+        allIniFiles.forEach(file => console.log(`  - ${file}`));
+        lastStatusMessage = '\x1b[33m✗ Please rename your file to include "defaultgame" (e.g., DefaultGame.ini)\x1b[0m';
+      } else {
+        lastStatusMessage = '\x1b[33m✗ No DefaultGame.ini files found in imports folder. Please add a file first.\x1b[0m';
+      }
       return;
     }
     
