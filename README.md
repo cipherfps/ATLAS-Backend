@@ -1,6 +1,10 @@
-# Atlas
+# ATLAS
 
-Atlas is a Fortnite backend for all versions of fortnite!
+Atlas is a Fortnite backend for all versions of fortnite prioritized for trickshotters!
+This backend has features such as the following
+- Straight Bloom Toggle
+- CurveTable Toggle
+- CurveTable Editor
 
 If you want to contribute just fork this repository and make a pull request!
 
