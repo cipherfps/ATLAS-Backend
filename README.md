@@ -52,4 +52,4 @@ If you prefer to install manually:
 
 # Credits
 
-- [andr1ww](https://github.com/andr1ww) ATLAS is a fork of [https://github.com/andr1ww/Nexa](Nexa Backend)
+- [andr1ww](https://github.com/andr1ww) ATLAS is a fork of [Nexa backend](https://github.com/andr1ww/Nexa)
