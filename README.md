@@ -59,7 +59,7 @@ If you prefer to install manually:
 - Enter your Friend's [Radmin VPN](https://www.radmin-vpn.com/) IP in the **Host** box.
 - Change the port to **3551** (if they haven't manually changed the port)
 
-3. **Test it by pressing *Start Backend*. **
+3. **Test it by pressing** ***Start Backend***.
 - If it replies **"The backend was started correctly"**, then it worked! You're free to launch Fortnite.
 - If it replies **"Cannot ping the remote backend"**, then it didn't work; You either have the wrong IP or port.
 
