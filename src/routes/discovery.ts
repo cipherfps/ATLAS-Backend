@@ -60,7 +60,7 @@ export default function () {
               },
               {
                 lastVisited: null,
-                linkCode: "playlist_papaya",
+                linkCode: "playlist_showdownalt_solo",
                 isFavorite: false,
                 globalCCU: 1,
               },

@@ -416,11 +416,11 @@
     "namespace": "fn",
     "accountId": "epic",
     "creatorName": "Epic",
-    "mnemonic": "playlist_papaya",
+    "mnemonic": "playlist_showdownalt_solo",
     "linkType": "BR:Playlist",
     "metadata": {
         "alt_title": {
-        "de": "Party Royale",
+        "de": "Arena",
         "ru": "Королевская вечеринка",
         "ko": "파티로얄",
         "pt-BR": "Festa Royale",
@@ -460,9 +460,9 @@
         },
         "tagline": "Welcome to the Party! Leave your weapons and mats behind and hang out with friends, play games, perfect your skydive and more. The party’s just getting started!",
         "matchmaking": {
-        "override_playlist": "playlist_papaya"
+        "override_playlist": "playlist_showdownalt_solo"
         },
-        "title": "Party Royale"
+        "title": "Arena"
     },
     "version": 95,
     "active": true,

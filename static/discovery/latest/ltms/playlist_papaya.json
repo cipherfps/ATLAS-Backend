@@ -2,11 +2,11 @@
   "namespace": "fn",
   "accountId": "epic",
   "creatorName": "Epic",
-  "mnemonic": "playlist_papaya",
+  "mnemonic": "playlist_showdownalt_solo",
   "linkType": "BR:Playlist",
   "metadata": {
       "alt_title": {
-          "de": "Party Royale",
+          "de": "Arena",
           "ru": "Королевская вечеринка",
           "ko": "파티로얄",
           "pt-BR": "Festa Royale",
@@ -23,17 +23,17 @@
           "es-419": "Fiesta campal",
           "tr": "Çılgın Parti"
       },
-      "image_url": "https://cdn2.unrealengine.com/partyroyale-1920-1920x1080-7001724bc7ab.jpg",
+      "image_url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
       "image_urls": {
           "url_s": "https://cdn2.unrealengine.com/partyroyale-480-480x270-a4ce24699034.jpg",
           "url_xs": "https://cdn2.unrealengine.com/partyroyale-256-256x144-932b805e9fb7.jpg",
           "url_m": "https://cdn2.unrealengine.com/partyroyale-640-640x360-983da0123af2.jpg",
-          "url": "https://cdn2.unrealengine.com/partyroyale-1920-1920x1080-7001724bc7ab.jpg"
+          "url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png"
       },
       "matchmaking": {
-          "override_playlist": "playlist_papaya"
+          "override_playlist": "playlist_showdownalt_solo"
       },
-      "title": "Party Royale"
+      "title": "Arena"
   },
   "version": 95,
   "active": true,

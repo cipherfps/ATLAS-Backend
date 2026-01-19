@@ -125,7 +125,7 @@ export default {
 						{
 							"linkData": {
 								"namespace": "fn",
-								"mnemonic": "playlist_papaya",
+								"mnemonic": "playlist_showdownalt_solo",
 								"linkType": "BR:Playlist",
 								"active": true,
 								"disabled": false,
@@ -135,14 +135,14 @@ export default {
 								"creatorName": "Epic",
 								"descriptionTags": [],
 								"metadata": {
-									"image_url": "https://cdn2.unrealengine.com/partyroyale-1920-1920x1080-7001724bc7ab.jpg",
+									"image_url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
 									"matchmaking": {
-									"override_playlist": "playlist_papaya"
+									"override_playlist": "playlist_showdownalt_solo"
 									}
 								}
 							},
 							"lastVisited": null,
-							"linkCode": "playlist_papaya",
+							"linkCode": "playlist_showdownalt_solo",
 							"isFavorite": false
 						}
 						],
@@ -281,7 +281,7 @@ export default {
 						{
 							"linkData": {
 								"namespace": "fn",
-								"mnemonic": "playlist_papaya",
+								"mnemonic": "playlist_showdownalt_solo",
 								"linkType": "BR:Playlist",
 								"active": true,
 								"disabled": false,
@@ -291,14 +291,14 @@ export default {
 								"creatorName": "Epic",
 								"descriptionTags": [],
 								"metadata": {
-									"image_url": "https://cdn2.unrealengine.com/partyroyale-1920-1920x1080-7001724bc7ab.jpg",
+									"image_url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
 									"matchmaking": {
-									"override_playlist": "playlist_papaya"
+									"override_playlist": "playlist_showdownalt_solo"
 									}
 								}
 							},
 							"lastVisited": null,
-							"linkCode": "playlist_papaya",
+							"linkCode": "playlist_showdownalt_solo",
 							"isFavorite": false
 						}
 						],
@@ -437,7 +437,7 @@ export default {
 						{
 							"linkData": {
 								"namespace": "fn",
-								"mnemonic": "playlist_papaya",
+								"mnemonic": "playlist_showdownalt_solo",
 								"linkType": "BR:Playlist",
 								"active": true,
 								"disabled": false,
@@ -447,14 +447,14 @@ export default {
 								"creatorName": "Epic",
 								"descriptionTags": [],
 								"metadata": {
-									"image_url": "https://cdn2.unrealengine.com/partyroyale-1920-1920x1080-7001724bc7ab.jpg",
+									"image_url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
 									"matchmaking": {
-									"override_playlist": "playlist_papaya"
+									"override_playlist": "playlist_showdownalt_solo"
 									}
 								}
 							},
 							"lastVisited": null,
-							"linkCode": "playlist_papaya",
+							"linkCode": "playlist_showdownalt_solo",
 							"isFavorite": false
 						}
 						],
@@ -593,7 +593,7 @@ export default {
 						{
 							"linkData": {
 								"namespace": "fn",
-								"mnemonic": "playlist_papaya",
+								"mnemonic": "playlist_showdownalt_solo",
 								"linkType": "BR:Playlist",
 								"active": true,
 								"disabled": false,
@@ -603,14 +603,14 @@ export default {
 								"creatorName": "Epic",
 								"descriptionTags": [],
 								"metadata": {
-									"image_url": "https://cdn2.unrealengine.com/partyroyale-1920-1920x1080-7001724bc7ab.jpg",
+									"image_url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
 									"matchmaking": {
-									"override_playlist": "playlist_papaya"
+									"override_playlist": "playlist_showdownalt_solo"
 									}
 								}
 							},
 							"lastVisited": null,
-							"linkCode": "playlist_papaya",
+							"linkCode": "playlist_showdownalt_solo",
 							"isFavorite": false
 						}
 						],
@@ -749,7 +749,7 @@ export default {
 						{
 							"linkData": {
 								"namespace": "fn",
-								"mnemonic": "playlist_papaya",
+								"mnemonic": "playlist_showdownalt_solo",
 								"linkType": "BR:Playlist",
 								"active": true,
 								"disabled": false,
@@ -759,14 +759,14 @@ export default {
 								"creatorName": "Epic",
 								"descriptionTags": [],
 								"metadata": {
-									"image_url": "https://cdn2.unrealengine.com/partyroyale-1920-1920x1080-7001724bc7ab.jpg",
+									"image_url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
 									"matchmaking": {
-									"override_playlist": "playlist_papaya"
+									"override_playlist": "playlist_showdownalt_solo"
 									}
 								}
 							},
 							"lastVisited": null,
-							"linkCode": "playlist_papaya",
+							"linkCode": "playlist_showdownalt_solo",
 							"isFavorite": false
 						}
 						],
