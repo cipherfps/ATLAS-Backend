@@ -380,6 +380,203 @@ async function importCurveTables() {
   }
 }
 
+// Function to display Arena Leaderboard
+async function showArenaLeaderboard() {
+  try {
+    // Clear console and redisplay logo
+    console.clear();
+    
+    // Redisplay centered logo using the global logo variable
+    const terminalWidth = process.stdout.columns || 80;
+    const lines = logo.split('\n');
+    const centeredLogo = lines.map(line => {
+      const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+      return ' '.repeat(padding) + line;
+    }).join('\n');
+    
+    console.log(centeredLogo);
+    console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on port ${PORT}`);
+    
+    console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\x1b[36m                  Arena Leaderboard\x1b[0m');
+    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m\n');
+    
+    // Load all player profiles and their arena points
+    const profilesDir = path.join(__dirname, '..', 'static', 'profiles');
+    const leaderboard: Array<{accountId: string, name: string, points: number}> = [];
+    
+    try {
+      const accounts = await fs.promises.readdir(profilesDir);
+      
+      for (const accountId of accounts) {
+        const accountPath = path.join(profilesDir, accountId);
+        const stats = await fs.promises.stat(accountPath);
+        
+        // Skip if not a directory or if it's the template file
+        if (!stats.isDirectory()) continue;
+        
+        // Skip Host account from leaderboard
+        if (accountId.toLowerCase() === 'host') continue;
+        
+        try {
+          const profilePath = path.join(accountPath, 'profile_athena.json');
+          const profileData = await fs.promises.readFile(profilePath, 'utf-8');
+          const profile = JSON.parse(profileData);
+          
+          const arenaPoints = profile?.stats?.attributes?.arena_hype || 0;
+          
+          // Use the folder name (accountId) as the display name
+          const displayName = accountId;
+          
+          leaderboard.push({
+            accountId: accountId,
+            name: displayName,
+            points: arenaPoints
+          });
+        } catch (err) {
+          // Skip profiles that can't be read
+        }
+      }
+      
+      // Sort by points (highest to lowest)
+      leaderboard.sort((a, b) => b.points - a.points);
+      
+      if (leaderboard.length === 0) {
+        console.log('\x1b[33m  No player profiles found.\x1b[0m\n');
+      } else {
+        // Display leaderboard
+        console.log('  \x1b[90mRank  Name                                    Arena Points\x1b[0m');
+        console.log('  \x1b[36m─────────────────────────────────────────────────────────\x1b[0m');
+        
+        leaderboard.forEach((player, index) => {
+          const rank = String(index + 1).padStart(4, ' ');
+          
+          // Format display name with proper length
+          let displayName = player.name || 'Unknown';
+          if (displayName.length > 35) {
+            displayName = displayName.substring(0, 32) + '...';
+          } else if (displayName.length < 35) {
+            displayName = displayName + ' '.repeat(35 - displayName.length);
+          }
+          
+          const points = String(player.points).padStart(12, ' ');
+          
+          // Color code: Gold for 1st, Silver for 2nd, Bronze for 3rd
+          let rankColor = '\x1b[0m';
+          if (index === 0) rankColor = '\x1b[93m'; // Gold
+          else if (index === 1) rankColor = '\x1b[37m'; // Silver
+          else if (index === 2) rankColor = '\x1b[33m'; // Bronze
+          
+          console.log(`  ${rankColor}${rank}.\x1b[0m \x1b[96m${displayName}\x1b[0m \x1b[32m${points}\x1b[0m`);
+        });
+        
+        console.log(`\n  \x1b[90mTotal Players: ${leaderboard.length}\x1b[0m`);
+      }
+    } catch (err) {
+      console.log('\x1b[31m  Error loading profiles: ' + err.message + '\x1b[0m\n');
+    }
+    
+    console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    
+    // Wait for user to press enter
+    await prompts({
+      type: 'text',
+      name: 'continue',
+      message: '\x1b[90mPress Enter to continue...\x1b[0m'
+    });
+    
+  } catch (error) {
+    console.error('\x1b[31mError displaying leaderboard:\x1b[0m', error);
+    await prompts({
+      type: 'text',
+      name: 'continue',
+      message: '\x1b[90mPress Enter to continue...\x1b[0m'
+    });
+  }
+}
+
+// Function for Other Settings menu
+async function otherSettingsMenu() {
+  let continueLoop = true;
+  
+  while (continueLoop) {
+    try {
+      // Clear console and redisplay logo
+      console.clear();
+      
+      // Redisplay centered logo using the global logo variable
+      const terminalWidth = process.stdout.columns || 80;
+      const lines = logo.split('\n');
+      const centeredLogo = lines.map(line => {
+        const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+        return ' '.repeat(padding) + line;
+      }).join('\n');
+      
+      console.log(centeredLogo);
+      console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on port ${PORT}`);
+      
+      // Display last status message if exists
+      if (lastStatusMessage) {
+        console.log(`\x1b[36m[BACKEND]\x1b[0m ${lastStatusMessage}`);
+      }
+      
+      // Read current config
+      const configPath = path.join(__dirname, 'config', 'config.ini');
+      const config = ini.parse(fs.readFileSync(configPath, 'utf-8'));
+      const arenaPointsEnabled = config.SaveArenaPoints === 'true' || config.SaveArenaPoints === true;
+      const arenaStatus = arenaPointsEnabled ? '\x1b[32m[ON]\x1b[0m' : '\x1b[31m[OFF]\x1b[0m';
+      
+      console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\x1b[36m                     Other Settings\x1b[0m');
+      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log(`\x1b[32m(1)\x1b[0m Toggle Arena Point Saving ${arenaStatus}`);
+      console.log('\x1b[32m(2)\x1b[0m Arena Leaderboard');
+      console.log('\x1b[32m(BACK)\x1b[0m Return to main menu');
+      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m\n');
+      
+      const response = await prompts({
+        type: 'text',
+        name: 'choice',
+        message: '\x1b[32mSelect an option (1/2/BACK):\x1b[0m',
+        validate: (value) => {
+          if (value.toLowerCase() === 'back') return true;
+          const num = parseInt(value);
+          return (num === 1 || num === 2) ? true : 'Please enter 1, 2, or BACK';
+        }
+      });
+      
+      if (!response.choice || response.choice.toLowerCase() === 'back') {
+        lastStatusMessage = '';
+        continueLoop = false;
+        continue;
+      }
+      
+      const choice = response.choice;
+      
+      switch (choice) {
+        case '1':
+          // Toggle Arena Point Saving
+          const newValue = !arenaPointsEnabled;
+          config.SaveArenaPoints = newValue.toString();
+          fs.writeFileSync(configPath, ini.stringify(config));
+          lastStatusMessage = `\x1b[32m✓ Arena Point Saving ${newValue ? 'enabled' : 'disabled'}! ${newValue ? 'Players will keep their arena points.' : 'Players will start at 0 arena points.'}\x1b[0m`;
+          break;
+        case '2':
+          // Show Arena Leaderboard
+          await showArenaLeaderboard();
+          lastStatusMessage = '';
+          break;
+        default:
+          break;
+      }
+      
+    } catch (error) {
+      lastStatusMessage = `\x1b[31m✗ Failed to update settings: ${error.message}\x1b[0m`;
+      continueLoop = false;
+    }
+  }
+}
+
 // Function to modify CurveTables
 async function modifyCurveTables() {
   let continueLoop = true;
@@ -835,36 +1032,43 @@ async function runInteractiveCLI() {
   const curveTableStatus = curveTablesEnabled ? '\x1b[32m[ON]\x1b[0m' : '\x1b[31m[OFF]\x1b[0m';
 
   console.log('\n\x1b[36mAvailable Modifications:\x1b[0m');
-  console.log(`\x1b[32m(A)\x1b[0m Toggle Straight Bloom ${bloomStatus}`);
-  console.log(`\x1b[32m(B)\x1b[0m Toggle CurveTables ${curveTableStatus}`);
-  console.log('\x1b[32m(C)\x1b[0m Modify CurveTables');
-  console.log('\x1b[32m(D)\x1b[0m Exit');
-  console.log('\x1b[32m(E)\x1b[0m Refresh');
+  console.log(`\x1b[32m(1)\x1b[0m Toggle Straight Bloom ${bloomStatus}`);
+  console.log(`\x1b[32m(2)\x1b[0m Toggle CurveTables ${curveTableStatus}`);
+  console.log('\x1b[32m(3)\x1b[0m Modify CurveTables');
+  console.log('\x1b[32m(4)\x1b[0m Other Settings');
+  console.log('\x1b[32m(5)\x1b[0m Refresh');
+  console.log('\x1b[32m(6)\x1b[0m Exit');
   console.log('');
 
   const response = await prompts({
     type: 'text',
     name: 'value',
-    message: '\x1b[32mSelect an option (A/B/C/D/E):\x1b[0m',
-    validate: (value) => ['a', 'A', 'b', 'B', 'c', 'C', 'd', 'D', 'e', 'E'].includes(value) ? true : 'Please enter A, B, C, D, or E'
+    message: '\x1b[32mSelect an option (1/2/3/4/5/6):\x1b[0m',
+    validate: (value) => {
+      const num = parseInt(value);
+      return (num >= 1 && num <= 6) ? true : 'Please enter a number between 1 and 6';
+    }
   });
 
-  const choice = response.value?.toUpperCase();
+  const choice = response.value;
 
   switch (choice) {
-    case 'A':
+    case '1':
       await toggleStraightBloom();
       break;
-    case 'B':
+    case '2':
       await toggleAllModifications();
       break;
-    case 'C':
+    case '3':
       await modifyCurveTables();
       break;
-    case 'E':
+    case '4':
+      await otherSettingsMenu();
+      break;
+    case '5':
       // Just continue loop to refresh
       break;
-    case 'D':
+    case '6':
       console.log('Exiting...');
       process.exit(0);
       break;

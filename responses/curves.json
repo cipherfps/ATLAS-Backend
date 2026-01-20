@@ -97,6 +97,8 @@
     "name": "Allow Neutral Editing",
     "key": "AllowNeutralEditing",
     "type": "static",
-    "staticValue": "1"
+    "staticValue": "1",
+    "deletedLine": "+CurveTable=/Game/Athena/Balance/DataTables/AthenaGameData;RowUpdate;AllowNeutralEditing;0;1",
+    "isDeleted": true
   }
 }
