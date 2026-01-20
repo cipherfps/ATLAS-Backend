@@ -12,7 +12,7 @@
       "attributes": {
         "platform": "EpicPC"
       },
-      "quantity": 0
+      "quantity": 9999999
     },
     "HomebaseBannerColor:DefaultColor1": {
       "templateId": "HomebaseBannerColor:DefaultColor1",
