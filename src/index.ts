@@ -154,35 +154,23 @@ async function importCurveTables() {
       fs.mkdirSync(importsDir, { recursive: true });
     }
     
-    // Look for DefaultGame.ini files in imports folder
+    // Look for any .ini files in imports folder
     const files = fs.readdirSync(importsDir);
-    const defaultGameFiles = files.filter(file => {
+    const iniFiles = files.filter(file => {
       const stats = fs.statSync(path.join(importsDir, file));
-      return stats.isFile() && file.toLowerCase().includes('defaultgame') && file.toLowerCase().endsWith('.ini');
+      return stats.isFile() && file.toLowerCase().endsWith('.ini');
     });
     
-    if (defaultGameFiles.length === 0) {
-      // Show what files were found for debugging
-      const allIniFiles = files.filter(file => {
-        const stats = fs.statSync(path.join(importsDir, file));
-        return stats.isFile() && file.toLowerCase().endsWith('.ini');
-      });
-      
-      if (allIniFiles.length > 0) {
-        console.log('\x1b[33m✗ Found .ini files but none contain "defaultgame" in the name:\x1b[0m');
-        allIniFiles.forEach(file => console.log(`  - ${file}`));
-        lastStatusMessage = '\x1b[33m✗ Please rename your file to include "defaultgame" (e.g., DefaultGame.ini)\x1b[0m';
-      } else {
-        lastStatusMessage = '\x1b[33m✗ No DefaultGame.ini files found in imports folder. Please add a file first.\x1b[0m';
-      }
+    if (iniFiles.length === 0) {
+      lastStatusMessage = '\x1b[33m✗ No .ini files found in imports folder. Please add a file first.\x1b[0m';
       return;
     }
     
     // Show available files
     console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
-    console.log('\x1b[36m            Available DefaultGame.ini Files\x1b[0m');
+    console.log('\x1b[36m                 Available .ini Files\x1b[0m');
     console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
-    defaultGameFiles.forEach((file, index) => {
+    iniFiles.forEach((file, index) => {
       console.log(`  \x1b[32m(${index + 1})\x1b[0m ${file}`);
     });
     console.log('  \x1b[32m(BACK)\x1b[0m Cancel and go back');
@@ -195,7 +183,7 @@ async function importCurveTables() {
       validate: (value) => {
         if (value.toLowerCase() === 'back') return true;
         const index = parseInt(value) - 1;
-        return (index >= 0 && index < defaultGameFiles.length) ? true : 'Please enter a valid file number or BACK';
+        return (index >= 0 && index < iniFiles.length) ? true : 'Please enter a valid file number or BACK';
       }
     });
     
@@ -204,7 +192,7 @@ async function importCurveTables() {
       return;
     }
     
-    const selectedFile = defaultGameFiles[parseInt(fileResponse.fileIndex) - 1];
+    const selectedFile = iniFiles[parseInt(fileResponse.fileIndex) - 1];
     const importFilePath = path.join(importsDir, selectedFile);
     const importContent = fs.readFileSync(importFilePath, 'utf-8');
     
@@ -371,8 +359,20 @@ async function importCurveTables() {
     });
     
     if (deleteResponse.delete && deleteResponse.delete.toUpperCase() === 'Y') {
-      fs.unlinkSync(importFilePath);
-      lastStatusMessage += ' \x1b[90m(File deleted)\x1b[0m';
+      // Ask for confirmation before deleting
+      const confirmResponse = await prompts({
+        type: 'text',
+        name: 'confirm',
+        message: '\x1b[31mAre you sure you want to delete this file? (Y/N):\x1b[0m',
+        validate: (value) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
+      });
+      
+      if (confirmResponse.confirm && confirmResponse.confirm.toUpperCase() === 'Y') {
+        fs.unlinkSync(importFilePath);
+        lastStatusMessage += ' \x1b[90m(File deleted)\x1b[0m';
+      } else {
+        lastStatusMessage += ' \x1b[90m(File kept)\x1b[0m';
+      }
     }
     
   } catch (error) {
@@ -631,15 +631,17 @@ async function modifyCurveTables() {
     const curves = JSON.parse(fs.readFileSync(curvesPath, 'utf-8'));
     let content = fs.readFileSync(iniPath, 'utf-8');
     
-    console.log('\n\x1b[36mCurveTable Management:\x1b[0m');
+    console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\x1b[36m                 CurveTable Management\x1b[0m');
+    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
     console.log('\x1b[32m(1)\x1b[0m Add CurveTable');
     console.log('\x1b[32m(2)\x1b[0m Delete CurveTable');
     console.log('\x1b[32m(3)\x1b[0m List Current Values');
     console.log('\x1b[32m(4)\x1b[0m Add Custom CurveTable');
-    console.log('\x1b[32m(5)\x1b[0m Import CurveTables from DefaultGame.ini');
+    console.log('\x1b[32m(5)\x1b[0m Import CurveTables from .ini file');
     console.log('\x1b[32m(6)\x1b[0m Clear All CurveTables');
-    console.log('\x1b[32m(BACK)\x1b[0m Go Back To Main Menu');
-    console.log('');
+    console.log('\x1b[32m(BACK)\x1b[0m Return to main menu');
+    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m\n');
     
     const actionResponse = await prompts({
       type: 'text',
@@ -1031,14 +1033,16 @@ async function runInteractiveCLI() {
   const curveTablesEnabled = !fs.existsSync(backupPath);
   const curveTableStatus = curveTablesEnabled ? '\x1b[32m[ON]\x1b[0m' : '\x1b[31m[OFF]\x1b[0m';
 
-  console.log('\n\x1b[36mAvailable Modifications:\x1b[0m');
+  console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+  console.log('\x1b[36m                Available Modifications\x1b[0m');
+  console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
   console.log(`\x1b[32m(1)\x1b[0m Toggle Straight Bloom ${bloomStatus}`);
   console.log(`\x1b[32m(2)\x1b[0m Toggle CurveTables ${curveTableStatus}`);
   console.log('\x1b[32m(3)\x1b[0m Modify CurveTables');
   console.log('\x1b[32m(4)\x1b[0m Other Settings');
   console.log('\x1b[32m(5)\x1b[0m Refresh');
   console.log('\x1b[32m(6)\x1b[0m Exit');
-  console.log('');
+  console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m\n');
 
   const response = await prompts({
     type: 'text',

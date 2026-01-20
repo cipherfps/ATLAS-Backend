@@ -3,9 +3,9 @@ ATLAS BACKEND - CURVETABLE IMPORT FOLDER
 
 HOW TO USE:
 -----------
-1. Place any DefaultGame.ini file from other backends into this folder
-2. Go to the ATLAS menu and select option (C) "Modify CurveTables"
-3. Choose option (5) "Import CurveTables from DefaultGame.ini"
+1. Place any .ini file with CurveTables into this folder
+2. Go to the ATLAS menu and select option (3) "Modify CurveTables"
+3. Choose option (5) "Import CurveTables from .ini file"
 4. Select the file you want to import from
 5. All curvetables from that file will be extracted and imported to your backend
 
@@ -21,8 +21,9 @@ NOTES:
 
 SUPPORTED FILE NAMES:
 ---------------------
-Any .ini file containing "defaultgame" in the name, such as:
+Any .ini file will be detected and shown in the import list, such as:
 - DefaultGame.ini
-- defaultgame.ini
-- old_defaultgame.ini
-- backend_defaultgame.ini
+- CustomCurves.ini
+- ModifiedValues.ini
+- backend_settings.ini
+- any_name.ini
