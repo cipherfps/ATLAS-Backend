@@ -73,3 +73,4 @@ If you prefer to install manually:
 - CurveTable Presets
 - Arena for Latest Versions
 - Fix applying MCP
+- XMPP
