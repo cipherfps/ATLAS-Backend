@@ -451,12 +451,12 @@
         "es-419": "¡Te damos la bienvenida a la fiesta! Deja atrás tus armas y materiales, pasa el rato con amigos, juega partidas, perfecciona tu caída libre y mucho más. ¡La fiesta acaba de empezar!",
         "tr": "Partiye hoş geldin! Silah ve materyallerini geride bırak; arkadaşlarınla vakit geçir, oyunlar oyna, hava dalışında mükemmelliğe ulaş... Parti daha yeni başlıyor!"
         },
-        "image_url": "https://static-assets-prod.s3.amazonaws.com/fn/static/1p/partyroyale-1920-1920x1080-7001724bc7ab_s.jpg",
+        "image_url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
         "image_urls": {
-        "url_s": "https://static-assets-prod.s3.amazonaws.com/fn/static/1p/partyroyale-1920-1920x1080-7001724bc7ab_s.jpg",
-        "url_xs": "https://static-assets-prod.s3.amazonaws.com/fn/static/1p/partyroyale-1920-1920x1080-7001724bc7ab_s.jpg",
-        "url_m": "https://static-assets-prod.s3.amazonaws.com/fn/static/1p/partyroyale-1920-1920x1080-7001724bc7ab_s.jpg",
-        "url": "https://static-assets-prod.s3.amazonaws.com/fn/static/1p/partyroyale-1920-1920x1080-7001724bc7ab_s.jpg"
+        "url_s": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
+        "url_xs": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
+        "url_m": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
+        "url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png"
         },
         "tagline": "Welcome to the Party! Leave your weapons and mats behind and hang out with friends, play games, perfect your skydive and more. The party’s just getting started!",
         "matchmaking": {
