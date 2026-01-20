@@ -66,7 +66,7 @@
         "corresponding_sets": {
             "ranked": "set_habanero_playlists"
         },
-        "default_sub_link_code": "playlist_defaultsquad"
+        "default_sub_link_code": "playlist_defaultsolo"
     },
     "version": 1,
     "active": true,
