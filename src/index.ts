@@ -147,7 +147,7 @@ const centeredLogo = lines.map(line => {
   return ' '.repeat(padding) + line;
 }).join('\n');
 
-console.log(centeredLogo);
+// Don't display logo here - will display during startup
 
 // Function to toggle Straight Bloom
 async function toggleStraightBloom() {
@@ -1124,17 +1124,55 @@ async function runInteractiveCLI() {
 
 // Check for updates from GitHub
 async function checkForUpdates() {
+  console.clear();
+  
+  // Display logo first
+  const terminalWidth = process.stdout.columns || 80;
+  const logoLines = `\x1b[96m${addShadows(` █████╗ ████████╗██╗      █████╗ ███████╗
+██╔══██╗╚══██╔══╝██║     ██╔══██╗██╔════╝
+███████║   ██║   ██║     ███████║███████╗
+██╔══██║   ██║   ██║     ██╔══██║╚════██║
+██║  ██║   ██║   ███████╗██║  ██║███████║
+╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝`)}
+                                         
+\x1b[37m${addShadowsBackend(`██████╗  █████╗  ██████╗██╗  ██╗███████╗███╗   ██╗██████╗ 
+██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██╔════╝████╗  ██║██╔══██╗
+██████╔╝███████║██║     █████╔╝ █████╗  ██╔██╗ ██║██║  ██║
+██╔══██╗██╔══██║██║     ██╔═██╗ ██╔══╝  ██║╚██╗██║██║  ██║
+██████╔╝██║  ██║╚██████╗██║  ██╗███████╗██║ ╚████║██████╔╝
+╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚═════╝ `)}
+                                                          
+\x1b[0m`;
+  
+  const lines = logoLines.split('\n');
+  const centeredLogo = lines.map(line => {
+    const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+    return ' '.repeat(padding) + line;
+  }).join('\n');
+  
+  console.log(centeredLogo);
+  console.log(''); // Empty line for spacing
+  
   try {
     // Read local version
     const packagePath = path.join(__dirname, '../package.json');
     const localPackage = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
     const currentVersion = localPackage.version || '0.0.0';
     
-    console.log(`Local version: ${currentVersion}`);
+    // Wait a moment for server startup messages to display first
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    console.log(`\x1b[33m[UPDATE CHECK]\x1b[0m Checking for updates...`);
+    console.log(`\x1b[33m[UPDATE CHECK]\x1b[0m Current version: ${currentVersion}`);
     
     const updateAvailable = await CheckForUpdate.checkForUpdate(currentVersion);
     
     if (updateAvailable) {
+      // Get latest version from GitHub
+      const response = await fetch('https://raw.githubusercontent.com/Project-Nocturno/ATLAS-Backend/main/package.json');
+      const remotePackage = await response.json();
+      const latestVersion = remotePackage.version;
+      
       // Get latest commit date for the timestamp
       const commitResponse = await fetch('https://api.github.com/repos/Project-Nocturno/ATLAS-Backend/commits/main', {
         headers: {
@@ -1163,22 +1201,39 @@ async function checkForUpdates() {
         
         const formattedDate = `${month}/${day}/${year} ${hours}:${minutes} ${ampm} ${timezone}`;
         
-        console.log(`\x1b[32m[UPDATE]\x1b[0m A new update is available! Check the GitHub to download the latest version. (Released: ${formattedDate})\n`);
-        // Wait 5 seconds before continuing
+        console.log(`\x1b[32m[UPDATE]\x1b[0m A new update is available! (v${latestVersion})`);
+        console.log(`\x1b[32m[UPDATE]\x1b[0m Check the GitHub to download the latest version.`);
+        console.log(`\x1b[32m[UPDATE]\x1b[0m Released: ${formattedDate}`);
+        console.log('');
+        console.log(`\x1b[33mPlease update before continuing. Exiting in 5 seconds...\x1b[0m`);
+        // Wait 5 seconds then exit
         await new Promise(resolve => setTimeout(resolve, 5000));
+        process.exit(0);
       }
     } else {
-      console.log('Backend is up to date!');
+      console.log(`\x1b[32m[UPDATE CHECK]\x1b[0m Backend is up to date!`);
+      console.log('');
+      console.log(`\x1b[90mContinuing in 5 seconds...\x1b[0m`);
+      // Wait 5 seconds before continuing
+      await new Promise(resolve => setTimeout(resolve, 5000));
     }
   } catch (error) {
-    console.log('Update check error:', (error as Error).message);
+    console.log(`\x1b[31m[UPDATE CHECK]\x1b[0m Error checking for updates: ${(error as Error).message}`);
+    console.log('');
+    console.log(`\x1b[90mContinuing in 5 seconds...\x1b[0m`);
+    // Wait 5 seconds even on error
+    await new Promise(resolve => setTimeout(resolve, 5000));
   }
 }
 
 // Start the server with Bun
 const startServer = async () => {
-  // Check for updates first before starting anything
+  // Check for updates FIRST - this is the very first thing that happens
+  // Nothing else starts until this completes
   await checkForUpdates();
+  
+  // Now clear and start the server
+  console.clear();
   
   // Start matchmaking WebSocket server
   startMatchmakingWebSocket(5555);
