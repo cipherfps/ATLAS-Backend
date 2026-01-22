@@ -1169,12 +1169,18 @@ async function checkForUpdates() {
       const response = await fetch(`https://raw.githubusercontent.com/cipherfps/ATLAS-Backend/main/package.json?t=${Date.now()}`);
       const remotePackage = await response.json();
       const latestVersion = remotePackage.version;
-      
+
+      const downloadUrl = 'https://github.com/cipherfps/ATLAS-Backend/releases/latest';
       console.log(`\x1b[92m[UPDATE]\x1b[0m New version available: v${latestVersion} (current: v${currentVersion})`);
-      console.log(`\x1b[33mPlease update before continuing. Exiting in 5 seconds...\x1b[0m`);
-      // Wait 5 seconds then exit
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      process.exit(0);
+      console.log(`\x1b[33mPlease update before continuing.\x1b[0m`);
+      console.log(`\x1b[36mDownload here: ${downloadUrl}\x1b[0m`);
+      // Just print the download link (do not attempt to open browser)
+      console.log("\x1b[33mPress any key to exit...\x1b[0m");
+      process.stdin.setRawMode(true);
+      process.stdin.resume();
+      process.stdin.on('data', process.exit.bind(process, 0));
+      // Prevent function from continuing
+      return;
     } else {
       console.log(`\x1b[32m✓\x1b[0m Backend is up to date (v${currentVersion})`);
       console.log(`\x1b[90mContinuing in 3 seconds...\x1b[0m`);
