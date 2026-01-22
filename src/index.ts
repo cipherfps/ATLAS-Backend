@@ -1162,69 +1162,28 @@ async function checkForUpdates() {
     // Wait a moment for server startup messages to display first
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    console.log(`\x1b[33m[UPDATE CHECK]\x1b[0m Checking for updates...`);
-    console.log(`\x1b[33m[UPDATE CHECK]\x1b[0m Current version: ${currentVersion}`);
-    
     const updateAvailable = await CheckForUpdate.checkForUpdate(currentVersion);
     
     if (updateAvailable) {
       // Get latest version from GitHub
-      const response = await fetch('https://raw.githubusercontent.com/Project-Nocturno/ATLAS-Backend/main/package.json');
+      const response = await fetch('https://raw.githubusercontent.com/cipherfps/ATLAS-Backend/main/package.json');
       const remotePackage = await response.json();
       const latestVersion = remotePackage.version;
       
-      console.log(`\x1b[33m[UPDATE CHECK]\x1b[0m Latest version: ${latestVersion}`);
-      
-      // Get latest commit date for the timestamp
-      const commitResponse = await fetch('https://api.github.com/repos/cipherfps/ATLAS-Backend/commits/main', {
-        headers: {
-          'User-Agent': 'ATLAS-Backend'
-        }
-      });
-      
-      if (commitResponse.ok) {
-        const commitData = await commitResponse.json();
-        const commitDate = new Date(commitData.commit.committer.date);
-        
-        // Format the commit date
-        let hours = commitDate.getHours();
-        const minutes = commitDate.getMinutes().toString().padStart(2, '0');
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        hours = hours % 12;
-        hours = hours ? hours : 12;
-        
-        const timezone = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
-          .formatToParts(commitDate)
-          .find(part => part.type === 'timeZoneName')?.value || '';
-        
-        const month = (commitDate.getMonth() + 1).toString().padStart(2, '0');
-        const day = commitDate.getDate().toString().padStart(2, '0');
-        const year = commitDate.getFullYear();
-        
-        const formattedDate = `${month}/${day}/${year} ${hours}:${minutes} ${ampm} ${timezone}`;
-        
-        console.log(`\x1b[32m[UPDATE]\x1b[0m A new update is available! (v${latestVersion})`);
-        console.log(`\x1b[32m[UPDATE]\x1b[0m Check the GitHub to download the latest version.`);
-        console.log(`\x1b[32m[UPDATE]\x1b[0m Released: ${formattedDate}`);
-        console.log('');
-        console.log(`\x1b[33mPlease update before continuing. Exiting in 5 seconds...\x1b[0m`);
-        // Wait 5 seconds then exit
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        process.exit(0);
-      }
-    } else {
-      console.log(`\x1b[32m[UPDATE CHECK]\x1b[0m Backend is up to date!`);
-      console.log('');
-      console.log(`\x1b[90mContinuing in 5 seconds...\x1b[0m`);
-      // Wait 5 seconds before continuing
+      console.log(`\x1b[32m[UPDATE]\x1b[0m New version available: v${latestVersion} (current: v${currentVersion})`);
+      console.log(`\x1b[33mPlease update before continuing. Exiting in 5 seconds...\x1b[0m`);
+      // Wait 5 seconds then exit
       await new Promise(resolve => setTimeout(resolve, 5000));
+      process.exit(0);
+    } else {
+      console.log(`\x1b[32m✓\x1b[0m Backend is up to date (v${currentVersion})`);
+      console.log(`\x1b[90mContinuing in 3 seconds...\x1b[0m`);
+      // Wait 3 seconds before continuing
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
   } catch (error) {
-    console.log(`\x1b[31m[UPDATE CHECK]\x1b[0m Error checking for updates: ${(error as Error).message}`);
-    console.log('');
-    console.log(`\x1b[90mContinuing in 5 seconds...\x1b[0m`);
-    // Wait 5 seconds even on error
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    console.log(`\x1b[31m✗\x1b[0m Update check failed. Continuing...`);
+    await new Promise(resolve => setTimeout(resolve, 2000));
   }
 }
 
