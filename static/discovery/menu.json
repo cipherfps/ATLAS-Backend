@@ -8,21 +8,37 @@
               {  
                 "linkData": {
                   "namespace": "fn",
-                  "mnemonic": "playlist_showdownalt_solo",
-                  "linkType": "BR:Playlist",
-                  "active": true,
-                  "disabled": false,
-                  "version": 95,
-                  "moderationStatus": "Unmoderated",
                   "accountId": "epic",
                   "creatorName": "Epic",
-                  "descriptionTags": [],
+                  "mnemonic": "playlist_showdownalt_solo",
+                  "linkType": "BR:Playlist",
                   "metadata": {
-                    "image_url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
+                    "parent_set": "set_br_playlists",
+                    "favorite_override": "set_br_playlists",
+                    "play_history_override": "set_br_playlists",
+                    "alt_title": {
+                      "en": "Arena"
+                    },
+                    "image_url": "https://cdn2.unrealengine.com/28br-ranked-640x360-baf774a9b48f.jpg",
+                    "product_tag": "Product.BR.Build.Arena",
+                    "image_urls": {
+                      "url_s": "https://cdn2.unrealengine.com/28br-ranked-640x360-baf774a9b48f.jpg",
+                      "url_xs": "https://cdn2.unrealengine.com/28br-ranked-640x360-baf774a9b48f.jpg",
+                      "url_m": "https://cdn2.unrealengine.com/28br-ranked-640x360-baf774a9b48f.jpg",
+                      "url": "https://cdn2.unrealengine.com/28br-ranked-640x360-baf774a9b48f.jpg"
+                    },
                     "matchmaking": {
                       "override_playlist": "playlist_showdownalt_solo"
-                    }
-                  }
+                    },
+                    "title": "Arena"
+                  },
+                  "version": 95,
+                  "active": true,
+                  "disabled": false,
+                  "created": "2021-10-01T00:56:45.010Z",
+                  "published": "2021-08-03T15:27:20.251Z",
+                  "descriptionTags": [],
+                  "moderationStatus": "Approved"
                 },
                 "lastVisited": null,
                 "linkCode": "playlist_showdownalt_solo",
@@ -31,21 +47,37 @@
               {
                 "linkData": {
                   "namespace": "fn",
-                  "mnemonic": "playlist_defaultsolo",
-                  "linkType": "BR:Playlist",
-                  "active": true,
-                  "disabled": false,
-                  "version": 95,
-                  "moderationStatus": "Unmoderated",
                   "accountId": "epic",
                   "creatorName": "Epic",
-                  "descriptionTags": [],
+                  "mnemonic": "playlist_defaultsolo",
+                  "linkType": "BR:Playlist",
                   "metadata": {
-                    "image_url": "https://cdn2.unrealengine.com/25br-solo-1920-1920x1080-f447350aee68.jpg",
+                    "parent_set": "set_br_playlists",
+                    "favorite_override": "set_br_playlists",
+                    "play_history_override": "set_br_playlists",
+                    "alt_title": {
+                      "en": "Solo"
+                    },
+                    "image_url": "https://cdn2.unrealengine.com/28br-solo-640x360-25621afebbce.jpg",
+                    "product_tag": "Product.BR.Build.Solo",
+                    "image_urls": {
+                      "url_s": "https://cdn2.unrealengine.com/28br-solo-640x360-25621afebbce.jpg",
+                      "url_xs": "https://cdn2.unrealengine.com/28br-solo-640x360-25621afebbce.jpg",
+                      "url_m": "https://cdn2.unrealengine.com/28br-solo-640x360-25621afebbce.jpg",
+                      "url": "https://cdn2.unrealengine.com/28br-solo-640x360-25621afebbce.jpg"
+                    },
                     "matchmaking": {
                       "override_playlist": "playlist_defaultsolo"
-                    }
-                  }
+                    },
+                    "title": "Solo"
+                  },
+                  "version": 95,
+                  "active": true,
+                  "disabled": false,
+                  "created": "2021-10-01T00:56:43.870Z",
+                  "published": "2023-11-03T08:26:11.189Z",
+                  "descriptionTags": [],
+                  "moderationStatus": "Unmoderated"
                 },
                 "lastVisited": null,
                 "linkCode": "playlist_defaultsolo",
@@ -54,68 +86,68 @@
               {
                 "linkData": {
                   "namespace": "fn",
-                  "mnemonic": "playlist_defaultduo",
-                  "linkType": "BR:Playlist",
-                  "active": true,
-                  "disabled": false,
-                  "version": 95,
-                  "moderationStatus": "Unmoderated",
                   "accountId": "epic",
                   "creatorName": "Epic",
-                  "descriptionTags": [],
+                  "mnemonic": "playlist_defaultduo",
+                  "linkType": "BR:Playlist",
                   "metadata": {
-                    "image_url": "https://cdn2.unrealengine.com/25br-duos-1920-1920x1080-8b0ad8cc6fd4.jpg",
+                    "parent_set": "set_br_playlists",
+                    "favorite_override": "set_br_playlists",
+                    "play_history_override": "set_br_playlists",
+                    "alt_title": {
+                      "en": "Duo"
+                    },
+                    "image_url": "https://cdn2.unrealengine.com/28br-duos-640x360-da173e4efe4a.jpg",
+                    "product_tag": "Product.BR.Build.Duo",
+                    "image_urls": {
+                      "url_s": "https://cdn2.unrealengine.com/28br-duos-640x360-da173e4efe4a.jpg",
+                      "url_xs": "https://cdn2.unrealengine.com/28br-duos-640x360-da173e4efe4a.jpg",
+                      "url_m": "https://cdn2.unrealengine.com/28br-duos-640x360-da173e4efe4a.jpg",
+                      "url": "https://cdn2.unrealengine.com/28br-duos-640x360-da173e4efe4a.jpg"
+                    },
                     "matchmaking": {
                       "override_playlist": "playlist_defaultduo"
-                    }
-                  }
+                    },
+                    "title": "Duo"
+                  },
+                  "version": 95,
+                  "active": true,
+                  "disabled": false,
+                  "created": "2021-10-01T00:56:46.389Z",
+                  "published": "2023-11-03T08:25:34.690Z",
+                  "descriptionTags": [],
+                  "moderationStatus": "Unmoderated"
                 },
                 "lastVisited": null,
                 "linkCode": "playlist_defaultduo",
                 "isFavorite": false
               },
-                        {
+              {
+                "linkData": {
                   "namespace": "fn",
                   "accountId": "epic",
                   "creatorName": "Epic",
-                  "mnemonic": "playlist_showdownalt_solo",
+                  "mnemonic": "playlist_trios",
                   "linkType": "BR:Playlist",
                   "metadata": {
-                      "parent_set": "set_br_playlists",
-                      "favorite_override": "set_br_playlists",
-                      "play_history_override": "set_br_playlists",
-                      "alt_title": {
-                          "de": "Arena",
-                          "ru": "Арена",
-                          "ko": "투기장",
-                          "pt-BR": "Arena",
-                          "en": "Arena",
-                          "it": "Arena",
-                          "fr": "Arène",
-                          "zh-CN": "",
-                          "es": "Arena",
-                          "es-MX": "En trío",
-                          "zh": "",
-                          "ar": "アリーナ",
-                          "zh-Hant": "",
-                          "ja": "トリオ",
-                          "pl": "Arena",
-                          "es-419": "Arena",
-                          "tr": "Arena"
-                      },
-                      "image_url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
-                      "product_tag": "Product.BR.Build.Arena",
-                      "image_urls": {
-                          "url_s": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
-                          "url_xs": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
-                          "url_m": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
-                          "url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png"
-                      },
-                      "matchmaking": {
-                          "override_playlist": "playlist_showdownalt_solo"
-                      },
-                      "video_vuid": "",
-                      "title": "Arena"
+                    "parent_set": "set_br_playlists",
+                    "favorite_override": "set_br_playlists",
+                    "play_history_override": "set_br_playlists",
+                    "alt_title": {
+                      "en": "Trio"
+                    },
+                    "image_url": "https://cdn2.unrealengine.com/28br-trios-640x360-dd73038c39d3.jpg",
+                    "product_tag": "Product.BR.Build.Trio",
+                    "image_urls": {
+                      "url_s": "https://cdn2.unrealengine.com/28br-trios-640x360-dd73038c39d3.jpg",
+                      "url_xs": "https://cdn2.unrealengine.com/28br-trios-640x360-dd73038c39d3.jpg",
+                      "url_m": "https://cdn2.unrealengine.com/28br-trios-640x360-dd73038c39d3.jpg",
+                      "url": "https://cdn2.unrealengine.com/28br-trios-640x360-dd73038c39d3.jpg"
+                    },
+                    "matchmaking": {
+                      "override_playlist": "playlist_trios"
+                    },
+                    "title": "Trio"
                   },
                   "version": 95,
                   "active": true,
@@ -124,25 +156,6 @@
                   "published": "2023-11-03T08:28:43.403Z",
                   "descriptionTags": [],
                   "moderationStatus": "Unmoderated"
-              },
-              {
-                "linkData": {
-                  "namespace": "fn",
-                  "mnemonic": "playlist_trios",
-                  "linkType": "BR:Playlist",
-                  "active": true,
-                  "disabled": false,
-                  "version": 95,
-                  "moderationStatus": "Unmoderated",
-                  "accountId": "epic",
-                  "creatorName": "Epic",
-                  "descriptionTags": [],
-                  "metadata": {
-                    "image_url": "https://cdn2.unrealengine.com/25br-trios-1920-1920x1080-9866e812b10c.jpg",
-                    "matchmaking": {
-                      "override_playlist": "playlist_trios"
-                    }
-                  }
                 },
                 "lastVisited": null,
                 "linkCode": "playlist_trios",
@@ -151,21 +164,37 @@
               {
                 "linkData": {
                   "namespace": "fn",
-                  "mnemonic": "playlist_defaultsquad",
-                  "linkType": "BR:Playlist",
-                  "active": true,
-                  "disabled": false,
-                  "version": 95,
-                  "moderationStatus": "Unmoderated",
                   "accountId": "epic",
                   "creatorName": "Epic",
-                  "descriptionTags": [],
+                  "mnemonic": "playlist_defaultsquad",
+                  "linkType": "BR:Playlist",
                   "metadata": {
-                    "image_url": "https://cdn2.unrealengine.com/25br-squads-1920-1920x1080-d515b42c587f.jpg",
+                    "parent_set": "set_br_playlists",
+                    "favorite_override": "set_br_playlists",
+                    "play_history_override": "set_br_playlists",
+                    "alt_title": {
+                      "en": "Squad"
+                    },
+                    "image_url": "https://cdn2.unrealengine.com/28br-squads-640x360-a8e6686e2546.jpg",
+                    "product_tag": "Product.BR.Build.Squad",
+                    "image_urls": {
+                      "url_s": "https://cdn2.unrealengine.com/28br-squads-640x360-a8e6686e2546.jpg",
+                      "url_xs": "https://cdn2.unrealengine.com/28br-squads-640x360-a8e6686e2546.jpg",
+                      "url_m": "https://cdn2.unrealengine.com/28br-squads-640x360-a8e6686e2546.jpg",
+                      "url": "https://cdn2.unrealengine.com/28br-squads-640x360-a8e6686e2546.jpg"
+                    },
                     "matchmaking": {
                       "override_playlist": "playlist_defaultsquad"
-                    }
-                  }
+                    },
+                    "title": "Squad"
+                  },
+                  "version": 95,
+                  "active": true,
+                  "disabled": false,
+                  "created": "2021-10-01T00:56:45.053Z",
+                  "published": "2023-11-03T08:28:43.403Z",
+                  "descriptionTags": [],
+                  "moderationStatus": "Unmoderated"
                 },
                 "lastVisited": null,
                 "linkCode": "playlist_defaultsquad",
@@ -182,5 +211,3 @@
     ],
     "ModeSets": {}
   }
-  
-    

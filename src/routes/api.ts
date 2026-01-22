@@ -74,7 +74,9 @@ export default function () {
   });
 
   app.get("/content-controls/:accountId/rules/namespaces/fn", async (c) => {
-    return c.json([]);
+    return c.json({
+      data: []
+    });
   });
 
   app.post("/content-controls/:accountId/verify-pin", async (c) => {
@@ -238,21 +240,8 @@ export default function () {
     return c.json({});
   });
 
-  app.get("/content-controls/:accountId", async (c) => {
-    return c.json({});
-  });
-
-  app.get("/content-controls/:accountId/rules/namespaces/fn", async (c) => {
-    return c.json({});
-  });
-
-  app.post("/content-controls/:accountId/verify-pin", async (c) => {
-    return c.json({});
-  });
-
-  app.get("/api/v2/interactions/aggregated/Fortnite/:accountId", async (c) => {
-    return c.json({});
-  });
+  // Content controls endpoints moved to top of file (lines 65-86)
+  // Duplicate endpoints removed to prevent conflicts
 
   app.get("/api/v1/namespace/fn/worlds/accessibleTo/:accountid", async (c) => {
     return c.json({});

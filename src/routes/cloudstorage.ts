@@ -96,6 +96,19 @@ export default function () {
         hotfixCache.set(fileName, fileContent);
       }
 
+      // For Season 5-6, strip all DataTable modifications to prevent crashes
+      if (fileName === "DefaultGame.ini" && version.season <= 6) {
+        // Remove all +DataTable and +CurveTable lines
+        const lines = fileContent.split('\n');
+        const filteredLines = lines.filter(line => {
+          const trimmed = line.trim();
+          // Keep everything except DataTable/CurveTable hotfixes
+          return !trimmed.startsWith('+DataTable=') && 
+                 !trimmed.startsWith('+CurveTable=');
+        });
+        fileContent = filteredLines.join('\n');
+      }
+
       if (fileName === "DefaultGame.ini") {
         const replacements: {
           [key: number]: { find: string; replace: string };

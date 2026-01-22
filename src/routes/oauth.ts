@@ -17,7 +17,7 @@ export default function () {
 
     // Only log actual player logins, not default/system accounts
     if (body.username && accountId !== "atlas") {
-      setStatusMessage(`\x1b[36mPlayer Logged In: ${accountId}\x1b[0m`);
+      setStatusMessage(`\x1b[36m[BACKEND]\x1b[0m Player Logged In: ${accountId}`);
     }
 
     let t = jwt.sign(

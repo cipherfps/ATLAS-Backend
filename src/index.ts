@@ -8,17 +8,72 @@ import { cors } from "hono/cors";
 import prompts from "prompts";
 import fs from "node:fs";
 import ini from "ini";
+import { startMatchmakingWebSocket } from "./utils/matchmaking/websocket";
 
 const PORT = process.env.PORT || 3551;
 const app = new Hono({ strict: false });
 
 // Store last status message
 let lastStatusMessage = '';
+let lastDisplayedMessage = '';
+let shouldRefreshMenu = false;
 
 // Export function to update status message from other modules
 export function setStatusMessage(message: string) {
-  lastStatusMessage = message;
-  // Status will be displayed on next menu refresh
+  // Add timestamp
+  const now = new Date();
+  let hours = now.getHours();
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const seconds = now.getSeconds().toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  const timestamp = `${hours}:${minutes}:${seconds} ${ampm}`;
+  
+  lastStatusMessage = `${message} \x1b[90m- ${timestamp}\x1b[0m`;
+  // If message changed, trigger menu refresh
+  if (message !== lastDisplayedMessage) {
+    lastDisplayedMessage = message;
+    shouldRefreshMenu = true;
+    
+    // Immediately refresh the display
+    console.clear();
+    displayMenuContent();
+  }
+}
+
+// Function to display the menu content (logo, status, options)
+function displayMenuContent() {
+  const terminalWidth = process.stdout.columns || 80;
+  const logoLines = `\x1b[96m${addShadows(` █████╗ ████████╗██╗      █████╗ ███████╗
+██╔══██╗╚══██╔══╝██║     ██╔══██╗██╔════╝
+███████║   ██║   ██║     ███████║███████╗
+██╔══██║   ██║   ██║     ██╔══██║╚════██║
+██║  ██║   ██║   ███████╗██║  ██║███████║
+╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝`)}
+                                         
+\x1b[37m${addShadowsBackend(`██████╗  █████╗  ██████╗██╗  ██╗███████╗███╗   ██╗██████╗ 
+██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██╔════╝████╗  ██║██╔══██╗
+██████╔╝███████║██║     █████╔╝ █████╗  ██╔██╗ ██║██║  ██║
+██╔══██╗██╔══██║██║     ██╔═██╗ ██╔══╝  ██║╚██╗██║██║  ██║
+██████╔╝██║  ██║╚██████╗██║  ██╗███████╗██║ ╚████║██████╔╝
+╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚═════╝ `)}
+                                                          
+\x1b[0m`;
+  
+  const lines = logoLines.split('\n');
+  const centeredLogo = lines.map(line => {
+    const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+    return ' '.repeat(padding) + line;
+  }).join('\n');
+  
+  console.log(centeredLogo);
+  console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on port ${PORT} | \x1b[33m[MATCHMAKING]\x1b[0m WebSocket on port 5555`);
+  
+  // Display last status message if exists
+  if (lastStatusMessage) {
+    console.log(lastStatusMessage);
+  }
 }
 
 export default app;
@@ -532,7 +587,7 @@ async function otherSettingsMenu() {
       console.log(`\x1b[32m(1)\x1b[0m Toggle Arena Point Saving ${arenaStatus}`);
       console.log('\x1b[32m(2)\x1b[0m Arena Leaderboard');
       console.log('\x1b[32m(BACK)\x1b[0m Return to main menu');
-      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m\n');
+      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
       
       const response = await prompts({
         type: 'text',
@@ -641,7 +696,7 @@ async function modifyCurveTables() {
     console.log('\x1b[32m(5)\x1b[0m Import CurveTables from .ini file');
     console.log('\x1b[32m(6)\x1b[0m Clear All CurveTables');
     console.log('\x1b[32m(BACK)\x1b[0m Return to main menu');
-    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m\n');
+    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
     
     const actionResponse = await prompts({
       type: 'text',
@@ -983,40 +1038,9 @@ function areModificationsEnabled(): boolean {
 
 async function runInteractiveCLI() {
   while (true) {
-    // Clear console and redisplay logo
+    // Clear console and display menu content
     console.clear();
-  
-  // Redisplay centered logo
-  const terminalWidth = process.stdout.columns || 80;
-  const logoLines = `\x1b[96m${addShadows(` █████╗ ████████╗██╗      █████╗ ███████╗
-██╔══██╗╚══██╔══╝██║     ██╔══██╗██╔════╝
-███████║   ██║   ██║     ███████║███████╗
-██╔══██║   ██║   ██║     ██╔══██║╚════██║
-██║  ██║   ██║   ███████╗██║  ██║███████║
-╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝`)}
-                                         
-\x1b[37m${addShadowsBackend(`██████╗  █████╗  ██████╗██╗  ██╗███████╗███╗   ██╗██████╗ 
-██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██╔════╝████╗  ██║██╔══██╗
-██████╔╝███████║██║     █████╔╝ █████╗  ██╔██╗ ██║██║  ██║
-██╔══██╗██╔══██║██║     ██╔═██╗ ██╔══╝  ██║╚██╗██║██║  ██║
-██████╔╝██║  ██║╚██████╗██║  ██╗███████╗██║ ╚████║██████╔╝
-╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚═════╝ `)}
-                                                          
-\x1b[0m`;
-  
-  const lines = logoLines.split('\n');
-  const centeredLogo = lines.map(line => {
-    const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
-    return ' '.repeat(padding) + line;
-  }).join('\n');
-  
-  console.log(centeredLogo);
-  console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on port ${PORT}`);
-  
-  // Display last status message if exists
-  if (lastStatusMessage) {
-    console.log(`\x1b[36m[BACKEND]\x1b[0m ${lastStatusMessage}`);
-  }
+    displayMenuContent();
   
   const iniPath = path.join(__dirname, '../static/hotfixes/DefaultGame.ini');
   const sniperPath = path.join(__dirname, '../responses/sniper.json');
@@ -1042,7 +1066,14 @@ async function runInteractiveCLI() {
   console.log('\x1b[32m(4)\x1b[0m Other Settings');
   console.log('\x1b[32m(5)\x1b[0m Refresh');
   console.log('\x1b[32m(6)\x1b[0m Exit');
-  console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m\n');
+  console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+
+  // Check if we should auto-refresh due to new status message
+  if (shouldRefreshMenu) {
+    shouldRefreshMenu = false;
+    await new Promise(resolve => setTimeout(resolve, 50)); // Brief pause to show the message
+    continue; // Restart loop to refresh display
+  }
 
   const response = await prompts({
     type: 'text',
@@ -1082,8 +1113,42 @@ async function runInteractiveCLI() {
   }
 }
 
+// Check for updates from GitHub
+async function checkForUpdates() {
+  try {
+    const response = await fetch('https://api.github.com/repos/Project-Nocturno/ATLAS-Backend/releases/latest', {
+      headers: {
+        'User-Agent': 'ATLAS-Backend'
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      const latestVersion = data.tag_name;
+      const releaseUrl = data.html_url;
+      
+      // Read current version from package.json
+      const packagePath = path.join(__dirname, '../package.json');
+      const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
+      const currentVersion = packageData.version;
+      
+      if (latestVersion && latestVersion !== `v${currentVersion}`) {
+        setStatusMessage(`\x1b[32m[UPDATE]\x1b[0m New update available! Check GitHub for updates`);
+      }
+    }
+  } catch (error) {
+    // Silently fail if update check fails (no internet, etc.)
+  }
+}
+
 // Start the server with Bun
 const startServer = async () => {
+  // Check for updates first before starting anything
+  await checkForUpdates();
+  
+  // Start matchmaking WebSocket server
+  startMatchmakingWebSocket(5555);
+  
   Bun.serve({
     port: PORT,
     fetch: app.fetch,
