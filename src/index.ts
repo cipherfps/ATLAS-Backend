@@ -29,12 +29,7 @@ export function setStatusMessage(message: string) {
   hours = hours % 12;
   hours = hours ? hours : 12; // the hour '0' should be '12'
   
-  // Get timezone abbreviation
-  const timezone = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
-    .formatToParts(now)
-    .find(part => part.type === 'timeZoneName')?.value || '';
-  
-  const timestamp = `${hours}:${minutes}:${seconds} ${ampm} ${timezone}`;
+  const timestamp = `${hours}:${minutes}:${seconds} ${ampm}`;
   
   lastStatusMessage = `${message} \x1b[90m- ${timestamp}\x1b[0m`;
   // If message changed, trigger menu refresh
