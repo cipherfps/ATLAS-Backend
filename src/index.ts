@@ -9,6 +9,7 @@ import prompts from "prompts";
 import fs from "node:fs";
 import ini from "ini";
 import { startMatchmakingWebSocket } from "./utils/matchmaking/websocket";
+import CheckForUpdate from "./utils/checkforupdate";
 
 const PORT = process.env.PORT || 3551;
 const app = new Hono({ strict: false });
@@ -1124,67 +1125,53 @@ async function runInteractiveCLI() {
 // Check for updates from GitHub
 async function checkForUpdates() {
   try {
-    // Fetch package.json from GitHub to get latest version
-    const response = await fetch('https://raw.githubusercontent.com/Project-Nocturno/ATLAS-Backend/main/package.json', {
-      headers: {
-        'User-Agent': 'ATLAS-Backend'
-      }
-    });
+    // Read local version
+    const packagePath = path.join(__dirname, '../package.json');
+    const localPackage = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
+    const currentVersion = localPackage.version || '0.0.0';
     
-    if (response.ok) {
-      const remotePackage = await response.json();
-      const remoteVersion = remotePackage.version;
-      
-      // Read local version
-      const packagePath = path.join(__dirname, '../package.json');
-      const localPackage = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
-      const localVersion = localPackage.version || '0.0.0';
-      
-      console.log(`Local version: ${localVersion}`);
-      console.log(`Remote version: ${remoteVersion}`);
-      
-      // Compare versions
-      if (remoteVersion !== localVersion) {
-        // Get latest commit date for the timestamp
-        const commitResponse = await fetch('https://api.github.com/repos/Project-Nocturno/ATLAS-Backend/commits/main', {
-          headers: {
-            'User-Agent': 'ATLAS-Backend'
-          }
-        });
-        
-        if (commitResponse.ok) {
-          const commitData = await commitResponse.json();
-          const commitDate = new Date(commitData.commit.committer.date);
-          
-          // Format the commit date
-          let hours = commitDate.getHours();
-          const minutes = commitDate.getMinutes().toString().padStart(2, '0');
-          const ampm = hours >= 12 ? 'PM' : 'AM';
-          hours = hours % 12;
-          hours = hours ? hours : 12;
-          
-          const timezone = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
-            .formatToParts(commitDate)
-            .find(part => part.type === 'timeZoneName')?.value || '';
-          
-          const month = (commitDate.getMonth() + 1).toString().padStart(2, '0');
-          const day = commitDate.getDate().toString().padStart(2, '0');
-          const year = commitDate.getFullYear();
-          
-          const formattedDate = `${month}/${day}/${year} ${hours}:${minutes} ${ampm} ${timezone}`;
-          
-          console.log(`\x1b[32m[UPDATE]\x1b[0m A new update is available! Check the GitHub to download the latest version. (Released: ${formattedDate})\n`);
-          // Wait 5 seconds before continuing
-          await new Promise(resolve => setTimeout(resolve, 5000));
+    console.log(`Local version: ${currentVersion}`);
+    
+    const updateAvailable = await CheckForUpdate.checkForUpdate(currentVersion);
+    
+    if (updateAvailable) {
+      // Get latest commit date for the timestamp
+      const commitResponse = await fetch('https://api.github.com/repos/Project-Nocturno/ATLAS-Backend/commits/main', {
+        headers: {
+          'User-Agent': 'ATLAS-Backend'
         }
-      } else {
-        console.log('Backend is up to date!');
+      });
+      
+      if (commitResponse.ok) {
+        const commitData = await commitResponse.json();
+        const commitDate = new Date(commitData.commit.committer.date);
+        
+        // Format the commit date
+        let hours = commitDate.getHours();
+        const minutes = commitDate.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        
+        const timezone = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
+          .formatToParts(commitDate)
+          .find(part => part.type === 'timeZoneName')?.value || '';
+        
+        const month = (commitDate.getMonth() + 1).toString().padStart(2, '0');
+        const day = commitDate.getDate().toString().padStart(2, '0');
+        const year = commitDate.getFullYear();
+        
+        const formattedDate = `${month}/${day}/${year} ${hours}:${minutes} ${ampm} ${timezone}`;
+        
+        console.log(`\x1b[32m[UPDATE]\x1b[0m A new update is available! Check the GitHub to download the latest version. (Released: ${formattedDate})\n`);
+        // Wait 5 seconds before continuing
+        await new Promise(resolve => setTimeout(resolve, 5000));
       }
     } else {
-      console.log('Failed to check for updates:', response.status);
+      console.log('Backend is up to date!');
     }
   } catch (error) {
-    console.log('Update check error:', error.message);
+    console.log('Update check error:', (error as Error).message);
   }
 }
 
