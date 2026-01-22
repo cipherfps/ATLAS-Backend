@@ -1196,6 +1196,7 @@ async function checkForUpdates() {
       console.log(`\x1b[90mContinuing in 3 seconds...\x1b[0m`);
       // Wait 3 seconds before continuing
       await new Promise(resolve => setTimeout(resolve, 3000));
+      return true;
     }
   } catch (error) {
     console.log(`\x1b[31m✗\x1b[0m Update check failed. Continuing...`);
@@ -1205,24 +1206,18 @@ async function checkForUpdates() {
 
 // Start the server with Bun
 const startServer = async () => {
-  // Check for updates FIRST - this is the very first thing that happens
-  // Nothing else starts until this completes
-  await checkForUpdates();
-  
+  const canContinue = await checkForUpdates();
+  if (!canContinue) return;
   // Now clear and start the server
   console.clear();
-  
   // Start matchmaking WebSocket server
   startMatchmakingWebSocket(5555);
-  
   Bun.serve({
     port: PORT,
     fetch: app.fetch,
   });
-  
   // Wait for Bun's startup message to print
   await new Promise(resolve => setTimeout(resolve, 100));
-  
   await runInteractiveCLI();
 };
 
