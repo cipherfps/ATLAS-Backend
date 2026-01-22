@@ -1176,9 +1176,21 @@ async function checkForUpdates() {
       console.log(`\x1b[36mDownload here: ${downloadUrl}\x1b[0m`);
       // Just print the download link (do not attempt to open browser)
       console.log("\x1b[33mPress any key to exit...\x1b[0m");
-      process.stdin.setRawMode(true);
-      process.stdin.resume();
-      process.stdin.on('data', process.exit.bind(process, 0));
+      if (process.stdin.isTTY) {
+        // Remove all previous listeners to avoid stacking
+        process.stdin.removeAllListeners('data');
+        process.stdin.setRawMode(true);
+        process.stdin.resume();
+        process.stdin.once('data', () => {
+          process.stdin.setRawMode(false);
+          process.stdin.pause();
+          process.exit(0);
+        });
+      } else {
+        // If not a TTY, just wait a bit then exit
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        process.exit(0);
+      }
       // Prevent function from continuing
       return;
     } else {
