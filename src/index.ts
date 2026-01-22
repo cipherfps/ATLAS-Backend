@@ -1186,13 +1186,11 @@ async function checkForUpdates() {
           process.exit(0);
         });
       } else {
-        // If not a TTY, just wait a bit then exit
-        await new Promise(resolve => setTimeout(resolve, 10000));
-        process.exit(0);
+        // If not a TTY, print message and do not exit automatically
+        console.log("\x1b[31mCannot detect user input in this terminal. Please close the window manually after updating.\x1b[0m");
+        // Prevent function from continuing
+        return;
       }
-      // Prevent function from continuing
-      // Exit the process so nothing else runs
-      process.exit(0);
     } else {
       console.log(`\x1b[32m✓\x1b[0m Backend is up to date (v${currentVersion})`);
       console.log(`\x1b[90mContinuing in 3 seconds...\x1b[0m`);
