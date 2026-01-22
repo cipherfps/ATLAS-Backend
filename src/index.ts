@@ -77,7 +77,7 @@ function displayMenuContent() {
   }).join('\n');
   
   console.log(centeredLogo);
-  console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on port ${PORT} | \x1b[33m[MATCHMAKING]\x1b[0m WebSocket on port 5555`);
+  console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on port ${PORT}`);
   
   // Display last status message if exists
   if (lastStatusMessage) {
@@ -165,11 +165,11 @@ async function toggleStraightBloom() {
     const sniperSpreadLines = sniperData.lines;
     
     // Check if any sniper lines exist in the INI
-    const hasLines = sniperSpreadLines.some(line => content.includes(line));
+    const hasLines = sniperSpreadLines.some((line: string) => content.includes(line));
     
     if (hasLines) {
       // Remove all sniper lines
-      sniperSpreadLines.forEach(line => {
+      sniperSpreadLines.forEach((line: string) => {
         content = content.replace(line + '\n', '').replace(line, '');
       });
       // Clean up extra newlines
@@ -209,7 +209,7 @@ async function toggleStraightBloom() {
     
     fs.writeFileSync(iniPath, content);
   } catch (error) {
-    lastStatusMessage = `\x1b[31m✗ Failed to toggle Straight Bloom: ${error.message}\x1b[0m`;
+    lastStatusMessage = `\x1b[31m✗ Failed to toggle Straight Bloom: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
   }
 }
 
@@ -249,7 +249,7 @@ async function importCurveTables() {
       type: 'text',
       name: 'fileIndex',
       message: '\x1b[32mSelect a file to import from:\x1b[0m',
-      validate: (value) => {
+      validate: (value: string) => {
         if (value.toLowerCase() === 'back') return true;
         const index = parseInt(value) - 1;
         return (index >= 0 && index < iniFiles.length) ? true : 'Please enter a valid file number or BACK';
@@ -291,7 +291,7 @@ async function importCurveTables() {
       type: 'text',
       name: 'confirm',
       message: `\x1b[32mImport all ${matches.length} curvetable(s)? (Y/N):\x1b[0m`,
-      validate: (value) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
+      validate: (value: string) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
     });
     
     if (!confirmResponse.confirm || confirmResponse.confirm.toUpperCase() !== 'Y') {
@@ -377,7 +377,7 @@ async function importCurveTables() {
           // Generate a readable name from the key
           const autoName = key
             .split('.')
-            .pop() // Get last part after final dot
+            .pop() ?? '' // Get last part after final dot
             .replace(/([A-Z])/g, ' $1') // Add space before capital letters
             .trim();
           
@@ -424,7 +424,7 @@ async function importCurveTables() {
       type: 'text',
       name: 'delete',
       message: '\x1b[32mDelete the imported file? (Y/N):\x1b[0m',
-      validate: (value) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
+      validate: (value: string) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
     });
     
     if (deleteResponse.delete && deleteResponse.delete.toUpperCase() === 'Y') {
@@ -433,7 +433,7 @@ async function importCurveTables() {
         type: 'text',
         name: 'confirm',
         message: '\x1b[31mAre you sure you want to delete this file? (Y/N):\x1b[0m',
-        validate: (value) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
+        validate: (value: string) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
       });
       
       if (confirmResponse.confirm && confirmResponse.confirm.toUpperCase() === 'Y') {
@@ -445,7 +445,7 @@ async function importCurveTables() {
     }
     
   } catch (error) {
-    lastStatusMessage = `\x1b[31m✗ Failed to import curvetables: ${error.message}\x1b[0m`;
+    lastStatusMessage = `\x1b[31m✗ Failed to import curvetables: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
   }
 }
 
@@ -464,7 +464,7 @@ async function showArenaLeaderboard() {
     }).join('\n');
     
     console.log(centeredLogo);
-    console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on port ${PORT}`);
+    console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
     
     console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
     console.log('\x1b[36m                  Arena Leaderboard\x1b[0m');
@@ -542,7 +542,7 @@ async function showArenaLeaderboard() {
         console.log(`\n  \x1b[90mTotal Players: ${leaderboard.length}\x1b[0m`);
       }
     } catch (err) {
-      console.log('\x1b[31m  Error loading profiles: ' + err.message + '\x1b[0m\n');
+      console.log('\x1b[31m  Error loading profiles: ' + (err instanceof Error ? err.message : String(err)) + '\x1b[0m\n');
     }
     
     console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
@@ -607,7 +607,7 @@ async function otherSettingsMenu() {
         type: 'text',
         name: 'choice',
         message: '\x1b[32mSelect an option (1/2/BACK):\x1b[0m',
-        validate: (value) => {
+        validate: (value: string) => {
           if (value.toLowerCase() === 'back') return true;
           const num = parseInt(value);
           return (num === 1 || num === 2) ? true : 'Please enter 1, 2, or BACK';
@@ -640,7 +640,7 @@ async function otherSettingsMenu() {
       }
       
     } catch (error) {
-      lastStatusMessage = `\x1b[31m✗ Failed to update settings: ${error.message}\x1b[0m`;
+      lastStatusMessage = `\x1b[31m✗ Failed to update settings: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
       continueLoop = false;
     }
   }
@@ -716,7 +716,7 @@ async function modifyCurveTables() {
       type: 'text',
       name: 'action',
       message: '\x1b[32mSelect an option (1/2/3/4/5/6/BACK):\x1b[0m',
-      validate: (value) => (['1', '2', '3', '4', '5', '6'].includes(value) || value.toLowerCase() === 'back') ? true : 'Please enter 1, 2, 3, 4, 5, 6, or BACK'
+      validate: (value: string) => (['1', '2', '3', '4', '5', '6'].includes(value) || value.toLowerCase() === 'back') ? true : 'Please enter 1, 2, 3, 4, 5, 6, or BACK'
     });
     
     const action = actionResponse.action?.toLowerCase();
@@ -761,7 +761,7 @@ async function modifyCurveTables() {
         type: 'text',
         name: 'name',
         message: '\x1b[32mEnter a name for this custom curvetable:\x1b[0m',
-        validate: (value) => value.length > 0 ? true : 'Name cannot be empty'
+        validate: (value: string) => value.length > 0 ? true : 'Name cannot be empty'
       });
       
       if (!nameResponse.name) {
@@ -773,7 +773,7 @@ async function modifyCurveTables() {
         type: 'text',
         name: 'paste',
         message: '\x1b[32mPaste the curvetable string (e.g., +CurveTable=/Game/Athena/Balance/DataTables/AthenaGameData;RowUpdate;Default.TurboBuildInterval;0;0.002):\x1b[0m',
-        validate: (value) => value.startsWith('+CurveTable=') ? true : 'String must start with +CurveTable='
+        validate: (value: string) => value.startsWith('+CurveTable=') ? true : 'String must start with +CurveTable='
       });
       
       if (!pasteResponse.paste) {
@@ -843,7 +843,7 @@ async function modifyCurveTables() {
         type: 'text',
         name: 'confirm',
         message: '\x1b[31mAre you sure you want to delete ALL curvetables? (Y/N):\x1b[0m',
-        validate: (value) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
+        validate: (value: string) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
       });
       
       if (!confirmResponse.confirm) {
@@ -895,7 +895,7 @@ async function modifyCurveTables() {
       type: 'text',
       name: 'curve',
       message: '\x1b[32mChoose a curve:\x1b[0m',
-      validate: (value) => {
+      validate: (value: string) => {
         if (value.toLowerCase() === 'back') return true;
         return Object.keys(Object.fromEntries(allCurves)).includes(value) ? true : 'Please enter a valid curve number or BACK';
       }
@@ -941,7 +941,7 @@ async function modifyCurveTables() {
           type: 'text',
           name: 'value',
           message: `\x1b[32mEnter new value for ${selectedCurve.name}:\x1b[0m`,
-          validate: (value) => !isNaN(Number(value)) ? true : 'Please enter a valid number'
+          validate: (value: string) => !isNaN(Number(value)) ? true : 'Please enter a valid number'
         });
         
         if (!valueResponse.value && valueResponse.value !== '0') {
@@ -985,7 +985,7 @@ async function modifyCurveTables() {
       // Continue loop to show submenu again after add/delete
       continue;
     } catch (error) {
-      lastStatusMessage = `\x1b[31m✗ Failed to modify CurveTables: ${error.message}\x1b[0m`;
+      lastStatusMessage = `\x1b[31m✗ Failed to modify CurveTables: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
       continue;
     }
   }
@@ -1006,7 +1006,7 @@ async function toggleAllModifications() {
       
       // Restore curvetable lines
       if (backup.curveTableLines && backup.curveTableLines.length > 0) {
-        backup.curveTableLines.forEach(line => {
+        backup.curveTableLines.forEach((line: string) => {
           content = content.replace(`;${line}`, line);
         });
       }
@@ -1036,7 +1036,7 @@ async function toggleAllModifications() {
       lastStatusMessage = '\x1b[32m✓ CurveTables disabled! Backup created.\x1b[0m';
     }
   } catch (error) {
-    lastStatusMessage = `\x1b[31m✗ Failed to toggle modifications: ${error.message}\x1b[0m`;
+    lastStatusMessage = `\x1b[31m✗ Failed to toggle modifications: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
   }
 }
 
@@ -1064,7 +1064,7 @@ async function runInteractiveCLI() {
   const sniperSpreadLines = sniperData.lines;
   
   // Check if straight bloom is currently enabled
-  const hasUncommentedSniperLines = sniperSpreadLines.some(line => content.includes(line) && !content.includes(`;${line}`));
+  const hasUncommentedSniperLines = sniperSpreadLines.some((line: string) => content.includes(line) && !content.includes(`;${line}`));
   const bloomStatus = hasUncommentedSniperLines ? '\x1b[32m[ON]\x1b[0m' : '\x1b[31m[OFF]\x1b[0m';
   
   // Check if curvetables are enabled
@@ -1093,7 +1093,7 @@ async function runInteractiveCLI() {
     type: 'text',
     name: 'value',
     message: '\x1b[32mSelect an option (1/2/3/4/5/6):\x1b[0m',
-    validate: (value) => {
+    validate: (value: string) => {
       const num = parseInt(value);
       return (num >= 1 && num <= 6) ? true : 'Please enter a number between 1 and 6';
     }
