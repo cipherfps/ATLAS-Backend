@@ -1173,8 +1173,10 @@ async function checkForUpdates() {
       const remotePackage = await response.json();
       const latestVersion = remotePackage.version;
       
+      console.log(`\x1b[33m[UPDATE CHECK]\x1b[0m Latest version: ${latestVersion}`);
+      
       // Get latest commit date for the timestamp
-      const commitResponse = await fetch('https://api.github.com/repos/Project-Nocturno/ATLAS-Backend/commits/main', {
+      const commitResponse = await fetch('https://api.github.com/repos/cipherfps/ATLAS-Backend/commits/main', {
         headers: {
           'User-Agent': 'ATLAS-Backend'
         }
