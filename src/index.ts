@@ -1133,8 +1133,10 @@ async function checkForUpdates() {
         cwd: path.join(__dirname, '..'),
         encoding: 'utf-8' 
       }).trim();
-    } catch {
-      // Not a git repository or git not available
+      console.log(`Local commit: ${localCommitSha}`);
+    } catch (e) {
+      console.log('Could not get local commit SHA:', e.message);
+      return;
     }
     
     // Check for latest commit on main branch
@@ -1147,6 +1149,7 @@ async function checkForUpdates() {
     if (response.ok) {
       const data = await response.json();
       const latestCommitSha = data.sha.substring(0, 7); // Short SHA
+      console.log(`Remote commit: ${latestCommitSha}`);
       const commitDate = new Date(data.commit.committer.date);
       
       // Format the commit date
@@ -1171,10 +1174,14 @@ async function checkForUpdates() {
         console.log(`\x1b[32m[UPDATE]\x1b[0m A new update is available! Check the GitHub to download the latest version. (Released: ${formattedDate})\n`);
         // Wait 5 seconds before continuing
         await new Promise(resolve => setTimeout(resolve, 5000));
+      } else {
+        console.log('Backend is up to date!');
       }
+    } else {
+      console.log('Failed to check for updates:', response.status);
     }
   } catch (error) {
-    // Silently fail if update check fails (no internet, etc.)
+    console.log('Update check error:', error.message);
   }
 }
 
