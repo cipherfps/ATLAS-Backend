@@ -1,12 +1,12 @@
 const log = {
-    checkforupdate: (msg: string) => console.log(`\x1b[33m[UPDATE CHECK]\x1b[0m ${msg}`)
+    checkforupdate: (msg: string) => console.log(`\x1b[92m[UPDATE CHECK]\x1b[0m ${msg}`)
 };
 
 class CheckForUpdate {
     static async checkForUpdate(currentVersion: string): Promise<boolean> {
         try {
             log.checkforupdate('Fetching latest version from GitHub...');
-            const response = await fetch('https://raw.githubusercontent.com/cipherfps/ATLAS-Backend/main/package.json');
+            const response = await fetch(`https://raw.githubusercontent.com/cipherfps/ATLAS-Backend/main/package.json?t=${Date.now()}`);
             
             if (!response.ok) {
                 log.checkforupdate(`GitHub fetch failed with status: ${response.status}`);

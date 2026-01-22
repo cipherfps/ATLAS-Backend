@@ -72,4 +72,4 @@ If you prefer to install manually:
 ## To Do List
 - Arena for Latest Versions
 - Fix applying MCP
-- XMPP
+- XMPP (maybe)

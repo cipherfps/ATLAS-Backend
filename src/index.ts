@@ -1166,11 +1166,11 @@ async function checkForUpdates() {
     
     if (updateAvailable) {
       // Get latest version from GitHub
-      const response = await fetch('https://raw.githubusercontent.com/cipherfps/ATLAS-Backend/main/package.json');
+      const response = await fetch(`https://raw.githubusercontent.com/cipherfps/ATLAS-Backend/main/package.json?t=${Date.now()}`);
       const remotePackage = await response.json();
       const latestVersion = remotePackage.version;
       
-      console.log(`\x1b[32m[UPDATE]\x1b[0m New version available: v${latestVersion} (current: v${currentVersion})`);
+      console.log(`\x1b[92m[UPDATE]\x1b[0m New version available: v${latestVersion} (current: v${currentVersion})`);
       console.log(`\x1b[33mPlease update before continuing. Exiting in 5 seconds...\x1b[0m`);
       // Wait 5 seconds then exit
       await new Promise(resolve => setTimeout(resolve, 5000));
