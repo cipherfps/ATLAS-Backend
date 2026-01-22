@@ -13,7 +13,7 @@ import { startMatchmakingWebSocket } from "./utils/matchmaking/websocket";
 const PORT = process.env.PORT || 3551;
 const app = new Hono({ strict: false });
 
-// Version: 1.0.0 - Testing update notification system
+// Version: 1.0.1 - Update notification system is now working!
 
 // Store last status message
 let lastStatusMessage = '';
