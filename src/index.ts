@@ -92,10 +92,15 @@ app.use("*", cors());
 app.notFound((c) => c.json(Atlas.basic.notFound, 404));
 
 app.use(async (c, next) => {
-  if (c.req.path === "/images/icons/gear.png" || c.req.path === "/favicon.ico") await next();
-  else {
+  if (c.req.path === "/images/icons/gear.png" || c.req.path === "/favicon.ico") {
     await next();
-    // Request logging disabled
+  } else {
+    await next();
+  }
+
+  if (c.req.path === "/unknown" && c.req.method === "GET") {
+    setStatusMessage("\x1b[36m[BACKEND]\x1b[0m Atlas Backend was pinged by Launcher");
+    return c.text("OK"); // Return a response and prevent further logging
   }
 });
 
@@ -1163,7 +1168,6 @@ async function checkForUpdates() {
     await new Promise(resolve => setTimeout(resolve, 500));
     
     const updateAvailable = await CheckForUpdate.checkForUpdate(currentVersion);
-    
     if (updateAvailable) {
       // Get latest version from GitHub
       const response = await fetch(`https://raw.githubusercontent.com/cipherfps/ATLAS-Backend/main/package.json?t=${Date.now()}`);
@@ -1185,22 +1189,23 @@ async function checkForUpdates() {
           process.stdin.pause();
           process.exit(0);
         });
+        // Prevent function from continuing
+        return false;
       } else {
         // If not a TTY, print message and do not exit automatically
         console.log("\x1b[31mCannot detect user input in this terminal. Please close the window manually after updating.\x1b[0m");
-        // Prevent function from continuing
-        return;
+        return false;
       }
     } else {
       console.log(`\x1b[32m✓\x1b[0m Backend is up to date (v${currentVersion})`);
       console.log(`\x1b[90mContinuing in 3 seconds...\x1b[0m`);
-      // Wait 3 seconds before continuing
       await new Promise(resolve => setTimeout(resolve, 3000));
       return true;
     }
   } catch (error) {
     console.log(`\x1b[31m✗\x1b[0m Update check failed. Continuing...`);
     await new Promise(resolve => setTimeout(resolve, 2000));
+    return true;
   }
 }
 
