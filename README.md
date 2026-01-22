@@ -70,7 +70,6 @@ If you prefer to install manually:
 - [Ralzify](https://github.com/Ralzify) ATLAS uses the CurveTable and Straight Bloom code from [FortBackend](https://github.com/Ralzify/FortBackend)
 
 ## To Do List
-- CurveTable Presets
 - Arena for Latest Versions
 - Fix applying MCP
 - XMPP
