@@ -29,7 +29,12 @@ export function setStatusMessage(message: string) {
   hours = hours % 12;
   hours = hours ? hours : 12; // the hour '0' should be '12'
   
-  const timestamp = `${hours}:${minutes}:${seconds} ${ampm}`;
+  // Get timezone abbreviation
+  const timezone = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
+    .formatToParts(now)
+    .find(part => part.type === 'timeZoneName')?.value || '';
+  
+  const timestamp = `${hours}:${minutes}:${seconds} ${ampm} ${timezone}`;
   
   lastStatusMessage = `${message} \x1b[90m- ${timestamp}\x1b[0m`;
   // If message changed, trigger menu refresh
@@ -1117,6 +1122,19 @@ async function runInteractiveCLI() {
 // Check for updates from GitHub
 async function checkForUpdates() {
   try {
+    // Get local git commit SHA if in a git repository
+    const { execSync } = require('child_process');
+    let localCommitSha = '';
+    
+    try {
+      localCommitSha = execSync('git rev-parse --short HEAD', { 
+        cwd: path.join(__dirname, '..'),
+        encoding: 'utf-8' 
+      }).trim();
+    } catch {
+      // Not a git repository or git not available
+    }
+    
     // Check for latest commit on main branch
     const response = await fetch('https://api.github.com/repos/Project-Nocturno/ATLAS-Backend/commits/main', {
       headers: {
@@ -1129,20 +1147,29 @@ async function checkForUpdates() {
       const latestCommitSha = data.sha.substring(0, 7); // Short SHA
       const commitDate = new Date(data.commit.committer.date);
       
-      // Check if there's a stored commit SHA
-      const commitTrackPath = path.join(__dirname, '../.last-commit');
-      let lastKnownCommit = '';
+      // Format the commit date
+      let hours = commitDate.getHours();
+      const minutes = commitDate.getMinutes().toString().padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
       
-      if (fs.existsSync(commitTrackPath)) {
-        lastKnownCommit = fs.readFileSync(commitTrackPath, 'utf-8').trim();
+      const timezone = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
+        .formatToParts(commitDate)
+        .find(part => part.type === 'timeZoneName')?.value || '';
+      
+      const month = (commitDate.getMonth() + 1).toString().padStart(2, '0');
+      const day = commitDate.getDate().toString().padStart(2, '0');
+      const year = commitDate.getFullYear();
+      
+      const formattedDate = `${month}/${day}/${year} ${hours}:${minutes} ${ampm} ${timezone}`;
+      
+      // Compare local commit with remote
+      if (localCommitSha && localCommitSha !== latestCommitSha) {
+        console.log(`\x1b[32m[UPDATE]\x1b[0m A new update is available! Check the GitHub to download the latest version. (Released: ${formattedDate})\n`);
+        // Wait 5 seconds before continuing
+        await new Promise(resolve => setTimeout(resolve, 5000));
       }
-      
-      if (lastKnownCommit && lastKnownCommit !== latestCommitSha) {
-        setStatusMessage(`\x1b[32m[UPDATE]\x1b[0m New update available! Check GitHub for updates`);
-      }
-      
-      // Store the latest commit SHA for next check
-      fs.writeFileSync(commitTrackPath, latestCommitSha);
     }
   } catch (error) {
     // Silently fail if update check fails (no internet, etc.)
