@@ -1122,7 +1122,8 @@ async function runInteractiveCLI() {
 // Check for updates from GitHub
 async function checkForUpdates() {
   try {
-    const response = await fetch('https://api.github.com/repos/Project-Nocturno/ATLAS-Backend/releases/latest', {
+    // Check for latest commit on main branch
+    const response = await fetch('https://api.github.com/repos/Project-Nocturno/ATLAS-Backend/commits/main', {
       headers: {
         'User-Agent': 'ATLAS-Backend'
       }
@@ -1130,17 +1131,23 @@ async function checkForUpdates() {
     
     if (response.ok) {
       const data = await response.json();
-      const latestVersion = data.tag_name;
-      const releaseUrl = data.html_url;
+      const latestCommitSha = data.sha.substring(0, 7); // Short SHA
+      const commitDate = new Date(data.commit.committer.date);
       
-      // Read current version from package.json
-      const packagePath = path.join(__dirname, '../package.json');
-      const packageData = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
-      const currentVersion = packageData.version;
+      // Check if there's a stored commit SHA
+      const commitTrackPath = path.join(__dirname, '../.last-commit');
+      let lastKnownCommit = '';
       
-      if (latestVersion && latestVersion !== `v${currentVersion}`) {
+      if (fs.existsSync(commitTrackPath)) {
+        lastKnownCommit = fs.readFileSync(commitTrackPath, 'utf-8').trim();
+      }
+      
+      if (lastKnownCommit && lastKnownCommit !== latestCommitSha) {
         setStatusMessage(`\x1b[32m[UPDATE]\x1b[0m New update available! Check GitHub for updates`);
       }
+      
+      // Store the latest commit SHA for next check
+      fs.writeFileSync(commitTrackPath, latestCommitSha);
     }
   } catch (error) {
     // Silently fail if update check fails (no internet, etc.)
