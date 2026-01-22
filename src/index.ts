@@ -1174,8 +1174,7 @@ async function checkForUpdates() {
       console.log(`\x1b[92m[UPDATE]\x1b[0m New version available: v${latestVersion} (current: v${currentVersion})`);
       console.log(`\x1b[33mPlease update before continuing.\x1b[0m`);
       console.log(`\x1b[36mDownload here: ${downloadUrl}\x1b[0m`);
-      // Just print the download link (do not attempt to open browser)
-      console.log("\x1b[33mPress any key to exit...\x1b[0m");
+      console.log("\x1b[90mPress Enter to continue...\x1b[0m");
       if (process.stdin.isTTY) {
         // Remove all previous listeners to avoid stacking
         process.stdin.removeAllListeners('data');
@@ -1192,7 +1191,8 @@ async function checkForUpdates() {
         process.exit(0);
       }
       // Prevent function from continuing
-      return;
+      // Exit the process so nothing else runs
+      process.exit(0);
     } else {
       console.log(`\x1b[32m✓\x1b[0m Backend is up to date (v${currentVersion})`);
       console.log(`\x1b[90mContinuing in 3 seconds...\x1b[0m`);
