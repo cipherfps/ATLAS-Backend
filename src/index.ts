@@ -77,7 +77,7 @@ function displayMenuContent() {
   }).join('\n');
   
   console.log(centeredLogo);
-  console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on port ${PORT}`);
+  console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
   
   // Display last status message if exists
   if (lastStatusMessage) {
@@ -99,7 +99,7 @@ app.use(async (c, next) => {
   }
 
   if (c.req.path === "/unknown" && c.req.method === "GET") {
-    setStatusMessage("\x1b[36m[BACKEND]\x1b[0m Atlas Backend was pinged by Launcher");
+    setStatusMessage("\x1b[36m[BACKEND]\x1b[0m ATLAS Backend was pinged by Launcher");
     return c.text("OK"); // Return a response and prevent further logging
   }
 });
@@ -582,7 +582,7 @@ async function otherSettingsMenu() {
       }).join('\n');
       
       console.log(centeredLogo);
-      console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on port ${PORT}`);
+      console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
       
       // Display last status message if exists
       if (lastStatusMessage) {
@@ -680,7 +680,7 @@ async function modifyCurveTables() {
     }).join('\n');
     
     console.log(centeredLogo);
-    console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on port ${PORT}`);
+    console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
     
     // Display last status message if exists
     if (lastStatusMessage) {
