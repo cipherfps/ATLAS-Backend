@@ -66,9 +66,9 @@ export default function () {
               {
                 entryType: "Website",
                 image:
-                  "https://media.discordapp.net/attachments/1241535588394471545/1251931646555324426/Izdelek_brez_naslova_33.png?ex=66705fb4&is=666f0e34&hm=730eb730ea6523eabe6ec8956c9d1fcb06719189f0dbf76358c1f9c55b366143&=&format=webp&quality=lossless&width=1200&height=389",
+                  "https://cdn.discordapp.com/attachments/1411777423229321266/1464096129594425344/ATLAS_Backend_Banner.png?ex=69743946&is=6972e7c6&hm=38807dc8bbd03af519e2bcf91bef69eddcc243a359b888848b21c338881fc8a2&=&format=webp&quality=lossless&width=3840&height=2160",
                 tileImage:
-                  "https://media.discordapp.net/attachments/1241535588394471545/1251931646555324426/Izdelek_brez_naslova_33.png?ex=66705fb4&is=666f0e34&hm=730eb730ea6523eabe6ec8956c9d1fcb06719189f0dbf76358c1f9c55b366143&=&format=webp&quality=lossless&width=1200&height=389",
+                  "https://cdn.discordapp.com/attachments/1411777423229321266/1464098964901990666/ATLAS_Backend_Banner_Slim.png?ex=69743bea&is=6972ea6a&hm=c557595155bcfe7ae33698b3e20d12f156708765214aee561498f6a915177b43&=&format=webp&quality=lossless&width=3840&height=2160",
                 videoMute: false,
                 hidden: false,
                 tabTitleOverride: "ATLAS",
@@ -82,7 +82,7 @@ export default function () {
                 videoAutoplay: false,
                 videoFullscreen: false,
                 spotlight: false,
-                websiteURL: "https://discord.gg/atlas-1229545680641462282",
+                websiteURL: "https://discord.gg/G9MAF77V7R",
                 websiteButtonText: "Join our discord",
               },
             ],
