@@ -51,7 +51,7 @@ If you prefer to install manually:
 
 ### How To Connect To Someone Else's ATLAS Server
 
-1. **Install [Reboot Launcher](https://github.com/Auties00/Reboot-Launcher/releases/latest)
+1. **Install** [Reboot Launcher](https://github.com/Auties00/Reboot-Launcher/releases/latest)
 
 2. **Head over to the Backend tab.**
 - Change the type to :
