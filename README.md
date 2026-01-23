@@ -1,5 +1,5 @@
 # ATLAS
-<img width="960" height="468" alt="ATLAS Backend Banner Slim" src="https://github.com/user-attachments/assets/f8b18481-1cf8-46d6-a8c0-9517ecbe88b5" />
+<img width="1920" height="1080" alt="ATLAS Backend Banner Transparent" src="https://github.com/user-attachments/assets/23883b15-d35d-427b-93ac-d50e3aa2ea72" />
 
 Atlas is a Fortnite backend for all versions of fortnite designed for trickshotters!
 This backend has features such as the following:
