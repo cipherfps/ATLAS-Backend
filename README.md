@@ -1,4 +1,4 @@
-# ATLAS
+<img width="1920" height="1080" alt="ATLAS Backend Banner Transparent" src="https://github.com/user-attachments/assets/23883b15-d35d-427b-93ac-d50e3aa2ea72" />
 
 Atlas is a Fortnite backend for all versions of fortnite designed for trickshotters!
 This backend has features such as the following:
@@ -50,7 +50,7 @@ If you prefer to install manually:
 
 ### How To Connect To Someone Else's ATLAS Server
 
-1. **Install [Reboot Launcher](https://github.com/Auties00/Reboot-Launcher/releases/latest)
+1. **Install** [Reboot Launcher](https://github.com/Auties00/Reboot-Launcher/releases/latest)
 
 2. **Head over to the Backend tab.**
 - Change the type to :
@@ -69,7 +69,7 @@ If you prefer to install manually:
 - [andr1ww](https://github.com/andr1ww) ATLAS is a fork of [Nexa](https://github.com/andr1ww/Nexa)
 - [Ralzify](https://github.com/Ralzify) ATLAS uses the CurveTable and Straight Bloom code from [FortBackend](https://github.com/Ralzify/FortBackend)
 
-## To Do List
+## To-Do List
 - Arena for Latest Versions
 - Fix applying MCP
 - XMPP (maybe)
