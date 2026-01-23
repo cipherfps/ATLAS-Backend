@@ -1,5 +1,5 @@
 # ATLAS
-
+<img width="1920" height="936" alt="ATLAS Backend Banner Slim" src="https://github.com/user-attachments/assets/3467cc00-89ca-402c-b72b-5b4691ad5bf3" />
 Atlas is a Fortnite backend for all versions of fortnite designed for trickshotters!
 This backend has features such as the following:
 - Straight Bloom Toggle
@@ -69,7 +69,7 @@ If you prefer to install manually:
 - [andr1ww](https://github.com/andr1ww) ATLAS is a fork of [Nexa](https://github.com/andr1ww/Nexa)
 - [Ralzify](https://github.com/Ralzify) ATLAS uses the CurveTable and Straight Bloom code from [FortBackend](https://github.com/Ralzify/FortBackend)
 
-## To Do List
+## To-Do List
 - Arena for Latest Versions
 - Fix applying MCP
 - XMPP (maybe)
