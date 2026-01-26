@@ -135,7 +135,7 @@ export default {
 								"creatorName": "Epic",
 								"descriptionTags": [],
 								"metadata": {
-									"image_url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
+									"image_url": "https://raw.githubusercontent.com/cipherfps/ATLAS-Backend/refs/heads/main/public/playlists/Late-Game-Arena.png",
 									"matchmaking": {
 									"override_playlist": "playlist_showdownalt_solo"
 									}
@@ -291,7 +291,7 @@ export default {
 								"creatorName": "Epic",
 								"descriptionTags": [],
 								"metadata": {
-									"image_url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
+									"image_url": "https://raw.githubusercontent.com/cipherfps/ATLAS-Backend/refs/heads/main/public/playlists/Late-Game-Arena.png",
 									"matchmaking": {
 									"override_playlist": "playlist_showdownalt_solo"
 									}
@@ -447,7 +447,7 @@ export default {
 								"creatorName": "Epic",
 								"descriptionTags": [],
 								"metadata": {
-									"image_url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
+									"image_url": "https://raw.githubusercontent.com/cipherfps/ATLAS-Backend/refs/heads/main/public/playlists/Late-Game-Arena.png",
 									"matchmaking": {
 									"override_playlist": "playlist_showdownalt_solo"
 									}
@@ -603,7 +603,7 @@ export default {
 								"creatorName": "Epic",
 								"descriptionTags": [],
 								"metadata": {
-									"image_url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
+									"image_url": "https://raw.githubusercontent.com/cipherfps/ATLAS-Backend/refs/heads/main/public/playlists/Late-Game-Arena.png",
 									"matchmaking": {
 									"override_playlist": "playlist_showdownalt_solo"
 									}
@@ -759,7 +759,7 @@ export default {
 								"creatorName": "Epic",
 								"descriptionTags": [],
 								"metadata": {
-									"image_url": "https://cdn2.unrealengine.com/Fortnite%2Ffortnite-game%2Ftournaments%2FArena_ModeSelect_Generic_Solo4-1024x512-8a00c8b712843e0af102a7a43629f50c8987d927.png",
+									"image_url": "https://raw.githubusercontent.com/cipherfps/ATLAS-Backend/refs/heads/main/public/playlists/Late-Game-Arena.png",
 									"matchmaking": {
 									"override_playlist": "playlist_showdownalt_solo"
 									}
