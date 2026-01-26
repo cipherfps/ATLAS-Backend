@@ -66,9 +66,9 @@ export default function () {
               {
                 entryType: "Website",
                 image:
-                  "https://cdn.discordapp.com/attachments/1411777423229321266/1464096129594425344/ATLAS_Backend_Banner.png?ex=69743946&is=6972e7c6&hm=38807dc8bbd03af519e2bcf91bef69eddcc243a359b888848b21c338881fc8a2&=&format=webp&quality=lossless&width=3840&height=2160",
+                  "https://raw.githubusercontent.com/cipherfps/ATLAS-Backend/refs/heads/main/public/images/ATLAS-Backend-Banner.png",
                 tileImage:
-                  "https://cdn.discordapp.com/attachments/1411777423229321266/1464098964901990666/ATLAS_Backend_Banner_Slim.png?ex=69743bea&is=6972ea6a&hm=c557595155bcfe7ae33698b3e20d12f156708765214aee561498f6a915177b43&=&format=webp&quality=lossless&width=3840&height=2160",
+                  "https://raw.githubusercontent.com/cipherfps/ATLAS-Backend/refs/heads/main/public/images/ATLAS-Backend-Banner-Slim.png",
                 videoMute: false,
                 hidden: false,
                 tabTitleOverride: "ATLAS",
