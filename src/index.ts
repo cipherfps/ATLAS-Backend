@@ -905,6 +905,74 @@ async function modifyCurveTables() {
       // Continue loop to show submenu again
       continue;
     }
+
+    // List current CurveTable values without modifying anything
+    if (action === '3') {
+      const activeCurveRegex = /^\+CurveTable=(.+?);RowUpdate;(.+?);(\d+);(.+)$/gm;
+      const activeMatches = [...content.matchAll(activeCurveRegex)];
+
+      console.log('\n\x1b[33mList of CurveTables Enabled:\x1b[0m');
+      if (activeMatches.length === 0) {
+        console.log('\x1b[90m(no CurveTables found)\x1b[0m');
+        await prompts({
+          type: 'text',
+          name: 'continue',
+          message: '\x1b[90mPress Enter to continue...\x1b[0m'
+        });
+        lastStatusMessage = '';
+        continue;
+      }
+
+      const entries = activeMatches.map(match => {
+        const [, pathPart, key, rowValue, value] = match;
+        const curveEntry = Object.values(curves as Record<string, any>).find((c: any) => c.key === key);
+        const nameLabel = curveEntry ? curveEntry.name : '';
+        const isCustom = !!curveEntry?.isCustom;
+        return { pathPart, key, rowValue, value, nameLabel, isCustom };
+      });
+
+      entries.forEach((entry, index) => {
+        const displayName = entry.nameLabel || entry.key;
+        const customTag = entry.isCustom ? ' \x1b[33m[CUSTOM]\x1b[0m' : '';
+        console.log(`\x1b[36m(${index + 1})\x1b[0m ${displayName}${customTag}`);
+      });
+
+      const detailResponse = await prompts({
+        type: 'text',
+        name: 'detail',
+        message: '\x1b[32mEnter a number to view details or BACK to return:\x1b[0m',
+        validate: (value: string) => {
+          if (value.toLowerCase() === 'back') return true;
+          const num = parseInt(value, 10);
+          return num >= 1 && num <= entries.length ? true : `Enter 1-${entries.length} or BACK`;
+        }
+      });
+
+      if (!detailResponse.detail || detailResponse.detail.toLowerCase() === 'back') {
+        lastStatusMessage = '';
+        continue;
+      }
+
+      const idx = parseInt(detailResponse.detail, 10) - 1;
+      const entry = entries[idx];
+
+      console.log('\n\x1b[33mCurveTable Details:\x1b[0m');
+      if (entry.nameLabel) {
+        console.log(`\x1b[36mNAME \x1b[0m: ${entry.nameLabel}`);
+      }
+      console.log(`\x1b[32mKEY  \x1b[0m: ${entry.key}`);
+      console.log(`\x1b[35mPATH \x1b[0m: ${entry.pathPart}`);
+      console.log(`\x1b[33mVALUE\x1b[0m: ${entry.value}`);
+
+      await prompts({
+        type: 'text',
+        name: 'continue',
+        message: '\x1b[90mPress Enter to continue...\x1b[0m'
+      });
+
+      lastStatusMessage = '';
+      continue;
+    }
     
     // For Add (1) and Delete (2), show all curves including custom ones
     const allCurves = Object.entries(curves);
