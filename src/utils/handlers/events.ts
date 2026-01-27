@@ -16,6 +16,7 @@ function getEvents(ver: any) {
   const config = {
     RufusStage: parseInt(rawConfig.RufusStage) || 1,
     WaterLevel: parseInt(rawConfig.WaterLevel) || 1,
+    UseWaterStorm: rawConfig.UseWaterStorm === 'true' || rawConfig.UseWaterStorm === true,
     SaveArenaPoints: rawConfig.SaveArenaPoints === 'true' || rawConfig.SaveArenaPoints === true,
   };
   
@@ -96,10 +97,6 @@ function getEvents(ver: any) {
 
     if (ver.build == 12.41) {
       events.push(createEvent("JCD01"));
-    }
-
-    if (ver.build == 12.61) {
-      events.push(createEvent("FLA01"));
     }
 
     if (ver.build == 13.4) {
@@ -219,6 +216,16 @@ function getEvents(ver: any) {
     }
     if (config.WaterLevel == 8) {
       events.push(createEvent("WL8"));
+    }
+  }
+
+  if (ver.build == 12.61) {
+    if (config.UseWaterStorm) {
+      events.push(createEvent("EventFlag.FSGA01"));
+      events.push(createEvent("FSGA01"));
+      events.push(createEvent("FLA02"));
+      events.push(createEvent("FLA01"));
+      events.push(createEvent("FKD"));
     }
   }
 
