@@ -19,9 +19,6 @@ function getEvents(ver: any) {
     SaveArenaPoints: rawConfig.SaveArenaPoints === 'true' || rawConfig.SaveArenaPoints === true,
   };
   
-  console.log(`[Events] Version: ${ver.build} (type: ${typeof ver.build}), RufusStage: ${config.RufusStage}, WaterLevel: ${config.WaterLevel}`);
-  console.log(`[Events] Full version object:`, ver);
-  
   let events = [
     createEvent(`EventFlag.Season${ver.season}`),
     createEvent(`EventFlag.${ver.lobby}`),
@@ -186,53 +183,42 @@ function getEvents(ver: any) {
     // Durian Event
     events.push(createEvent("DL01"));
     events.push(createEvent("DL02"));
-    
-    console.log(`[Rufus] Build 27.11 detected, RufusStage: ${config.RufusStage}`);
 
     if (config.RufusStage == 2) {
-      console.log("[Rufus] Adding RufusWeek2");
       events.push(createEvent("RufusWeek2"));
     }
     if (config.RufusStage == 3) {
-      console.log("[Rufus] Adding RufusWeek3");
       events.push(createEvent("RufusWeek3"));
     }
     if (config.RufusStage == 4) {
-      console.log("[Rufus] Adding RufusWeek4");
       events.push(createEvent("RufusWeek4"));
     }
   }
 
   if (ver.season == 13) {
-    console.log(`[WaterLevel] Season 13 detected, WaterLevel: ${config.WaterLevel}`);
-    
     if (config.WaterLevel == 1) {
-      console.log("[WaterLevel] Adding WL1");
       events.push(createEvent("WL1"));
     }
     if (config.WaterLevel == 2) {
-      console.log("[WaterLevel] Adding WL2");
       events.push(createEvent("WL2"));
     }
     if (config.WaterLevel == 3) {
-      console.log("[WaterLevel] Adding WL3");
       events.push(createEvent("WL3"));
     }
     if (config.WaterLevel == 4) {
-      console.log("[WaterLevel] Adding WL4");
       events.push(createEvent("WL4"));
     }
     if (config.WaterLevel == 5) {
-      console.log("[WaterLevel] Adding WL5");
       events.push(createEvent("WL5"));
     }
     if (config.WaterLevel == 6) {
-      console.log("[WaterLevel] Adding WL6");
       events.push(createEvent("WL6"));
     }
     if (config.WaterLevel == 7) {
-      console.log("[WaterLevel] Adding WL7");
       events.push(createEvent("WL7"));
+    }
+    if (config.WaterLevel == 8) {
+      events.push(createEvent("WL8"));
     }
   }
 

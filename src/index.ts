@@ -907,6 +907,107 @@ async function clearExportedData() {
   }
 }
 
+// Function for Game Configuration menu
+async function gameConfigurationMenu() {
+  let continueLoop = true;
+  
+  while (continueLoop) {
+    try {
+      // Clear console and redisplay logo
+      console.clear();
+      
+      // Redisplay centered logo using the global logo variable
+      const terminalWidth = process.stdout.columns || 80;
+      const lines = logo.split('\n');
+      const centeredLogo = lines.map(line => {
+        const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+        return ' '.repeat(padding) + line;
+      }).join('\n');
+      
+      console.log(centeredLogo);
+      console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
+      
+      // Display last status message if exists
+      if (lastStatusMessage) {
+        console.log(`\x1b[36m[BACKEND]\x1b[0m ${lastStatusMessage}`);
+      }
+      
+      // Read current config
+      const configPath = path.join(__dirname, 'config', 'config.ini');
+      const config = ini.parse(fs.readFileSync(configPath, 'utf-8'));
+      const rufusStage = config.RufusStage || '1';
+      const waterLevel = config.WaterLevel || '1';
+      
+      console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\x1b[36m                  Game Configuration\x1b[0m');
+      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log(`\x1b[32m(1)\x1b[0m Rufus Week Stage (27.11) - \x1b[32mCurrent:\x1b[0m \x1b[33m${rufusStage}\x1b[0m`);
+      console.log(`\x1b[32m(2)\x1b[0m Water Level (13.X) - \x1b[32mCurrent:\x1b[0m \x1b[33m${waterLevel}\x1b[0m`);
+      console.log('\x1b[32m(BACK)\x1b[0m Return to other settings');
+      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      
+      const response = await prompts({
+        type: 'text',
+        name: 'choice',
+        message: '\x1b[32mSelect an option (1/2/BACK):\x1b[0m',
+        validate: (value: string) => {
+          if (value.toLowerCase() === 'back') return true;
+          const num = parseInt(value);
+          return (num === 1 || num === 2) ? true : 'Please enter 1, 2, or BACK';
+        }
+      });
+      
+      if (!response.choice || response.choice.toLowerCase() === 'back') {
+        lastStatusMessage = '';
+        continueLoop = false;
+        continue;
+      }
+      
+      const choice = response.choice;
+      
+      if (choice === '1') {
+        // Rufus Week Stage
+        const stageResponse = await prompts({
+          type: 'text',
+          name: 'stage',
+          message: '\x1b[32mEnter Rufus Week Stage (1-4):\x1b[0m',
+          validate: (value: string) => {
+            const num = parseInt(value);
+            return (num >= 1 && num <= 4) ? true : 'Please enter a number between 1 and 4';
+          }
+        });
+        
+        if (stageResponse.stage) {
+          config.RufusStage = stageResponse.stage;
+          fs.writeFileSync(configPath, ini.stringify(config));
+          lastStatusMessage = `\x1b[32m✓ Rufus Week Stage set to ${stageResponse.stage}!\x1b[0m`;
+        }
+      } else if (choice === '2') {
+        // Water Level
+        const levelResponse = await prompts({
+          type: 'text',
+          name: 'level',
+          message: '\x1b[32mEnter Water Level (1-8):\x1b[0m',
+          validate: (value: string) => {
+            const num = parseInt(value);
+            return (num >= 1 && num <= 8) ? true : 'Please enter a number between 1 and 8';
+          }
+        });
+        
+        if (levelResponse.level) {
+          config.WaterLevel = levelResponse.level;
+          fs.writeFileSync(configPath, ini.stringify(config));
+          lastStatusMessage = `\x1b[32m✓ Water Level set to ${levelResponse.level}!\x1b[0m`;
+        }
+      }
+      
+    } catch (error) {
+      lastStatusMessage = `\x1b[31m✗ Failed to update configuration: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
+      continueLoop = false;
+    }
+  }
+}
+
 // Function for Other Settings menu
 async function otherSettingsMenu() {
   let continueLoop = true;
@@ -943,18 +1044,19 @@ async function otherSettingsMenu() {
       console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
       console.log(`\x1b[32m(1)\x1b[0m Toggle Arena Point Saving ${arenaStatus}`);
       console.log('\x1b[32m(2)\x1b[0m Arena Leaderboard');
-      console.log('\x1b[32m(3)\x1b[0m Manage Data');
+      console.log('\x1b[32m(3)\x1b[0m Game Configuration');
+      console.log('\x1b[32m(4)\x1b[0m Manage Data');
       console.log('\x1b[32m(BACK)\x1b[0m Return to main menu');
       console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
       
       const response = await prompts({
         type: 'text',
         name: 'choice',
-        message: '\x1b[32mSelect an option (1/2/3/BACK):\x1b[0m',
+        message: '\x1b[32mSelect an option (1/2/3/4/BACK):\x1b[0m',
         validate: (value: string) => {
           if (value.toLowerCase() === 'back') return true;
           const num = parseInt(value);
-          return (num === 1 || num === 2 || num === 3) ? true : 'Please enter 1, 2, 3, or BACK';
+          return (num >= 1 && num <= 4) ? true : 'Please enter 1, 2, 3, 4, or BACK';
         }
       });
       
@@ -980,6 +1082,11 @@ async function otherSettingsMenu() {
           lastStatusMessage = '';
           break;
         case '3':
+          // Game Configuration
+          await gameConfigurationMenu();
+          lastStatusMessage = '';
+          break;
+        case '4':
           // Manage Data
           await manageDataMenu();
           lastStatusMessage = '';
@@ -1016,7 +1123,7 @@ async function manageDataMenu() {
       console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
       
       console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
-      console.log('\x1b[36m                     Manage Data\x1b[0m');
+      console.log('\x1b[36m                    Data Management\x1b[0m');
       console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
       console.log('\x1b[32m(1)\x1b[0m Export Data');
       console.log('\x1b[32m(2)\x1b[0m Import Data');
