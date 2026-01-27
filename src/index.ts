@@ -720,77 +720,98 @@ async function modifyCurveTables() {
     });
     
     const action = actionResponse.action?.toLowerCase();
-    
+
     if (!action || action === 'back') {
+      lastStatusMessage = '';
       continueLoop = false;
-      break;
-    }
-    
-    if (action === '3') {
-      // List current CurveTable values
-      const curveTableRegex = /^\+CurveTable=(.+?);RowUpdate;(.+?);0;(.+)$/gm;
-      const matches = [...content.matchAll(curveTableRegex)];
-      
-      if (matches.length > 0) {
-        console.log('\n\x1b[36mCurrent CurveTable Values:\x1b[0m');
-        matches.forEach(match => {
-          console.log(`  \x1b[32m${match[2]}\x1b[0m = ${match[3]}`);
-          console.log(`    Path: ${match[1]}`);
-        });
-        lastStatusMessage = '\x1b[36mCurveTable list displayed.\x1b[0m';
-      } else {
-        console.log('\n\x1b[33mNo active CurveTable modifications found.\x1b[0m');
-        lastStatusMessage = '\x1b[33mNo active CurveTable modifications found.\x1b[0m';
-      }
-      console.log('');
-      
-      // Wait for user to press enter before returning to submenu
-      await prompts({
-        type: 'text',
-        name: 'continue',
-        message: '\x1b[90mPress Enter to continue...\x1b[0m'
-      });
-      
-      // Continue loop to show submenu again
       continue;
     }
-    
+
     if (action === '4') {
-      // Add custom CurveTable
       const nameResponse = await prompts({
         type: 'text',
         name: 'name',
-        message: '\x1b[32mEnter a name for this custom curvetable:\x1b[0m',
-        validate: (value: string) => value.length > 0 ? true : 'Name cannot be empty'
+        message: '\x1b[32mEnter a name for the custom CurveTable:\x1b[0m',
+        validate: (value: string) => value.trim().length > 0 ? true : 'Name cannot be empty'
       });
-      
+
       if (!nameResponse.name) {
-        // User cancelled
+        lastStatusMessage = '\x1b[33mCancelled.\x1b[0m';
         continue;
       }
-      
-      const pasteResponse = await prompts({
+
+      let isStatic = false;
+      let staticValue: string | undefined;
+      let multiLine = false;
+      let multiLines: string[] = [];
+
+      const staticResponse = await prompts({
         type: 'text',
-        name: 'paste',
-        message: '\x1b[32mPaste the curvetable string (e.g., +CurveTable=/Game/Athena/Balance/DataTables/AthenaGameData;RowUpdate;Default.TurboBuildInterval;0;0.002):\x1b[0m',
-        validate: (value: string) => value.startsWith('+CurveTable=') ? true : 'String must start with +CurveTable='
+        name: 'isStatic',
+        message: `\x1b[32mIs this custom CurveTable static? (Y/N):\x1b[0m`,
+        validate: (value: string) => ['y','Y','n','N'].includes(value) ? true : 'Please enter Y or N'
       });
-      
-      if (!pasteResponse.paste) {
-        // User cancelled
-        continue;
+      isStatic = staticResponse.isStatic && staticResponse.isStatic.toUpperCase() === 'Y';
+
+      const multiLineResponse = await prompts({
+        type: 'text',
+        name: 'multiLine',
+        message: `\x1b[32mDoes this custom CurveTable require multiple lines? (Y/N):\x1b[0m`,
+        validate: (value: string) => ['y','Y','n','N'].includes(value) ? true : 'Please enter Y or N'
+      });
+      multiLine = multiLineResponse.multiLine && multiLineResponse.multiLine.toUpperCase() === 'Y';
+
+      let curveString = '';
+      let key = '';
+      let value = '';
+      let path_part = '';
+
+      if (multiLine) {
+        const blockResponse = await prompts({
+          type: 'text',
+          name: 'block',
+          message: '\x1b[32mPaste all CurveTable lines (newline separated):\x1b[0m'
+        });
+        const rawBlock = blockResponse.block || '';
+        multiLines = rawBlock.split(/\r?\n/).map((l: string) => l.trim()).filter(Boolean);
+
+        if (multiLines.length === 0) {
+          lastStatusMessage = '\x1b[31m✗ No lines provided for multi-line CurveTable.\x1b[0m';
+          continue;
+        }
+
+        const match = multiLines[0].match(/^\+CurveTable=(.+?);RowUpdate;(.+?);(\d+);(.+)$/);
+        if (!match) {
+          lastStatusMessage = '\x1b[31m✗ Invalid curvetable format in first line. Expected: +CurveTable=/path;RowUpdate;key;0;value\x1b[0m';
+          continue;
+        }
+        [, path_part, key, , value] = match;
+        curveString = multiLines.join('\n');
+        if (isStatic) staticValue = value;
+      } else {
+        const pasteResponse = await prompts({
+          type: 'text',
+          name: 'paste',
+          message: '\x1b[32mPaste the curvetable string (e.g., +CurveTable=/Game/Athena/Balance/DataTables/AthenaGameData;RowUpdate;Default.TurboBuildInterval;0;0.002):\x1b[0m',
+          validate: (value: string) => value.startsWith('+CurveTable=') ? true : 'String must start with +CurveTable='
+        });
+        
+        if (!pasteResponse.paste) {
+          // User cancelled
+          continue;
+        }
+        
+        curveString = pasteResponse.paste.trim();
+        const match = curveString.match(/^\+CurveTable=(.+?);RowUpdate;(.+?);(\d+);(.+)$/);
+        
+        if (!match) {
+          lastStatusMessage = '\x1b[31m✗ Invalid curvetable format. Expected: +CurveTable=/path;RowUpdate;key;0;value\x1b[0m';
+          continue;
+        }
+        
+        [, path_part, key, , value] = match;
+        if (isStatic) staticValue = value;
       }
-      
-      // Parse the curvetable string
-      const curveString = pasteResponse.paste.trim();
-      const match = curveString.match(/^\+CurveTable=(.+?);RowUpdate;(.+?);(\d+);(.+)$/);
-      
-      if (!match) {
-        lastStatusMessage = '\x1b[31m✗ Invalid curvetable format. Expected: +CurveTable=/path;RowUpdate;key;0;value\x1b[0m';
-        continue;
-      }
-      
-      const [_, path_part, key, zeroVal, value] = match;
       
       // Find next ID
       const maxId = Math.max(...Object.keys(curves).map(k => parseInt(k)).filter(n => !isNaN(n)), 0);
@@ -802,8 +823,10 @@ async function modifyCurveTables() {
         key: key,
         value: value,
         pathPart: path_part,
-        type: 'custom',
-        isCustom: true
+        type: isStatic ? 'static' : 'custom',
+        isCustom: true,
+        ...(isStatic && staticValue !== undefined ? { staticValue } : {}),
+        ...(multiLine && multiLines.length > 0 ? { multiLines } : {})
       };
       
       fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
@@ -931,53 +954,111 @@ async function modifyCurveTables() {
         lastStatusMessage = '\x1b[33mCurveTable not found in INI file.\x1b[0m';
       }
     } else if (action === '1') {
-      // Add: Prompt for value and add/update the line
-      let newValue: string;
-      if (selectedCurve.type === 'static') {
-        newValue = selectedCurve.staticValue;
-        console.log(`\x1b[32mUsing static value: ${newValue}\x1b[0m`);
-      } else {
-        const valueResponse = await prompts({
-          type: 'text',
-          name: 'value',
-          message: `\x1b[32mEnter new value for ${selectedCurve.name}:\x1b[0m`,
-          validate: (value: string) => !isNaN(Number(value)) ? true : 'Please enter a valid number'
-        });
-        
-        if (!valueResponse.value && valueResponse.value !== '0') {
-          // User cancelled
-          continue;
+      // Add/update: handle single-line and multi-line curves, respecting static curves without prompting
+      if (selectedCurve.multiLines && selectedCurve.multiLines.length > 0) {
+        let linesToUse = selectedCurve.multiLines as string[];
+
+        // Allow updating multi-line content for non-static curves
+        if (selectedCurve.type !== 'static') {
+          const blockResponse = await prompts({
+            type: 'text',
+            name: 'block',
+            message: '\x1b[32mPaste new CurveTable lines (leave empty to reuse stored):\x1b[0m'
+          });
+          if (blockResponse.block && blockResponse.block.trim()) {
+            linesToUse = blockResponse.block
+              .split(/\r?\n/)
+              .map((l: string) => l.trim())
+              .filter(Boolean);
+
+            const firstMatch = linesToUse[0]?.match(/^\+CurveTable=(.+?);RowUpdate;(.+?);(\d+);(.+)$/);
+            if (firstMatch) {
+              selectedCurve.pathPart = firstMatch[1];
+              selectedCurve.key = firstMatch[2];
+              selectedCurve.value = firstMatch[4];
+            }
+            selectedCurve.multiLines = linesToUse;
+            curves[curveResponse.curve] = selectedCurve;
+            fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
+          }
         }
-        
-        newValue = valueResponse.value;
-      }
-      
-      const pathPart = selectedCurve.pathPart || '/Game/Athena/Balance/DataTables/AthenaGameData';
-      const curveLine = `+CurveTable=${pathPart};RowUpdate;${selectedCurve.key};0;${newValue}`;
-      const escapedKey = selectedCurve.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const existingLineRegex = new RegExp(`\\+CurveTable=.*;RowUpdate;${escapedKey};0;.*`, 'g');
-      
-      if (existingLineRegex.test(content)) {
-        // Update existing
-        content = content.replace(existingLineRegex, curveLine);
-      } else {
-        // Add new
+
+        const escapedKey = selectedCurve.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`^\\+CurveTable=.*;RowUpdate;${escapedKey};\\d+;.*$`, 'gm');
+        content = content.replace(regex, '').replace(/^\s*\n/gm, '');
+
         const assetHotfixIndex = content.indexOf('[AssetHotfix]');
         if (assetHotfixIndex !== -1) {
           const insertPoint = content.indexOf('\n', assetHotfixIndex) + 1;
-          content = content.slice(0, insertPoint) + curveLine + '\n' + content.slice(insertPoint);
+          content = content.slice(0, insertPoint) + linesToUse.join('\n') + '\n' + content.slice(insertPoint);
         }
+
+        // Clear deleted state if it was previously deleted
+        if (selectedCurve.isDeleted) {
+          delete selectedCurve.isDeleted;
+          delete selectedCurve.deletedLine;
+          curves[curveResponse.curve] = selectedCurve;
+          fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
+        }
+
+        lastStatusMessage = '\x1b[32m✓ CurveTable added/updated successfully!\x1b[0m';
+      } else {
+        // Single-line path (existing behavior) with static-value shortcut
+        let newValue: string;
+        if (selectedCurve.type === 'static') {
+          newValue = selectedCurve.staticValue;
+          console.log(`\x1b[32mUsing static value: ${newValue}\x1b[0m`);
+        } else {
+          const valueResponse = await prompts({
+            type: 'text',
+            name: 'value',
+            message: `\x1b[32mEnter new value for ${selectedCurve.name}:\x1b[0m`,
+            validate: (value: string) => !isNaN(Number(value)) ? true : 'Please enter a valid number'
+          });
+
+          if (!valueResponse.value && valueResponse.value !== '0') {
+            // User cancelled
+            continue;
+          }
+
+          newValue = valueResponse.value;
+        }
+
+        const pathPart = selectedCurve.pathPart || '/Game/Athena/Balance/DataTables/AthenaGameData';
+        const curveLine = `+CurveTable=${pathPart};RowUpdate;${selectedCurve.key};0;${newValue}`;
+        const escapedKey = selectedCurve.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const existingLineRegex = new RegExp(`\\+CurveTable=.*;RowUpdate;${escapedKey};0;.*`, 'g');
+
+        if (existingLineRegex.test(content)) {
+          // Update existing
+          content = content.replace(existingLineRegex, curveLine);
+        } else {
+          // Add new
+          const assetHotfixIndex = content.indexOf('[AssetHotfix]');
+          if (assetHotfixIndex !== -1) {
+            const insertPoint = content.indexOf('\n', assetHotfixIndex) + 1;
+            content = content.slice(0, insertPoint) + curveLine + '\n' + content.slice(insertPoint);
+          }
+        }
+
+        // Clear deleted state if it was previously deleted and restore all deleted lines
+        if (selectedCurve.isDeleted) {
+          if (selectedCurve.deletedLine) {
+            const linesToRestore = selectedCurve.deletedLine.split('\n');
+            const assetHotfixIndex = content.indexOf('[AssetHotfix]');
+            if (assetHotfixIndex !== -1) {
+              const insertPoint = content.indexOf('\n', assetHotfixIndex) + 1;
+              content = content.slice(0, insertPoint) + linesToRestore.join('\n') + '\n' + content.slice(insertPoint);
+            }
+          }
+          delete selectedCurve.isDeleted;
+          delete selectedCurve.deletedLine;
+          curves[curveResponse.curve] = selectedCurve;
+          fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
+        }
+
+        lastStatusMessage = '\x1b[32m✓ CurveTable added/updated successfully!\x1b[0m';
       }
-      
-      // Clear deleted state if it was previously deleted
-      if (selectedCurve.isDeleted) {
-        delete selectedCurve.isDeleted;
-        delete selectedCurve.deletedLine;
-        curves[curveResponse.curve] = selectedCurve;
-        fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
-      }
-      
-      lastStatusMessage = '\x1b[32m✓ CurveTable added/updated successfully!\x1b[0m';
     }
     
       fs.writeFileSync(iniPath, content);
@@ -1228,4 +1309,3 @@ const startServer = async () => {
 
 // Main execution
 startServer();
-
