@@ -249,11 +249,12 @@ async function toggleStraightBloom() {
 // Function to import CurveTables from DefaultGame.ini
 async function importCurveTables() {
   try {
-    const importsDir = path.join(__dirname, '../imports');
+    const importsDir = path.join(__dirname, '../exports/DefaultGame');
     
     // Check if imports directory exists
     if (!fs.existsSync(importsDir)) {
-      fs.mkdirSync(importsDir, { recursive: true });
+      lastStatusMessage = '\x1b[33m\u2717 No DefaultGame.ini found in exports folder. Please export data first.\x1b[0m';
+      return;
     }
     
     // Look for any .ini files in imports folder
@@ -264,7 +265,7 @@ async function importCurveTables() {
     });
     
     if (iniFiles.length === 0) {
-      lastStatusMessage = '\x1b[33m✗ No .ini files found in imports folder. Please add a file first.\x1b[0m';
+      lastStatusMessage = '\x1b[33m✗ No .ini files found in exports/DefaultGame folder.\x1b[0m';
       return;
     }
     
@@ -595,6 +596,285 @@ async function showArenaLeaderboard() {
   }
 }
 
+// Helper function to copy directory recursively
+function copyDirRecursive(src: string, dest: string): void {
+  if (!fs.existsSync(src)) return;
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest, { recursive: true });
+  }
+  
+  const items = fs.readdirSync(src);
+  items.forEach(item => {
+    const srcPath = path.join(src, item);
+    const destPath = path.join(dest, item);
+    const stat = fs.statSync(srcPath);
+    
+    if (stat.isDirectory()) {
+      copyDirRecursive(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  });
+}
+
+// Function to export data
+async function exportData() {
+  try {
+    const exportsDir = path.join(__dirname, '../exports');
+    const defaultGameExportDir = path.join(exportsDir, 'DefaultGame');
+    const profilesExportDir = path.join(exportsDir, 'Profiles');
+    const clientSettingsExportDir = path.join(exportsDir, 'ClientSettings');
+    
+    // Create export directories if they don't exist
+    fs.mkdirSync(defaultGameExportDir, { recursive: true });
+    fs.mkdirSync(profilesExportDir, { recursive: true });
+    fs.mkdirSync(clientSettingsExportDir, { recursive: true });
+    
+    console.clear();
+    const terminalWidth = process.stdout.columns || 80;
+    const lines = logo.split('\n');
+    const centeredLogo = lines.map(line => {
+      const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+      return ' '.repeat(padding) + line;
+    }).join('\n');
+    
+    console.log(centeredLogo);
+    console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
+    console.log('');
+    console.log('\x1b[36mExporting data...\x1b[0m');
+    
+    // Export DefaultGame.ini
+    const iniSourcePath = path.join(__dirname, '../static/hotfixes/DefaultGame.ini');
+    const iniDestPath = path.join(defaultGameExportDir, 'DefaultGame.ini');
+    if (fs.existsSync(iniSourcePath)) {
+      fs.copyFileSync(iniSourcePath, iniDestPath);
+      console.log(`\x1b[32m✓\x1b[0m DefaultGame.ini exported`);
+    } else {
+      console.log(`\x1b[33m✗\x1b[0m DefaultGame.ini not found`);
+    }
+    
+    // Export Profiles folders
+    const profilesSourceDir = path.join(__dirname, '../static/profiles');
+    if (fs.existsSync(profilesSourceDir)) {
+      const profileItems = fs.readdirSync(profilesSourceDir);
+      let profileCount = 0;
+      profileItems.forEach(item => {
+        const itemPath = path.join(profilesSourceDir, item);
+        const stat = fs.statSync(itemPath);
+        if (stat.isDirectory()) {
+          copyDirRecursive(itemPath, path.join(profilesExportDir, item));
+          profileCount++;
+        }
+      });
+      console.log(`\x1b[32m✓\x1b[0m ${profileCount} profile folder(s) exported`);
+    } else {
+      console.log(`\x1b[33m✗\x1b[0m Profiles source directory not found`);
+    }
+    
+    // Export ClientSettings folders
+    const clientSettingsSourceDir = path.join(__dirname, '../static/ClientSettings');
+    if (fs.existsSync(clientSettingsSourceDir)) {
+      const clientItems = fs.readdirSync(clientSettingsSourceDir);
+      let clientCount = 0;
+      clientItems.forEach(item => {
+        const itemPath = path.join(clientSettingsSourceDir, item);
+        const stat = fs.statSync(itemPath);
+        if (stat.isDirectory()) {
+          copyDirRecursive(itemPath, path.join(clientSettingsExportDir, item));
+          clientCount++;
+        }
+      });
+      console.log(`\x1b[32m✓\x1b[0m ${clientCount} ClientSettings folder(s) exported`);
+    } else {
+      console.log(`\x1b[33m✗\x1b[0m ClientSettings source directory not found`);
+    }
+    
+    console.log('');
+    lastStatusMessage = '\x1b[32m✓ Data exported successfully!\x1b[0m';
+    
+    await prompts({
+      type: 'text',
+      name: 'continue',
+      message: '\x1b[90mPress Enter to continue...\x1b[0m'
+    });
+    
+  } catch (error) {
+    lastStatusMessage = `\x1b[31m✗ Export failed: ${(error instanceof Error ? error.message : String(error))}\\x1b[0m`;
+    await prompts({
+      type: 'text',
+      name: 'continue',
+      message: '\x1b[90mPress Enter to continue...\x1b[0m'
+    });
+  }
+}
+
+// Function to import data
+async function importData() {
+  try {
+    const exportsDir = path.join(__dirname, '../exports');
+    const defaultGameExportDir = path.join(exportsDir, 'DefaultGame');
+    const profilesExportDir = path.join(exportsDir, 'Profiles');
+    const clientSettingsExportDir = path.join(exportsDir, 'ClientSettings');
+    
+    console.clear();
+    const terminalWidth = process.stdout.columns || 80;
+    const lines = logo.split('\n');
+    const centeredLogo = lines.map(line => {
+      const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+      return ' '.repeat(padding) + line;
+    }).join('\n');
+    
+    console.log(centeredLogo);
+    console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
+    console.log('');
+    
+    // Confirm import
+    const confirmResponse = await prompts({
+      type: 'text',
+      name: 'confirm',
+      message: '\x1b[31mAre you sure you want to import data? This will overwrite existing files. (Y/N):\x1b[0m',
+      validate: (value: string) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
+    });
+    
+    if (!confirmResponse.confirm || confirmResponse.confirm.toUpperCase() !== 'Y') {
+      lastStatusMessage = '\x1b[33mImport cancelled.\x1b[0m';
+      return;
+    }
+    
+    console.log('\x1b[36mImporting data...\x1b[0m');
+    
+    // Import Profiles folders
+    const profilesDestDir = path.join(__dirname, '../static/profiles');
+    if (fs.existsSync(profilesExportDir)) {
+      const profileItems = fs.readdirSync(profilesExportDir);
+      let profileCount = 0;
+      profileItems.forEach(item => {
+        const itemPath = path.join(profilesExportDir, item);
+        const stat = fs.statSync(itemPath);
+        if (stat.isDirectory()) {
+          copyDirRecursive(itemPath, path.join(profilesDestDir, item));
+          profileCount++;
+        }
+      });
+      console.log(`\x1b[32m✓\x1b[0m ${profileCount} profile folder(s) imported`);
+    } else {
+      console.log(`\x1b[33m✗\x1b[0m Profiles not found in exports`);
+    }
+    
+    // Import ClientSettings folders
+    const clientSettingsDestDir = path.join(__dirname, '../static/ClientSettings');
+    if (fs.existsSync(clientSettingsExportDir)) {
+      const clientItems = fs.readdirSync(clientSettingsExportDir);
+      let clientCount = 0;
+      clientItems.forEach(item => {
+        const itemPath = path.join(clientSettingsExportDir, item);
+        const stat = fs.statSync(itemPath);
+        if (stat.isDirectory()) {
+          copyDirRecursive(itemPath, path.join(clientSettingsDestDir, item));
+          clientCount++;
+        }
+      });
+      console.log(`\x1b[32m✓\x1b[0m ${clientCount} ClientSettings folder(s) imported`);
+    } else {
+      console.log(`\x1b[33m✗\x1b[0m ClientSettings not found in exports`);
+    }
+    
+    console.log('');
+    lastStatusMessage = '\x1b[32m✓ Data imported successfully!\x1b[0m';
+    
+    await prompts({
+      type: 'text',
+      name: 'continue',
+      message: '\x1b[90mPress Enter to continue...\x1b[0m'
+    });
+    
+  } catch (error) {
+    lastStatusMessage = `\x1b[31m✗ Import failed: ${(error instanceof Error ? error.message : String(error))}\\x1b[0m`;
+    await prompts({
+      type: 'text',
+      name: 'continue',
+      message: '\x1b[90mPress Enter to continue...\x1b[0m'
+    });
+  }
+}
+
+// Helper function to delete directory recursively
+function deleteDirRecursive(dirPath: string): void {
+  if (!fs.existsSync(dirPath)) return;
+  
+  const items = fs.readdirSync(dirPath);
+  items.forEach(item => {
+    const itemPath = path.join(dirPath, item);
+    const stat = fs.statSync(itemPath);
+    
+    if (stat.isDirectory()) {
+      deleteDirRecursive(itemPath);
+    } else {
+      fs.unlinkSync(itemPath);
+    }
+  });
+  
+  fs.rmdirSync(dirPath);
+}
+
+// Function to clear exported data
+async function clearExportedData() {
+  try {
+    const exportsDir = path.join(__dirname, '../exports');
+    
+    console.clear();
+    const terminalWidth = process.stdout.columns || 80;
+    const lines = logo.split('\n');
+    const centeredLogo = lines.map(line => {
+      const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+      return ' '.repeat(padding) + line;
+    }).join('\n');
+    
+    console.log(centeredLogo);
+    console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
+    console.log('');
+    
+    // Confirm clear
+    const confirmResponse = await prompts({
+      type: 'text',
+      name: 'confirm',
+      message: '\x1b[31mAre you sure you want to clear all exported data? (Y/N):\x1b[0m',
+      validate: (value: string) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
+    });
+    
+    if (!confirmResponse.confirm || confirmResponse.confirm.toUpperCase() !== 'Y') {
+      lastStatusMessage = '\x1b[33mClear cancelled.\x1b[0m';
+      return;
+    }
+    
+    console.log('\x1b[36mClearing exported data...\x1b[0m');
+    
+    if (fs.existsSync(exportsDir)) {
+      deleteDirRecursive(exportsDir);
+      console.log(`\x1b[32m✓\x1b[0m Exported data cleared`);
+    } else {
+      console.log(`\x1b[33m✗\x1b[0m No exported data found`);
+    }
+    
+    console.log('');
+    lastStatusMessage = '\x1b[32m✓ Exported data cleared successfully!\x1b[0m';
+    
+    await prompts({
+      type: 'text',
+      name: 'continue',
+      message: '\x1b[90mPress Enter to continue...\x1b[0m'
+    });
+    
+  } catch (error) {
+    lastStatusMessage = `\x1b[31m✗ Clear failed: ${(error instanceof Error ? error.message : String(error))}\\x1b[0m`;
+    await prompts({
+      type: 'text',
+      name: 'continue',
+      message: '\x1b[90mPress Enter to continue...\x1b[0m'
+    });
+  }
+}
+
 // Function for Other Settings menu
 async function otherSettingsMenu() {
   let continueLoop = true;
@@ -631,17 +911,18 @@ async function otherSettingsMenu() {
       console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
       console.log(`\x1b[32m(1)\x1b[0m Toggle Arena Point Saving ${arenaStatus}`);
       console.log('\x1b[32m(2)\x1b[0m Arena Leaderboard');
+      console.log('\x1b[32m(3)\x1b[0m Manage Data');
       console.log('\x1b[32m(BACK)\x1b[0m Return to main menu');
       console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
       
       const response = await prompts({
         type: 'text',
         name: 'choice',
-        message: '\x1b[32mSelect an option (1/2/BACK):\x1b[0m',
+        message: '\x1b[32mSelect an option (1/2/3/BACK):\x1b[0m',
         validate: (value: string) => {
           if (value.toLowerCase() === 'back') return true;
           const num = parseInt(value);
-          return (num === 1 || num === 2) ? true : 'Please enter 1, 2, or BACK';
+          return (num === 1 || num === 2 || num === 3) ? true : 'Please enter 1, 2, 3, or BACK';
         }
       });
       
@@ -666,12 +947,88 @@ async function otherSettingsMenu() {
           await showArenaLeaderboard();
           lastStatusMessage = '';
           break;
+        case '3':
+          // Manage Data
+          await manageDataMenu();
+          lastStatusMessage = '';
+          break;
         default:
           break;
       }
       
     } catch (error) {
       lastStatusMessage = `\x1b[31m✗ Failed to update settings: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
+      continueLoop = false;
+    }
+  }
+}
+
+// Function to manage data (export, import, clear)
+async function manageDataMenu() {
+  let continueLoop = true;
+  
+  while (continueLoop) {
+    try {
+      // Clear console and redisplay logo
+      console.clear();
+      
+      // Redisplay centered logo using the global logo variable
+      const terminalWidth = process.stdout.columns || 80;
+      const lines = logo.split('\n');
+      const centeredLogo = lines.map(line => {
+        const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+        return ' '.repeat(padding) + line;
+      }).join('\n');
+      
+      console.log(centeredLogo);
+      console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
+      
+      console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\x1b[36m                     Manage Data\x1b[0m');
+      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\x1b[32m(1)\x1b[0m Export Data');
+      console.log('\x1b[32m(2)\x1b[0m Import Data');
+      console.log('\x1b[32m(3)\x1b[0m Clear Exported Data');
+      console.log('\x1b[32m(BACK)\x1b[0m Return to other settings');
+      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      
+      const response = await prompts({
+        type: 'text',
+        name: 'choice',
+        message: '\x1b[32mSelect an option (1/2/3/BACK):\x1b[0m',
+        validate: (value: string) => {
+          if (value.toLowerCase() === 'back') return true;
+          const num = parseInt(value);
+          return (num === 1 || num === 2 || num === 3) ? true : 'Please enter 1, 2, 3, or BACK';
+        }
+      });
+      
+      if (!response.choice || response.choice.toLowerCase() === 'back') {
+        continueLoop = false;
+        continue;
+      }
+      
+      const choice = response.choice;
+      
+      switch (choice) {
+        case '1':
+          // Export Data
+          await exportData();
+          break;
+        case '2':
+          // Import Data
+          await importData();
+          break;
+        case '3':
+          // Clear Exported Data
+          await clearExportedData();
+          break;
+        default:
+          break;
+      }
+      
+    } catch (error) {
+      console.log(`\x1b[31m✗ Error: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`);
       continueLoop = false;
     }
   }
@@ -1354,8 +1711,8 @@ async function checkForUpdates() {
       }
     } else {
       console.log(`\x1b[32m✓\x1b[0m Backend is up to date (v${currentVersion})`);
-      console.log(`\x1b[90mContinuing in 3 seconds...\x1b[0m`);
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      console.log(`\x1b[90mContinuing in 1 second...\x1b[0m`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
       return true;
     }
   } catch (error) {

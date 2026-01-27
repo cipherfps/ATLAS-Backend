@@ -182,4 +182,5 @@ static/ClientSettings/*
 .vscode/settings.json
 profiles
 profile_athena.json
-imports/*.ini
+exports/*
+!exports/.gitkeep
