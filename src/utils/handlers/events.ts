@@ -2,8 +2,6 @@ import ini from "ini";
 import fs from "node:fs";
 import path from "node:path";
 
-var config = ini.parse(fs.readFileSync(path.join(__dirname, "../../config/config.ini"), "utf-8"));
-
 function createEvent(eventType: any) {
   return {
     eventType,
@@ -13,6 +11,17 @@ function createEvent(eventType: any) {
 }
 
 function getEvents(ver: any) {
+  // Reload config on each call to get the latest values
+  const rawConfig = ini.parse(fs.readFileSync(path.join(__dirname, "../../config/config.ini"), "utf-8"));
+  const config = {
+    RufusStage: parseInt(rawConfig.RufusStage) || 1,
+    WaterLevel: parseInt(rawConfig.WaterLevel) || 1,
+    SaveArenaPoints: rawConfig.SaveArenaPoints === 'true' || rawConfig.SaveArenaPoints === true,
+  };
+  
+  console.log(`[Events] Version: ${ver.build} (type: ${typeof ver.build}), RufusStage: ${config.RufusStage}, WaterLevel: ${config.WaterLevel}`);
+  console.log(`[Events] Full version object:`, ver);
+  
   let events = [
     createEvent(`EventFlag.Season${ver.season}`),
     createEvent(`EventFlag.${ver.lobby}`),
@@ -96,30 +105,6 @@ function getEvents(ver: any) {
       events.push(createEvent("FLA01"));
     }
 
-    if (ver.season == 13) {
-      if (config.WaterLevel == 1) {
-        events.push(createEvent("WL1"));
-      }
-      if (config.WaterLevel == 2) {
-        events.push(createEvent("WL2"));
-      }
-      if (config.WaterLevel == 3) {
-        events.push(createEvent("WL3"));
-      }
-      if (config.WaterLevel == 4) {
-        events.push(createEvent("WL4"));
-      }
-      if (config.WaterLevel == 5) {
-        events.push(createEvent("WL5"));
-      }
-      if (config.WaterLevel == 6) {
-        events.push(createEvent("WL6"));
-      }
-      if (config.WaterLevel == 7) {
-        events.push(createEvent("WL7"));
-      }
-    }
-
     if (ver.build == 13.4) {
       events.push(createEvent("SM1"));
     }
@@ -195,62 +180,59 @@ function getEvents(ver: any) {
       // Jujutsu Kaisen tab
       events.push(createEvent("EventFlag.Event_BelongTreaty"));
     }
+  }
 
-    if (ver.build == 27.11) {
-      // Durian Event
-      events.push(createEvent("DL01"));
-      events.push(createEvent("DL02"));
+  if (Math.abs(ver.build - 27.11) < 0.01) {
+    // Durian Event
+    events.push(createEvent("DL01"));
+    events.push(createEvent("DL02"));
+    
+    console.log(`[Rufus] Build 27.11 detected, RufusStage: ${config.RufusStage}`);
 
-      if (config.RufusStage == 2) {
-        events.push(createEvent("RufusWeek2"));
-      }
-      if (config.RufusStage == 3) {
-        events.push(createEvent("RufusWeek3"));
-      }
-      if (config.RufusStage == 4) {
-        events.push(createEvent("RufusWeek4"));
-      }
+    if (config.RufusStage == 2) {
+      console.log("[Rufus] Adding RufusWeek2");
+      events.push(createEvent("RufusWeek2"));
     }
-
-    if (ver.build == 28.1) {
-      // TMNT Tab countdown
-      events.push(createEvent("EventFlag.Event_LinedNotebook_Teaser"));
+    if (config.RufusStage == 3) {
+      console.log("[Rufus] Adding RufusWeek3");
+      events.push(createEvent("RufusWeek3"));
     }
-
-    if (ver.build == 28.2) {
-      // TMNT mini pass
-      events.push(createEvent("EventFlag.Event_LinedNotebook"));
+    if (config.RufusStage == 4) {
+      console.log("[Rufus] Adding RufusWeek4");
+      events.push(createEvent("RufusWeek4"));
     }
+  }
 
-    if (ver.build == 28.3) {
-      //Pre-Emergence Event
-      events.push(createEvent("CH5S1CPPE"));
+  if (ver.season == 13) {
+    console.log(`[WaterLevel] Season 13 detected, WaterLevel: ${config.WaterLevel}`);
+    
+    if (config.WaterLevel == 1) {
+      console.log("[WaterLevel] Adding WL1");
+      events.push(createEvent("WL1"));
     }
-
-    if (ver.build == 29.0) {
-      events.push(createEvent("EventFlag.Event_S29_SeasonalActivation"));
+    if (config.WaterLevel == 2) {
+      console.log("[WaterLevel] Adding WL2");
+      events.push(createEvent("WL2"));
     }
-
-    if (ver.build == 29.2 || ver.build == 29.3) {
-      events.push(createEvent("EventFlag.Event_S29_ColdDay"));
-      events.push(createEvent("AtlaShrines"));
-      events.push(createEvent("AtlaScrolls"));
-      events.push(createEvent("AtlaChests"));
+    if (config.WaterLevel == 3) {
+      console.log("[WaterLevel] Adding WL3");
+      events.push(createEvent("WL3"));
     }
-
-    if (ver.build == 29.4) {
-      events.push(createEvent("EventFlag.Event_Osiris"));
-      events.push(createEvent("SUPERSPORT_BUILDUP_1"));
-      events.push(createEvent("SUPERSPORT_BUILDUP_2"));
-      events.push(createEvent("SUPERSPORT_BUILDUP_3"));
-      events.push(createEvent("SUPERSPORT_CHARGE_1"));
-      events.push(createEvent("SUPERSPORT_STRIKE_1"));
-      events.push(createEvent("SUPERSPORT_CHARGE_2"));
-      events.push(createEvent("SUPERSPORT_STRIKE_2"));
-      events.push(createEvent("SUPERSPORT_CHARGE_3"));
-      events.push(createEvent("SUPERSPORT_STRIKE_3"));
-      events.push(createEvent("SUPERSPORT_SANDSTORM"));
-      events.push(createEvent("SUPERSPORT_LIGHT_2"));
+    if (config.WaterLevel == 4) {
+      console.log("[WaterLevel] Adding WL4");
+      events.push(createEvent("WL4"));
+    }
+    if (config.WaterLevel == 5) {
+      console.log("[WaterLevel] Adding WL5");
+      events.push(createEvent("WL5"));
+    }
+    if (config.WaterLevel == 6) {
+      console.log("[WaterLevel] Adding WL6");
+      events.push(createEvent("WL6"));
+    }
+    if (config.WaterLevel == 7) {
+      console.log("[WaterLevel] Adding WL7");
+      events.push(createEvent("WL7"));
     }
   }
 
