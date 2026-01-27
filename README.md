@@ -3,19 +3,19 @@
 ATLAS is a Fortnite backend for all versions of fortnite designed for trickshotters!
 This backend has features such as the following:
 
-### CurveTables
+### 1. CurveTables
 - CurveTable Toggle
 - CurveTable Editor
 - CurveTable Importer
 
-### Straight Bloom
+### 2. Straight Bloom
 - Toggle Straight Bloom (Straight Sniper Bullets)
 
-### Importing/Exporting Data
+### 3. Importing/Exporting Data
 - Importing/Exporting Client Settings
 - Importing/Exporting Profiles
 
-### Other Features
+### 4. Other Features
 - Arena Playlist/Points (22.40 and under)
 - Arena Points Saving (Unfinished)
 - Arena Point Leaderboard with all Profiles
