@@ -19,7 +19,7 @@ This backend has features such as the following:
 - Arena Playlist/Points (22.40 and under)
 - Arena Points Saving (Unfinished)
 - Arena Point Leaderboard with all Profiles
-- Game Confiugration (GUI Rufus/Water Stage Editor)
+- Game Configuration (GUI Rufus/Water Stage Editor)
 
 If you want to contribute just fork this repository and make a pull request!
 
