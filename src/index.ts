@@ -625,6 +625,38 @@ async function exportData() {
     const profilesExportDir = path.join(exportsDir, 'Profiles');
     const clientSettingsExportDir = path.join(exportsDir, 'ClientSettings');
     
+    // Check if any export directories already exist with content
+    const hasExistingData = (
+      (fs.existsSync(defaultGameExportDir) && fs.readdirSync(defaultGameExportDir).length > 0) ||
+      (fs.existsSync(profilesExportDir) && fs.readdirSync(profilesExportDir).length > 0) ||
+      (fs.existsSync(clientSettingsExportDir) && fs.readdirSync(clientSettingsExportDir).length > 0)
+    );
+    
+    if (hasExistingData) {
+      console.clear();
+      const terminalWidth = process.stdout.columns || 80;
+      const lines = logo.split('\n');
+      const centeredLogo = lines.map(line => {
+        const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+        return ' '.repeat(padding) + line;
+      }).join('\n');
+      
+      console.log(centeredLogo);
+      console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
+      console.log('');
+      console.log('\x1b[33m⚠  Exported data already exists!\x1b[0m');
+      console.log('\x1b[33mPlease clear exported data before exporting again.\x1b[0m');
+      console.log('');
+      
+      await prompts({
+        type: 'text',
+        name: 'continue',
+        message: '\x1b[90mPress Enter to continue...\x1b[0m'
+      });
+      
+      return;
+    }
+    
     // Create export directories if they don't exist
     fs.mkdirSync(defaultGameExportDir, { recursive: true });
     fs.mkdirSync(profilesExportDir, { recursive: true });
@@ -847,7 +879,7 @@ async function clearExportedData() {
       return;
     }
     
-    console.log('\x1b[36mClearing exported data...\x1b[0m');
+    console.log('\x1b[32m✓\x1b[0m\x1b[31m Clearing exported data...\x1b[0m');
     
     if (fs.existsSync(exportsDir)) {
       deleteDirRecursive(exportsDir);
@@ -1280,24 +1312,49 @@ async function modifyCurveTables() {
         continue;
       }
 
-      const entries = activeMatches.map(match => {
+      // Group entries by key to handle multi-line curves
+      const entriesMap = new Map<string, any>();
+      
+      activeMatches.forEach(match => {
         const [, pathPart, key, rowValue, value] = match;
         const curveEntry = Object.values(curves as Record<string, any>).find((c: any) => c.key === key);
         const nameLabel = curveEntry ? curveEntry.name : '';
         const isCustom = !!curveEntry?.isCustom;
-        return { pathPart, key, rowValue, value, nameLabel, isCustom };
+        const isMultiLine = !!curveEntry?.multiLines;
+        
+        // Use key+pathPart as unique identifier for grouping
+        const uniqueKey = `${pathPart}:${key}`;
+        
+        if (!entriesMap.has(uniqueKey)) {
+          entriesMap.set(uniqueKey, { 
+            pathPart, 
+            key, 
+            rowValue, 
+            value, 
+            nameLabel, 
+            isCustom,
+            isMultiLine,
+            lineCount: 1
+          });
+        } else if (isMultiLine) {
+          // For multi-line curves, just increment the count
+          entriesMap.get(uniqueKey).lineCount++;
+        }
       });
+
+      const entries = Array.from(entriesMap.values());
 
       entries.forEach((entry, index) => {
         const displayName = entry.nameLabel || entry.key;
         const customTag = entry.isCustom ? ' \x1b[33m[CUSTOM]\x1b[0m' : '';
         console.log(`\x1b[36m(${index + 1})\x1b[0m ${displayName}${customTag}`);
       });
+      console.log('\x1b[36m(BACK)\x1b[0m Go back');
 
       const detailResponse = await prompts({
         type: 'text',
         name: 'detail',
-        message: '\x1b[32mEnter a number to view details or BACK to return:\x1b[0m',
+        message: '\x1b[32mChoose a curve to view details:\x1b[0m',
         validate: (value: string) => {
           if (value.toLowerCase() === 'back') return true;
           const num = parseInt(value, 10);
@@ -1314,12 +1371,27 @@ async function modifyCurveTables() {
       const entry = entries[idx];
 
       console.log('\n\x1b[33mCurveTable Details:\x1b[0m');
-      if (entry.nameLabel) {
-        console.log(`\x1b[36mNAME \x1b[0m: ${entry.nameLabel}`);
+      
+      // If it's a multi-line curve, show each line separately with full details
+      if (entry.isMultiLine && entry.lineCount > 1) {
+        // Find and display all matching lines
+        const allLinesRegex = new RegExp(`^\\+CurveTable=${entry.pathPart.replace(/[.*+?^${}()|[\]\\]/g, '\\\\$&')};RowUpdate;${entry.key.replace(/[.*+?^${}()|[\]\\]/g, '\\\\$&')};(\\d+);(.+)$`, 'gm');
+        const allMatches = [...content.matchAll(allLinesRegex)];
+        allMatches.forEach((match, i) => {
+          if (i > 0) console.log(''); // Add blank line between entries
+          console.log(`\x1b[36mNAME \x1b[0m: ${entry.nameLabel} (${i + 1})`);
+          console.log(`\x1b[32mKEY  \x1b[0m: ${entry.key}`);
+          console.log(`\x1b[35mPATH \x1b[0m: ${entry.pathPart}`);
+          console.log(`\x1b[33mVALUE\x1b[0m: ${match[2]}`);
+        });
+      } else {
+        if (entry.nameLabel) {
+          console.log(`\x1b[36mNAME \x1b[0m: ${entry.nameLabel}`);
+        }
+        console.log(`\x1b[32mKEY  \x1b[0m: ${entry.key}`);
+        console.log(`\x1b[35mPATH \x1b[0m: ${entry.pathPart}`);
+        console.log(`\x1b[33mVALUE\x1b[0m: ${entry.value}`);
       }
-      console.log(`\x1b[32mKEY  \x1b[0m: ${entry.key}`);
-      console.log(`\x1b[35mPATH \x1b[0m: ${entry.pathPart}`);
-      console.log(`\x1b[33mVALUE\x1b[0m: ${entry.value}`);
 
       await prompts({
         type: 'text',
