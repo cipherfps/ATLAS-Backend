@@ -154,6 +154,63 @@ const centeredLogo = lines.map(line => {
 
 // Don't display logo here - will display during startup
 
+const CURVE_TABLE_COMMENT = '# CurveTables';
+const STRAIGHT_BLOOM_COMMENT = '# Straight Bloom';
+
+function findInsertPoint(fileContent: string, commentLabel: string): number {
+  const commentIndex = fileContent.indexOf(commentLabel);
+  if (commentIndex !== -1) {
+    const newlineAfterComment = fileContent.indexOf('\n', commentIndex);
+    return newlineAfterComment === -1 ? fileContent.length : newlineAfterComment + 1;
+  }
+
+  const assetIndex = fileContent.indexOf('[AssetHotfix]');
+  if (assetIndex !== -1) {
+    const newlineAfterAsset = fileContent.indexOf('\n', assetIndex);
+    return newlineAfterAsset === -1 ? fileContent.length : newlineAfterAsset + 1;
+  }
+
+  return fileContent.length;
+}
+
+function ensureAssetSection(
+  fileContent: string,
+  commentLabel: string,
+  preferPrepend = false
+): { content: string; insertPoint: number } {
+  let content = fileContent;
+
+  if (!content.includes(commentLabel)) {
+    const assetIndex = content.indexOf('[AssetHotfix]');
+    if (assetIndex !== -1) {
+      if (preferPrepend) {
+        // Insert a dedicated section before the first [AssetHotfix]
+        content = `${content.slice(0, assetIndex)}[AssetHotfix]\n${commentLabel}\n${content.slice(assetIndex)}`;
+      } else {
+        const newlineAfterAsset = content.indexOf('\n', assetIndex);
+        const insertAt = newlineAfterAsset === -1 ? content.length : newlineAfterAsset + 1;
+        content = content.slice(0, insertAt) + `${commentLabel}\n` + content.slice(insertAt);
+      }
+    } else {
+      content = `${content.trimEnd()}\n[AssetHotfix]\n${commentLabel}\n`;
+    }
+  }
+
+  const insertPoint = findInsertPoint(content, commentLabel);
+  return { content, insertPoint };
+}
+
+function normalizeCurveTablePlacement(fileContent: string): string {
+  const curveLines = [...fileContent.matchAll(/^\+CurveTable=.*$/gm)].map(m => m[0]);
+  if (curveLines.length === 0) return fileContent;
+
+  let content = fileContent.replace(/^\+CurveTable=.*$/gm, '').replace(/^\s*\n/gm, '');
+  const ensured = ensureAssetSection(content, CURVE_TABLE_COMMENT, true);
+  content = ensured.content;
+  const insertPoint = ensured.insertPoint;
+  return content.slice(0, insertPoint) + curveLines.join('\n') + '\n' + content.slice(insertPoint);
+}
+
 // Function to toggle Straight Bloom
 async function toggleStraightBloom() {
   try {
@@ -176,34 +233,10 @@ async function toggleStraightBloom() {
       content = content.replace(/\n\n+/g, '\n');
       lastStatusMessage = '\x1b[32m✓ Straight Bloom disabled!\x1b[0m';
     } else {
-      // Add all sniper lines - find the last [AssetHotfix] section which should contain # Straight Bloom
-      const lines = content.split('\n');
-      let lastAssetHotfixIndex = -1;
-      
-      // Find the last [AssetHotfix] section
-      for (let i = lines.length - 1; i >= 0; i--) {
-        if (lines[i].trim() === '[AssetHotfix]') {
-          lastAssetHotfixIndex = i;
-          break;
-        }
-      }
-      
-      if (lastAssetHotfixIndex !== -1) {
-        // Look for # Straight Bloom comment after this [AssetHotfix]
-        let straightBloomIndex = -1;
-        for (let i = lastAssetHotfixIndex + 1; i < lines.length; i++) {
-          if (lines[i].trim() === '# Straight Bloom') {
-            straightBloomIndex = i;
-            break;
-          }
-        }
-        
-        if (straightBloomIndex !== -1) {
-          // Insert after the # Straight Bloom comment
-          lines.splice(straightBloomIndex + 1, 0, ...sniperSpreadLines);
-          content = lines.join('\n');
-        }
-      }
+      const ensured = ensureAssetSection(content, STRAIGHT_BLOOM_COMMENT);
+      content = ensured.content;
+      const insertPoint = ensured.insertPoint;
+      content = content.slice(0, insertPoint) + sniperSpreadLines.join('\n') + '\n' + content.slice(insertPoint);
       lastStatusMessage = '\x1b[32m✓ Straight Bloom enabled!\x1b[0m';
     }
     
@@ -304,6 +337,10 @@ async function importCurveTables() {
     const curvesPath = path.join(__dirname, '../responses/curves.json');
     let content = fs.readFileSync(iniPath, 'utf-8');
     const curves = JSON.parse(fs.readFileSync(curvesPath, 'utf-8'));
+
+    // Ensure CurveTables section exists and normalize placement before importing
+    const ensuredCurve = ensureAssetSection(content, CURVE_TABLE_COMMENT, true);
+    content = normalizeCurveTablePlacement(ensuredCurve.content);
     
     let importedCount = 0;
     let updatedCount = 0;
@@ -349,12 +386,9 @@ async function importCurveTables() {
           updatedCount++;
         } else {
           // Enable this default curve with the imported value
-          const assetHotfixIndex = content.indexOf('[AssetHotfix]');
-          if (assetHotfixIndex !== -1) {
-            const insertPoint = content.indexOf('\n', assetHotfixIndex) + 1;
-            content = content.slice(0, insertPoint) + fullLine + '\n' + content.slice(insertPoint);
-            enabledCount++;
-          }
+          const insertPoint = findInsertPoint(content, CURVE_TABLE_COMMENT);
+          content = content.slice(0, insertPoint) + fullLine + '\n' + content.slice(insertPoint);
+          enabledCount++;
           
           // Clear deleted state if it exists
           if (defaultCurve.isDeleted) {
@@ -396,12 +430,9 @@ async function importCurveTables() {
           };
           
           // Add to INI file
-          const assetHotfixIndex = content.indexOf('[AssetHotfix]');
-          if (assetHotfixIndex !== -1) {
-            const insertPoint = content.indexOf('\n', assetHotfixIndex) + 1;
-            content = content.slice(0, insertPoint) + fullLine + '\n' + content.slice(insertPoint);
-            customsAdded++;
-          }
+          const insertPoint = findInsertPoint(content, CURVE_TABLE_COMMENT);
+          content = content.slice(0, insertPoint) + fullLine + '\n' + content.slice(insertPoint);
+          customsAdded++;
         }
       }
     });
@@ -699,6 +730,7 @@ async function modifyCurveTables() {
     const iniPath = path.join(__dirname, '../static/hotfixes/DefaultGame.ini');
     const curves = JSON.parse(fs.readFileSync(curvesPath, 'utf-8'));
     let content = fs.readFileSync(iniPath, 'utf-8');
+    content = normalizeCurveTablePlacement(content);
     
     console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
     console.log('\x1b[36m                 CurveTable Management\x1b[0m');
@@ -753,65 +785,45 @@ async function modifyCurveTables() {
       });
       isStatic = staticResponse.isStatic && staticResponse.isStatic.toUpperCase() === 'Y';
 
-      const multiLineResponse = await prompts({
-        type: 'text',
-        name: 'multiLine',
-        message: `\x1b[32mDoes this custom CurveTable require multiple lines? (Y/N):\x1b[0m`,
-        validate: (value: string) => ['y','Y','n','N'].includes(value) ? true : 'Please enter Y or N'
-      });
-      multiLine = multiLineResponse.multiLine && multiLineResponse.multiLine.toUpperCase() === 'Y';
-
       let curveString = '';
       let key = '';
       let value = '';
       let path_part = '';
+      const pasteResponse = await prompts({
+        type: 'text',
+        name: 'block',
+        message: '\x1b[32mPaste CurveTable line(s) (comma or newline separated):\x1b[0m'
+      });
 
-      if (multiLine) {
-        const blockResponse = await prompts({
-          type: 'text',
-          name: 'block',
-          message: '\x1b[32mPaste all CurveTable lines (newline separated):\x1b[0m'
-        });
-        const rawBlock = blockResponse.block || '';
-        multiLines = rawBlock.split(/\r?\n/).map((l: string) => l.trim()).filter(Boolean);
-
-        if (multiLines.length === 0) {
-          lastStatusMessage = '\x1b[31m✗ No lines provided for multi-line CurveTable.\x1b[0m';
-          continue;
-        }
-
-        const match = multiLines[0].match(/^\+CurveTable=(.+?);RowUpdate;(.+?);(\d+);(.+)$/);
-        if (!match) {
-          lastStatusMessage = '\x1b[31m✗ Invalid curvetable format in first line. Expected: +CurveTable=/path;RowUpdate;key;0;value\x1b[0m';
-          continue;
-        }
-        [, path_part, key, , value] = match;
-        curveString = multiLines.join('\n');
-        if (isStatic) staticValue = value;
-      } else {
-        const pasteResponse = await prompts({
-          type: 'text',
-          name: 'paste',
-          message: '\x1b[32mPaste the curvetable string (e.g., +CurveTable=/Game/Athena/Balance/DataTables/AthenaGameData;RowUpdate;Default.TurboBuildInterval;0;0.002):\x1b[0m',
-          validate: (value: string) => value.startsWith('+CurveTable=') ? true : 'String must start with +CurveTable='
-        });
-        
-        if (!pasteResponse.paste) {
-          // User cancelled
-          continue;
-        }
-        
-        curveString = pasteResponse.paste.trim();
-        const match = curveString.match(/^\+CurveTable=(.+?);RowUpdate;(.+?);(\d+);(.+)$/);
-        
-        if (!match) {
-          lastStatusMessage = '\x1b[31m✗ Invalid curvetable format. Expected: +CurveTable=/path;RowUpdate;key;0;value\x1b[0m';
-          continue;
-        }
-        
-        [, path_part, key, , value] = match;
-        if (isStatic) staticValue = value;
+      const rawBlock = pasteResponse.block || '';
+      let parsedLines = rawBlock.split(/[\r\n,]+/).map((l: string) => l.trim()).filter(Boolean);
+      // Fallback: if lines were pasted with no separators, split on repeated +CurveTable markers
+      if (parsedLines.length <= 1 && rawBlock.includes('+CurveTable=')) {
+        const byMarker = rawBlock.split(/(?=\+CurveTable=)/).map((l: string) => l.trim()).filter(Boolean);
+        if (byMarker.length > parsedLines.length) parsedLines = byMarker;
       }
+
+      if (parsedLines.length === 0) {
+        lastStatusMessage = '\x1b[33mCancelled.\x1b[0m';
+        continue;
+      }
+
+      multiLine = parsedLines.length > 1;
+      if (multiLine) {
+        multiLines = parsedLines;
+        curveString = multiLines.join('\n');
+      } else {
+        curveString = parsedLines[0];
+      }
+
+      const match = parsedLines[0].match(/^\+CurveTable=(.+?);RowUpdate;(.+?);(\d+);(.+)$/);
+      if (!match) {
+        lastStatusMessage = '\x1b[31m✗ Invalid curvetable format. Expected: +CurveTable=/path;RowUpdate;key;0;value\x1b[0m';
+        continue;
+      }
+
+      [, path_part, key, , value] = match;
+      if (isStatic) staticValue = value;
       
       // Find next ID
       const maxId = Math.max(...Object.keys(curves).map(k => parseInt(k)).filter(n => !isNaN(n)), 0);
@@ -831,12 +843,9 @@ async function modifyCurveTables() {
       
       fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
       
-      // Add to INI file
-      const assetHotfixIndex = content.indexOf('[AssetHotfix]');
-      if (assetHotfixIndex !== -1) {
-        const insertPoint = content.indexOf('\n', assetHotfixIndex) + 1;
-        content = content.slice(0, insertPoint) + curveString + '\n' + content.slice(insertPoint);
-      }
+      // Add to INI file under the CurveTables section
+      const insertPoint = findInsertPoint(content, CURVE_TABLE_COMMENT);
+      content = content.slice(0, insertPoint) + curveString + '\n' + content.slice(insertPoint);
       
       fs.writeFileSync(iniPath, content);
       lastStatusMessage = '\x1b[32m✓ Custom curvetable added successfully!\x1b[0m';
@@ -934,12 +943,12 @@ async function modifyCurveTables() {
     if (action === '2') {
       // Delete: Remove the CurveTable line and store it
       const escapedKey = selectedCurve.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`^\\+CurveTable=.*;RowUpdate;${escapedKey};0;.*$`, 'gm');
-      const match = content.match(regex);
-      
-      if (match && match[0]) {
-        // Store the deleted line in the curve definition
-        selectedCurve.deletedLine = match[0];
+      const regex = new RegExp(`^\\+CurveTable=.*;RowUpdate;${escapedKey};\\d+;.*$`, 'gm');
+      const matches = content.match(regex);
+
+      if (matches && matches.length > 0) {
+        // Store all deleted lines for restoration
+        selectedCurve.deletedLine = matches.join('\n');
         selectedCurve.isDeleted = true;
         
         // Remove from INI file
@@ -963,13 +972,20 @@ async function modifyCurveTables() {
           const blockResponse = await prompts({
             type: 'text',
             name: 'block',
-            message: '\x1b[32mPaste new CurveTable lines (leave empty to reuse stored):\x1b[0m'
+            message: '\x1b[32mPaste new CurveTable lines (comma or newline separated, leave empty to reuse stored):\x1b[0m'
           });
           if (blockResponse.block && blockResponse.block.trim()) {
-            linesToUse = blockResponse.block
-              .split(/\r?\n/)
+            let parsed = blockResponse.block
+              .split(/[\r\n,]+/)
               .map((l: string) => l.trim())
               .filter(Boolean);
+
+            if (parsed.length <= 1 && blockResponse.block.includes('+CurveTable=')) {
+              const byMarker = blockResponse.block.split(/(?=\+CurveTable=)/).map((l: string) => l.trim()).filter(Boolean);
+              if (byMarker.length > parsed.length) parsed = byMarker;
+            }
+
+            linesToUse = parsed;
 
             const firstMatch = linesToUse[0]?.match(/^\+CurveTable=(.+?);RowUpdate;(.+?);(\d+);(.+)$/);
             if (firstMatch) {
@@ -987,11 +1003,8 @@ async function modifyCurveTables() {
         const regex = new RegExp(`^\\+CurveTable=.*;RowUpdate;${escapedKey};\\d+;.*$`, 'gm');
         content = content.replace(regex, '').replace(/^\s*\n/gm, '');
 
-        const assetHotfixIndex = content.indexOf('[AssetHotfix]');
-        if (assetHotfixIndex !== -1) {
-          const insertPoint = content.indexOf('\n', assetHotfixIndex) + 1;
-          content = content.slice(0, insertPoint) + linesToUse.join('\n') + '\n' + content.slice(insertPoint);
-        }
+        const insertPoint = findInsertPoint(content, CURVE_TABLE_COMMENT);
+        content = content.slice(0, insertPoint) + linesToUse.join('\n') + '\n' + content.slice(insertPoint);
 
         // Clear deleted state if it was previously deleted
         if (selectedCurve.isDeleted) {
@@ -1034,22 +1047,16 @@ async function modifyCurveTables() {
           content = content.replace(existingLineRegex, curveLine);
         } else {
           // Add new
-          const assetHotfixIndex = content.indexOf('[AssetHotfix]');
-          if (assetHotfixIndex !== -1) {
-            const insertPoint = content.indexOf('\n', assetHotfixIndex) + 1;
-            content = content.slice(0, insertPoint) + curveLine + '\n' + content.slice(insertPoint);
-          }
+          const insertPoint = findInsertPoint(content, CURVE_TABLE_COMMENT);
+          content = content.slice(0, insertPoint) + curveLine + '\n' + content.slice(insertPoint);
         }
 
         // Clear deleted state if it was previously deleted and restore all deleted lines
         if (selectedCurve.isDeleted) {
           if (selectedCurve.deletedLine) {
             const linesToRestore = selectedCurve.deletedLine.split('\n');
-            const assetHotfixIndex = content.indexOf('[AssetHotfix]');
-            if (assetHotfixIndex !== -1) {
-              const insertPoint = content.indexOf('\n', assetHotfixIndex) + 1;
-              content = content.slice(0, insertPoint) + linesToRestore.join('\n') + '\n' + content.slice(insertPoint);
-            }
+            const insertPoint = findInsertPoint(content, CURVE_TABLE_COMMENT);
+            content = content.slice(0, insertPoint) + linesToRestore.join('\n') + '\n' + content.slice(insertPoint);
           }
           delete selectedCurve.isDeleted;
           delete selectedCurve.deletedLine;
