@@ -100,5 +100,24 @@
     "staticValue": "1",
     "deletedLine": "+CurveTable=/Game/Athena/Balance/DataTables/AthenaGameData;RowUpdate;AllowNeutralEditing;0;1",
     "isDeleted": true
+  },
+  "19": {
+    "name": "Disable Fall Damage",
+    "key": "Player",
+    "pathPart": "/Game/Athena/Balance/DataTables/AthenaFallingDamage",
+    "type": "static",
+    "staticValue": "0.0",
+    "multiLines": [
+      "+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;0;0.0",
+      "+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;1299;0.0",
+      "+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;1300;0.0",
+      "+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;1536;0.0",
+      "+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;1920;0.0",
+      "+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;2304;0.0",
+      "+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;2704;0.0",
+      "+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;7200;0.0"
+    ],
+    "deletedLine": "+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;0;0.0\n+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;1299;0.0\n+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;1300;0.0\n+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;1536;0.0\n+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;1920;0.0\n+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;2304;0.0\n+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;2704;0.0\n+CurveTable=/Game/Athena/Balance/DataTables/AthenaFallingDamage;RowUpdate;Player;7200;0.0",
+    "isDeleted": true
   }
 }
