@@ -945,7 +945,7 @@ async function gameConfigurationMenu() {
       console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
       console.log(`\x1b[32m(1)\x1b[0m Rufus Week Stage (27.11) - \x1b[32mCurrent:\x1b[0m \x1b[33m${rufusStage}\x1b[0m`);
       console.log(`\x1b[32m(2)\x1b[0m Water Level (13.X) - \x1b[32mCurrent:\x1b[0m \x1b[33m${waterLevel}\x1b[0m`);
-      console.log(`\x1b[32m(3)\x1b[0m Toggle Water Storm (12.41) ${waterStormStatus}`);
+      console.log(`\x1b[32m(3)\x1b[0m Toggle Water Storm (12.61) ${waterStormStatus}`);
       console.log('\x1b[32m(BACK)\x1b[0m Return to other settings');
       console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
       
