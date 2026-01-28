@@ -16,8 +16,8 @@ function getEvents(ver: any) {
   const config = {
     RufusStage: parseInt(rawConfig.RufusStage) || 1,
     WaterLevel: parseInt(rawConfig.WaterLevel) || 1,
-    UseWaterStorm: rawConfig.UseWaterStorm === 'true' || rawConfig.UseWaterStorm === true,
-    SaveArenaPoints: rawConfig.SaveArenaPoints === 'true' || rawConfig.SaveArenaPoints === true,
+    UseWaterStorm: rawConfig.UseWaterStorm === 'true' || rawConfig.UseWaterStorm === 'True' || rawConfig.UseWaterStorm === true,
+    SaveArenaPoints: rawConfig.SaveArenaPoints === 'true' || rawConfig.SaveArenaPoints === 'True' || rawConfig.SaveArenaPoints === true,
   };
   
   let events = [
