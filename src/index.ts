@@ -308,23 +308,43 @@ async function importCurveTables() {
       return;
     }
     
+    // Group matches by pathPart + key to identify multi-line entries
+    const groupedMatches = new Map();
+    matches.forEach(match => {
+      const fullLine = match[0];
+      const pathPart = match[1];
+      const key = match[2];
+      const rowNum = match[3];
+      const value = match[4];
+      const groupKey = `${pathPart}|||${key}`;
+      
+      if (!groupedMatches.has(groupKey)) {
+        groupedMatches.set(groupKey, {
+          pathPart,
+          key,
+          value,
+          lines: []
+        });
+      }
+      groupedMatches.get(groupKey).lines.push(fullLine);
+    });
+    
     // Show found curvetables with better formatting
     console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
-    console.log(`\x1b[36m          Found ${matches.length} CurveTable(s) to Import\x1b[0m`);
+    console.log(`\x1b[36m          Found ${groupedMatches.size} CurveTable(s) to Import\x1b[0m`);
     console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
-    matches.forEach((match, index) => {
-      const key = match[2];
-      const value = match[4];
-      const displayKey = key.length > 45 ? '...' + key.slice(-42) : key;
-      console.log(`  \x1b[90m${String(index + 1).padStart(2, ' ')}.\x1b[0m \x1b[96m${displayKey}\x1b[0m`);
-      console.log(`      \x1b[90mValue:\x1b[0m ${value}`);
+    Array.from(groupedMatches.values()).forEach((group, index) => {
+      const displayKey = group.key.length > 45 ? '...' + group.key.slice(-42) : group.key;
+      const lineCountText = group.lines.length > 1 ? ` \x1b[90m(${group.lines.length} lines)\x1b[0m` : '';
+      console.log(`  \x1b[90m${String(index + 1).padStart(2, ' ')}.\x1b[0m \x1b[96m${displayKey}\x1b[0m${lineCountText}`);
+      console.log(`      \x1b[90mValue:\x1b[0m ${group.value}`);
     });
     console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m\n');
     
     const confirmResponse = await prompts({
       type: 'text',
       name: 'confirm',
-      message: `\x1b[32mImport all ${matches.length} curvetable(s)? (Y/N):\x1b[0m`,
+      message: `\x1b[32mImport all ${groupedMatches.size} curvetable(s)? (Y/N):\x1b[0m`,
       validate: (value: string) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
     });
     
@@ -349,46 +369,50 @@ async function importCurveTables() {
     let skippedCount = 0;
     let customsAdded = 0;
     
-    // Build a map of existing default curves by key
+    // Build a map of existing default curves by key and pathPart
     const defaultCurvesByKey = new Map();
     Object.entries(curves).forEach(([id, curve]: any) => {
-      defaultCurvesByKey.set(curve.key, { id, curve });
+      const groupKey = curve.pathPart ? `${curve.pathPart}|||${curve.key}` : curve.key;
+      defaultCurvesByKey.set(groupKey, { id, curve });
     });
     
-    // Import each curvetable
-    matches.forEach(match => {
-      const fullLine = match[0];
-      const pathPart = match[1];
-      const key = match[2];
-      const value = match[4];
+    // Import each curvetable group
+    Array.from(groupedMatches.values()).forEach(group => {
+      const { pathPart, key, value, lines } = group;
+      const isMultiLine = lines.length > 1;
       
-      // Check if this exact line already exists in INI (avoid duplicates)
+      // Build lookup keys
       const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const exactLineRegex = new RegExp(`^\\+CurveTable=.*;RowUpdate;${escapedKey};\\d+;${escapedValue}$`, 'gm');
+      const escapedPath = pathPart.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const groupKey = `${pathPart}|||${key}`;
       
-      if (exactLineRegex.test(content)) {
-        // Exact line already exists, skip it
+      // Check if any lines already exist
+      const existingLinesRegex = new RegExp(`^\\+CurveTable=${escapedPath};RowUpdate;${escapedKey};\\d+;.*$`, 'gm');
+      const existingMatches = [...content.matchAll(existingLinesRegex)];
+      
+      if (existingMatches.length > 0 && existingMatches.map(m => m[0]).join('\n') === lines.join('\n')) {
+        // Exact same lines already exist, skip
         skippedCount++;
         return;
       }
       
       // Check if this is a default ATLAS curve
-      if (defaultCurvesByKey.has(key)) {
-        const defaultEntry = defaultCurvesByKey.get(key);
+      if (defaultCurvesByKey.has(groupKey) || defaultCurvesByKey.has(key)) {
+        const defaultEntry = defaultCurvesByKey.get(groupKey) || defaultCurvesByKey.get(key);
         const defaultCurve = defaultEntry.curve;
         
-        // Check if line with this key exists in INI
-        const keyExistsRegex = new RegExp(`^\\+CurveTable=.*;RowUpdate;${escapedKey};\\d+;.*$`, 'gm');
-        
-        if (keyExistsRegex.test(content)) {
-          // Update existing value
-          content = content.replace(keyExistsRegex, fullLine);
+        if (existingMatches.length > 0) {
+          // Remove existing lines and replace with imported ones
+          existingMatches.forEach(match => {
+            content = content.replace(match[0] + '\n', '').replace(match[0], '');
+          });
+          const insertPoint = findInsertPoint(content, CURVE_TABLE_COMMENT);
+          content = content.slice(0, insertPoint) + lines.join('\n') + '\n' + content.slice(insertPoint);
           updatedCount++;
         } else {
-          // Enable this default curve with the imported value
+          // Add new lines
           const insertPoint = findInsertPoint(content, CURVE_TABLE_COMMENT);
-          content = content.slice(0, insertPoint) + fullLine + '\n' + content.slice(insertPoint);
+          content = content.slice(0, insertPoint) + lines.join('\n') + '\n' + content.slice(insertPoint);
           enabledCount++;
           
           // Clear deleted state if it exists
@@ -398,14 +422,21 @@ async function importCurveTables() {
             curves[defaultEntry.id] = defaultCurve;
           }
         }
+        
+        // Update multiLines if this is a multi-line entry
+        if (isMultiLine && !defaultCurve.multiLines) {
+          defaultCurve.multiLines = lines;
+          curves[defaultEntry.id] = defaultCurve;
+        }
       } else {
         // This is a custom curve not in default list
-        // Check if it already exists in INI with different value
-        const keyExistsRegex = new RegExp(`^\\+CurveTable=.*;RowUpdate;${escapedKey};\\d+;.*$`, 'gm');
-        
-        if (keyExistsRegex.test(content)) {
-          // Update existing custom curve
-          content = content.replace(keyExistsRegex, fullLine);
+        if (existingMatches.length > 0) {
+          // Remove existing lines and replace with imported ones
+          existingMatches.forEach(match => {
+            content = content.replace(match[0] + '\n', '').replace(match[0], '');
+          });
+          const insertPoint = findInsertPoint(content, CURVE_TABLE_COMMENT);
+          content = content.slice(0, insertPoint) + lines.join('\n') + '\n' + content.slice(insertPoint);
           updatedCount++;
         } else {
           // Add as new custom curve with auto-generated name
@@ -421,7 +452,7 @@ async function importCurveTables() {
           const newId = String(maxId + 1);
           
           // Add to curves.json
-          curves[newId] = {
+          const newCurve: any = {
             name: `Imported: ${autoName}`,
             key: key,
             value: value,
@@ -430,9 +461,16 @@ async function importCurveTables() {
             isCustom: true
           };
           
+          // Add multiLines if this is a multi-line entry
+          if (isMultiLine) {
+            newCurve.multiLines = lines;
+          }
+          
+          curves[newId] = newCurve;
+          
           // Add to INI file
           const insertPoint = findInsertPoint(content, CURVE_TABLE_COMMENT);
-          content = content.slice(0, insertPoint) + fullLine + '\n' + content.slice(insertPoint);
+          content = content.slice(0, insertPoint) + lines.join('\n') + '\n' + content.slice(insertPoint);
           customsAdded++;
         }
       }
@@ -441,6 +479,12 @@ async function importCurveTables() {
     // Save updated INI and curves
     fs.writeFileSync(iniPath, content);
     fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
+    
+    // Delete backup file to set CurveTables toggle to ON state
+    const backupPath = path.join(__dirname, '../responses/modifications-backup.json');
+    if (fs.existsSync(backupPath)) {
+      fs.unlinkSync(backupPath);
+    }
     
     // Build status message
     const statusParts = [];
@@ -811,6 +855,213 @@ async function importData() {
       console.log(`\x1b[33m✗\x1b[0m ClientSettings not found in exports`);
     }
     
+    // Import CurveTables from DefaultGame.ini if it exists
+    const defaultGameExportPath = path.join(__dirname, '../exports/DefaultGame/DefaultGame.ini');
+    if (fs.existsSync(defaultGameExportPath)) {
+      try {
+        const importContent = fs.readFileSync(defaultGameExportPath, 'utf-8');
+        
+        // Extract all CurveTable lines
+        const curveTableRegex = /^\+CurveTable=(.+?);RowUpdate;(.+?);(\d+);(.+)$/gm;
+        const matches = [...importContent.matchAll(curveTableRegex)];
+        
+        if (matches.length > 0) {
+          // Group matches by pathPart + key to identify multi-line entries
+          const groupedMatches = new Map();
+          matches.forEach(match => {
+            const fullLine = match[0];
+            const pathPart = match[1];
+            const key = match[2];
+            const rowNum = match[3];
+            const value = match[4];
+            const groupKey = `${pathPart}|||${key}`;
+            
+            if (!groupedMatches.has(groupKey)) {
+              groupedMatches.set(groupKey, {
+                pathPart,
+                key,
+                value,
+                lines: []
+              });
+            }
+            groupedMatches.get(groupKey).lines.push(fullLine);
+          });
+          
+          // Read current backend's DefaultGame.ini and curves.json
+          const iniPath = path.join(__dirname, '../static/hotfixes/DefaultGame.ini');
+          const curvesPath = path.join(__dirname, '../responses/curves.json');
+          let content = fs.readFileSync(iniPath, 'utf-8');
+          const curves = JSON.parse(fs.readFileSync(curvesPath, 'utf-8'));
+
+          // Ensure CurveTables section exists and normalize placement before importing
+          const ensuredCurve = ensureAssetSection(content, CURVE_TABLE_COMMENT, true);
+          content = normalizeCurveTablePlacement(ensuredCurve.content);
+          
+          let importedCount = 0;
+          
+          // Build a map of existing default curves by key and pathPart
+          const defaultCurvesByKey = new Map();
+          Object.entries(curves).forEach(([id, curve]: any) => {
+            const groupKey = curve.pathPart ? `${curve.pathPart}|||${curve.key}` : curve.key;
+            defaultCurvesByKey.set(groupKey, { id, curve });
+          });
+          
+          // Import each curvetable group
+          Array.from(groupedMatches.values()).forEach(group => {
+            const { pathPart, key, value, lines } = group;
+            const isMultiLine = lines.length > 1;
+            
+            // Build lookup keys
+            const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const escapedPath = pathPart.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const groupKey = `${pathPart}|||${key}`;
+            
+            // Check if any lines already exist
+            const existingLinesRegex = new RegExp(`^\\+CurveTable=${escapedPath};RowUpdate;${escapedKey};\\d+;.*$`, 'gm');
+            const existingMatches = [...content.matchAll(existingLinesRegex)];
+            
+            if (existingMatches.length > 0 && existingMatches.map(m => m[0]).join('\n') === lines.join('\n')) {
+              return; // Skip exact duplicates
+            }
+            
+            // Check if this is a default ATLAS curve
+            if (defaultCurvesByKey.has(groupKey) || defaultCurvesByKey.has(key)) {
+              const defaultEntry = defaultCurvesByKey.get(groupKey) || defaultCurvesByKey.get(key);
+              const defaultCurve = defaultEntry.curve;
+              
+              if (existingMatches.length > 0) {
+                // Remove existing lines and replace with imported ones
+                existingMatches.forEach(match => {
+                  content = content.replace(match[0] + '\n', '').replace(match[0], '');
+                });
+                const insertPoint = findInsertPoint(content, CURVE_TABLE_COMMENT);
+                content = content.slice(0, insertPoint) + lines.join('\n') + '\n' + content.slice(insertPoint);
+              } else {
+                // Add new lines
+                const insertPoint = findInsertPoint(content, CURVE_TABLE_COMMENT);
+                content = content.slice(0, insertPoint) + lines.join('\n') + '\n' + content.slice(insertPoint);
+                
+                // Clear deleted state if it exists
+                if (defaultCurve.isDeleted) {
+                  delete defaultCurve.isDeleted;
+                  delete defaultCurve.deletedLine;
+                  curves[defaultEntry.id] = defaultCurve;
+                }
+              }
+              
+              // Update multiLines if this is a multi-line entry
+              if (isMultiLine && !defaultCurve.multiLines) {
+                defaultCurve.multiLines = lines;
+                curves[defaultEntry.id] = defaultCurve;
+              }
+              importedCount++;
+            } else {
+              // This is a custom curve not in default list
+              if (existingMatches.length > 0) {
+                // Remove existing lines and replace with imported ones
+                existingMatches.forEach(match => {
+                  content = content.replace(match[0] + '\n', '').replace(match[0], '');
+                });
+                const insertPoint = findInsertPoint(content, CURVE_TABLE_COMMENT);
+                content = content.slice(0, insertPoint) + lines.join('\n') + '\n' + content.slice(insertPoint);
+              } else {
+                // Add as new custom curve
+                const autoName = key
+                  .split('.')
+                  .pop() ?? ''
+                  .replace(/([A-Z])/g, ' $1')
+                  .trim();
+                
+                // Find next available ID
+                const maxId = Math.max(...Object.keys(curves).map(k => parseInt(k)).filter(n => !isNaN(n)), 0);
+                const newId = String(maxId + 1);
+                
+                // Add to curves.json
+                const newCurve: any = {
+                  name: `Imported: ${autoName}`,
+                  key: key,
+                  value: value,
+                  pathPart: pathPart,
+                  type: 'custom',
+                  isCustom: true
+                };
+                
+                // Add multiLines if this is a multi-line entry
+                if (isMultiLine) {
+                  newCurve.multiLines = lines;
+                }
+                
+                curves[newId] = newCurve;
+                
+                // Add to INI file
+                const insertPoint = findInsertPoint(content, CURVE_TABLE_COMMENT);
+                content = content.slice(0, insertPoint) + lines.join('\n') + '\n' + content.slice(insertPoint);
+              }
+              importedCount++;
+            }
+          });
+          
+          // Save updated INI and curves
+          fs.writeFileSync(iniPath, content);
+          fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
+          
+          // Delete backup file to set CurveTables toggle to ON state
+          const backupPath = path.join(__dirname, '../responses/modifications-backup.json');
+          if (fs.existsSync(backupPath)) {
+            fs.unlinkSync(backupPath);
+          }
+          
+          console.log(`\x1b[32m✓\x1b[0m ${importedCount} CurveTable(s) imported from DefaultGame.ini`);
+        } else {
+          console.log(`\x1b[90m○\x1b[0m No CurveTables found in DefaultGame.ini`);
+        }
+      } catch (error) {
+        console.log(`\x1b[33m✗\x1b[0m Failed to import CurveTables: ${(error instanceof Error ? error.message : String(error))}`);
+      }
+    } else {
+      console.log(`\x1b[90m○\x1b[0m DefaultGame.ini not found in exports`);
+    }
+    
+    // Import Straight Bloom from DefaultGame.ini if it exists
+    const defaultGameExportPathForBloom = path.join(__dirname, '../exports/DefaultGame/DefaultGame.ini');
+    if (fs.existsSync(defaultGameExportPathForBloom)) {
+      try {
+        const importContent = fs.readFileSync(defaultGameExportPathForBloom, 'utf-8');
+        const sniperPath = path.join(__dirname, '../responses/sniper.json');
+        const iniPath = path.join(__dirname, '../static/hotfixes/DefaultGame.ini');
+        
+        if (fs.existsSync(sniperPath)) {
+          const sniperData = JSON.parse(fs.readFileSync(sniperPath, 'utf-8'));
+          const sniperSpreadLines = sniperData.lines;
+          
+          // Check if any sniper lines exist in the imported content
+          const hasLines = sniperSpreadLines.some((line: string) => importContent.includes(line));
+          
+          if (hasLines) {
+            let content = fs.readFileSync(iniPath, 'utf-8');
+            
+            // Remove existing straight bloom lines if any
+            sniperSpreadLines.forEach((line: string) => {
+              content = content.replace(line + '\n', '').replace(line, '');
+            });
+            
+            // Add straight bloom lines
+            const ensured = ensureAssetSection(content, STRAIGHT_BLOOM_COMMENT);
+            content = ensured.content;
+            const insertPoint = ensured.insertPoint;
+            content = content.slice(0, insertPoint) + sniperSpreadLines.join('\n') + '\n' + content.slice(insertPoint);
+            
+            fs.writeFileSync(iniPath, content);
+            console.log(`\x1b[32m✓\x1b[0m Straight Bloom imported and enabled`);
+          } else {
+            console.log(`\x1b[90m○\x1b[0m Straight Bloom not found in DefaultGame.ini`);
+          }
+        }
+      } catch (error) {
+        console.log(`\x1b[33m✗\x1b[0m Failed to import Straight Bloom: ${(error instanceof Error ? error.message : String(error))}`);
+      }
+    }
+    
     console.log('');
     lastStatusMessage = '\x1b[32m✓ Data imported successfully!\x1b[0m';
     
@@ -899,6 +1150,175 @@ async function clearExportedData() {
     
   } catch (error) {
     lastStatusMessage = `\x1b[31m✗ Clear failed: ${(error instanceof Error ? error.message : String(error))}\\x1b[0m`;
+    await prompts({
+      type: 'text',
+      name: 'continue',
+      message: '\x1b[90mPress Enter to continue...\x1b[0m'
+    });
+  }
+}
+
+// Function to clear backend data (client settings, profiles, straightbloom, curvetables)
+async function clearBackendData() {
+  try {
+    const staticProfilesDir = path.join(__dirname, '../static/profiles');
+    const staticClientSettingsDir = path.join(__dirname, '../static/ClientSettings');
+    const iniPath = path.join(__dirname, '../static/hotfixes/DefaultGame.ini');
+    const sniperPath = path.join(__dirname, '../responses/sniper.json');
+    const curvesPath = path.join(__dirname, '../responses/curves.json');
+    
+    console.clear();
+    const terminalWidth = process.stdout.columns || 80;
+    const lines = logo.split('\n');
+    const centeredLogo = lines.map(line => {
+      const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+      return ' '.repeat(padding) + line;
+    }).join('\n');
+    
+    console.log(centeredLogo);
+    console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
+    console.log('');
+    
+    // Confirm clear
+    const confirmResponse = await prompts({
+      type: 'text',
+      name: 'confirm',
+      message: '\x1b[31mAre you sure you want to clear all backend data? This will delete client settings, player profiles, straightbloom, and curvetables. (Y/N):\x1b[0m',
+      validate: (value: string) => ['y', 'Y', 'n', 'N'].includes(value) ? true : 'Please enter Y or N'
+    });
+    
+    if (!confirmResponse.confirm || confirmResponse.confirm.toUpperCase() !== 'Y') {
+      lastStatusMessage = '\x1b[33mClear cancelled.\x1b[0m';
+      return;
+    }
+    
+    console.log('\x1b[36mClearing backend data...\x1b[0m');
+    
+    let clearedItems = 0;
+    
+    // Clear static/profiles (except template files)
+    if (fs.existsSync(staticProfilesDir)) {
+      const profileItems = fs.readdirSync(staticProfilesDir);
+      const templateFiles = [
+        'profile_athena.json',
+        'profile_campaign.json',
+        'profile_collections.json',
+        'profile_common_core.json',
+        'profile_common_public.json',
+        'profile_creative.json',
+        'profile_metadata.json',
+        'profile_outpost0.json',
+        'profile_profile0.json',
+        'profile_theater0.json'
+      ];
+      
+      profileItems.forEach(item => {
+        // Skip template files
+        if (templateFiles.includes(item)) {
+          return;
+        }
+        
+        const itemPath = path.join(staticProfilesDir, item);
+        const stats = fs.statSync(itemPath);
+        
+        if (stats.isDirectory()) {
+          deleteDirRecursive(itemPath);
+          clearedItems++;
+        } else if (stats.isFile()) {
+          fs.unlinkSync(itemPath);
+          clearedItems++;
+        }
+      });
+      console.log(`\x1b[32m✓\x1b[0m Player profiles cleared`);
+    }
+    
+    // Clear static/ClientSettings (except config folder)
+    if (fs.existsSync(staticClientSettingsDir)) {
+      const clientSettingsItems = fs.readdirSync(staticClientSettingsDir);
+      
+      clientSettingsItems.forEach(item => {
+        // Skip config folder
+        if (item.toLowerCase() === 'config') {
+          return;
+        }
+        
+        const itemPath = path.join(staticClientSettingsDir, item);
+        const stats = fs.statSync(itemPath);
+        
+        if (stats.isDirectory()) {
+          deleteDirRecursive(itemPath);
+          clearedItems++;
+        } else if (stats.isFile()) {
+          fs.unlinkSync(itemPath);
+          clearedItems++;
+        }
+      });
+      console.log(`\x1b[32m✓\x1b[0m Client settings cleared`);
+    }
+    
+    // Remove straightbloom
+    if (fs.existsSync(iniPath) && fs.existsSync(sniperPath)) {
+      let content = fs.readFileSync(iniPath, 'utf-8');
+      const sniperData = JSON.parse(fs.readFileSync(sniperPath, 'utf-8'));
+      const sniperSpreadLines = sniperData.lines;
+      
+      // Check if any sniper lines exist in the INI
+      const hasLines = sniperSpreadLines.some((line: string) => content.includes(line));
+      
+      if (hasLines) {
+        // Remove all sniper lines
+        sniperSpreadLines.forEach((line: string) => {
+          content = content.replace(line + '\n', '').replace(line, '');
+        });
+        // Clean up extra newlines
+        content = content.replace(/\n\n+/g, '\n');
+        fs.writeFileSync(iniPath, content);
+        console.log(`\x1b[32m✓\x1b[0m Straight Bloom removed`);
+      } else {
+        console.log(`\x1b[90m○\x1b[0m Straight Bloom was not enabled`);
+      }
+    }
+    
+    // Clear all curvetables
+    if (fs.existsSync(iniPath) && fs.existsSync(curvesPath)) {
+      let content = fs.readFileSync(iniPath, 'utf-8');
+      const curves = JSON.parse(fs.readFileSync(curvesPath, 'utf-8'));
+      
+      // Remove all CurveTable lines from INI
+      const hadCurves = /^\+CurveTable=.*$/gm.test(content);
+      content = content.replace(/^\+CurveTable=.*$/gm, '');
+      content = content.replace(/^\s*\n/gm, '');
+      fs.writeFileSync(iniPath, content);
+      
+      // Remove all custom curvetables from JSON
+      const customEntries = Object.keys(curves).filter(key => curves[key].isCustom);
+      customEntries.forEach(key => {
+        delete curves[key];
+      });
+      fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
+      
+      // Create empty backup to set toggle to OFF state
+      const backupPath = path.join(__dirname, '../responses/modifications-backup.json');
+      fs.writeFileSync(backupPath, JSON.stringify({ curveTableLines: [] }, null, 2));
+      
+      if (hadCurves || customEntries.length > 0) {
+        console.log(`\x1b[32m✓\x1b[0m CurveTables cleared`);
+      } else {
+        console.log(`\x1b[90m○\x1b[0m No CurveTables were configured`);
+      }
+    }
+    
+    console.log('');
+    lastStatusMessage = `\x1b[32m✓ Backend data cleared successfully! (${clearedItems} items removed)\x1b[0m`;
+    
+    await prompts({
+      type: 'text',
+      name: 'continue',
+      message: '\x1b[90mPress Enter to continue...\x1b[0m'
+    });
+    
+  } catch (error) {
+    lastStatusMessage = `\x1b[31m✗ Clear failed: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
     await prompts({
       type: 'text',
       name: 'continue',
@@ -1139,17 +1559,18 @@ async function manageDataMenu() {
       console.log('\x1b[32m(1)\x1b[0m Export Data');
       console.log('\x1b[32m(2)\x1b[0m Import Data');
       console.log('\x1b[32m(3)\x1b[0m Clear Exported Data');
+      console.log('\x1b[32m(4)\x1b[0m Clear Backend Data');
       console.log('\x1b[32m(BACK)\x1b[0m Return to other settings');
       console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
       
       const response = await prompts({
         type: 'text',
         name: 'choice',
-        message: '\x1b[32mSelect an option (1/2/3/BACK):\x1b[0m',
+        message: '\x1b[32mSelect an option (1/2/3/4/BACK):\x1b[0m',
         validate: (value: string) => {
           if (value.toLowerCase() === 'back') return true;
           const num = parseInt(value);
-          return (num === 1 || num === 2 || num === 3) ? true : 'Please enter 1, 2, 3, or BACK';
+          return (num === 1 || num === 2 || num === 3 || num === 4) ? true : 'Please enter 1, 2, 3, 4, or BACK';
         }
       });
       
@@ -1172,6 +1593,10 @@ async function manageDataMenu() {
         case '3':
           // Clear Exported Data
           await clearExportedData();
+          break;
+        case '4':
+          // Clear Backend Data
+          await clearBackendData();
           break;
         default:
           break;
