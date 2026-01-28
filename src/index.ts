@@ -937,14 +937,15 @@ async function gameConfigurationMenu() {
       const config = ini.parse(fs.readFileSync(configPath, 'utf-8'));
       const rufusStage = config.RufusStage || '1';
       const waterLevel = config.WaterLevel || '1';
-      const shouldUseWaterStorm = config.UseWaterStorm === 'true' || config.UseWaterStorm === true;
+      const shouldUseWaterStorm = config.UseWaterStorm === 'True' || config.UseWaterStorm === true;
+      const waterStormStatus = shouldUseWaterStorm ? '\x1b[32m[ON]\x1b[0m' : '\x1b[31m[OFF]\x1b[0m';
       
       console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
       console.log('\x1b[36m                  Game Configuration\x1b[0m');
       console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
       console.log(`\x1b[32m(1)\x1b[0m Rufus Week Stage (27.11) - \x1b[32mCurrent:\x1b[0m \x1b[33m${rufusStage}\x1b[0m`);
       console.log(`\x1b[32m(2)\x1b[0m Water Level (13.X) - \x1b[32mCurrent:\x1b[0m \x1b[33m${waterLevel}\x1b[0m`);
-      console.log(`\x1b[32m(3)\x1b[0m Use Water Storm - \x1b[32mCurrent:\x1b[0m \x1b[33m${shouldUseWaterStorm}\x1b[0m`);
+      console.log(`\x1b[32m(3)\x1b[0m Toggle Water Storm (12.41) ${waterStormStatus}`);
       console.log('\x1b[32m(BACK)\x1b[0m Return to other settings');
       console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
       
@@ -1003,22 +1004,13 @@ async function gameConfigurationMenu() {
         }
       }
       else if (choice === '3') {
-        // Use Water Storm
-        const stormResponse = await prompts({
-          type: 'text',
-          name: 'useStorm',
-          message: '\x1b[32mUse Water Storm (true/false):\x1b[0m',
-          validate: (value: string) => {
-            const val = value.toLowerCase();
-            return (val === 'true' || val === 'false') ? true : 'Please enter true or false';
-          }
-        });
-
-        if (stormResponse.useStorm) {
-          config.UseWaterStorm = stormResponse.useStorm;
-          fs.writeFileSync(configPath, ini.stringify(config));
-          lastStatusMessage = `\x1b[32m✓ Use Water Storm set to ${stormResponse.useStorm}!\x1b[0m`;
-        }
+        // Toggle Water Storm
+        const currentValue = config.UseWaterStorm === 'True' || config.UseWaterStorm === true;
+        const newValue = currentValue ? 'False' : 'True';
+        config.UseWaterStorm = newValue;
+        fs.writeFileSync(configPath, ini.stringify(config));
+        const statusText = newValue === 'True' ? '\x1b[32mON\x1b[0m' : '\x1b[31mOFF\x1b[0m';
+        lastStatusMessage = `\x1b[32m✓ Water Storm toggled ${statusText}!\x1b[0m`;
       }
     } catch (error) {
       lastStatusMessage = `\x1b[31m✗ Failed to update configuration: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
