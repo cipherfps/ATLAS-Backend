@@ -6,14 +6,13 @@ This backend has features such as the following:
 ### 1. CurveTables
 - CurveTable Toggle
 - CurveTable Editor
-- CurveTable Importer
+- CurveTable Importer/Presets (if .ini files added to exports, DefaultGame folder)
 
 ### 2. Straight Bloom
 - Toggle Straight Bloom (Straight Sniper Bullets)
 
 ### 3. Importing/Exporting Data
-- Importing/Exporting Client Settings
-- Importing/Exporting Profiles
+- Bulk Importing/Exporting Client Settings, Profiles, CurveTables, Straight Bloom
 
 ### 4. Other Features
 - Arena Playlist/Points (22.40 and under)
