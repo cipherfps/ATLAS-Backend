@@ -1476,18 +1476,19 @@ async function otherSettingsMenu() {
       console.log(`\x1b[32m(1)\x1b[0m Toggle Arena Point Saving ${arenaStatus}`);
       console.log('\x1b[32m(2)\x1b[0m Arena Leaderboard');
       console.log('\x1b[32m(3)\x1b[0m Game Configuration');
-      console.log('\x1b[32m(4)\x1b[0m Manage Data');
+      console.log('\x1b[32m(4)\x1b[0m Custom Cosmetic Profiles');
+      console.log('\x1b[32m(5)\x1b[0m Manage Data');
       console.log('\x1b[32m(BACK)\x1b[0m Return to main menu');
       console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
       
       const response = await prompts({
         type: 'text',
         name: 'choice',
-        message: '\x1b[32mSelect an option (1/2/3/4/BACK):\x1b[0m',
+        message: '\x1b[32mSelect an option (1/2/3/4/5/BACK):\x1b[0m',
         validate: (value: string) => {
           if (value.toLowerCase() === 'back') return true;
           const num = parseInt(value);
-          return (num >= 1 && num <= 4) ? true : 'Please enter 1, 2, 3, 4, or BACK';
+          return (num >= 1 && num <= 5) ? true : 'Please enter 1, 2, 3, 4, 5, or BACK';
         }
       });
       
@@ -1518,6 +1519,11 @@ async function otherSettingsMenu() {
           lastStatusMessage = '';
           break;
         case '4':
+          // Custom Cosmetic Profiles
+          await customCosmeticProfilesMenu();
+          lastStatusMessage = '';
+          break;
+        case '5':
           // Manage Data
           await manageDataMenu();
           lastStatusMessage = '';
@@ -1530,6 +1536,221 @@ async function otherSettingsMenu() {
       lastStatusMessage = `\x1b[31m✗ Failed to update settings: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
       continueLoop = false;
     }
+  }
+}
+
+// Function for Custom Cosmetic Profiles menu
+async function customCosmeticProfilesMenu() {
+  let continueLoop = true;
+  
+  while (continueLoop) {
+    try {
+      // Clear console and redisplay logo
+      console.clear();
+      
+      // Redisplay centered logo using the global logo variable
+      const terminalWidth = process.stdout.columns || 80;
+      const lines = logo.split('\n');
+      const centeredLogo = lines.map(line => {
+        const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+        return ' '.repeat(padding) + line;
+      }).join('\n');
+      
+      console.log(centeredLogo);
+      console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
+      
+      // Display last status message if exists
+      if (lastStatusMessage) {
+        console.log(`\x1b[36m[BACKEND]\x1b[0m ${lastStatusMessage}`);
+      }
+      
+      // Get list of profile directories
+      const profilesDir = path.join(__dirname, '../static/profiles');
+      const profileDirs = fs.readdirSync(profilesDir).filter(item => {
+        const itemPath = path.join(profilesDir, item);
+        return fs.statSync(itemPath).isDirectory();
+      });
+      
+      console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\x1b[36m              Custom Cosmetic Profiles\x1b[0m');
+      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      
+      // Show profile accounts found
+      if (profileDirs.length > 0) {
+        console.log(`\x1b[90mFound ${profileDirs.length} profile(s)\x1b[0m\n`);
+      }
+      
+      // Define presets
+      const presets = [
+        { id: '1', name: 'Latest Profile', folder: 'Latest Profile', version: '(v39+)' },
+        { id: '2', name: 'Reboot X Retrac Profile', folder: 'Reboot X Retrac Profile', version: '(v14.40)' },
+        { id: '3', name: 'Reboot X Stellar Profile', folder: 'Reboot X Stellar Profile', version: '(v12.41)' },
+        { id: '4', name: 'Reboot X Tozo Profile', folder: 'Reboot X Tozo Profile', version: '(v12.41)' }
+      ];
+      
+      // Display preset options
+      for (const preset of presets) {
+        console.log(`\x1b[32m(${preset.id})\x1b[0m ${preset.name} ${preset.version}`);
+      }
+      
+      console.log('\x1b[32m(BACK)\x1b[0m Return to other settings');
+      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      
+      const response = await prompts({
+        type: 'text',
+        name: 'choice',
+        message: '\x1b[32mSelect a preset to apply (1/2/3/4/BACK):\x1b[0m',
+        validate: (value: string) => {
+          if (value.toLowerCase() === 'back') return true;
+          const num = parseInt(value);
+          return (num >= 1 && num <= 4) ? true : 'Please enter 1, 2, 3, 4, or BACK';
+        }
+      });
+      
+      if (!response.choice || response.choice.toLowerCase() === 'back') {
+        lastStatusMessage = '';
+        continueLoop = false;
+        continue;
+      }
+      
+      const choice = response.choice;
+      const selectedPreset = presets.find(p => p.id === choice);
+      
+      if (selectedPreset) {
+        await applyCosmeticPreset(selectedPreset, profileDirs);
+      }
+      
+    } catch (error) {
+      lastStatusMessage = `\x1b[31m✗ Failed to manage cosmetic profiles: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
+      continueLoop = false;
+    }
+  }
+}
+
+// Function to apply cosmetic preset to all profiles
+async function applyCosmeticPreset(preset: { id: string, name: string, folder: string, version: string }, profileDirs: string[]) {
+  try {
+    const profilesDir = path.join(__dirname, '../static/profiles');
+    const presetsDir = path.join(__dirname, '../static/athenaprofiles/Profile Presets');
+    const presetProfilePath = path.join(presetsDir, preset.folder, 'profile_athena.json');
+    
+    // Check if preset profile exists
+    if (!fs.existsSync(presetProfilePath)) {
+      lastStatusMessage = `\x1b[31m✗ Preset profile not found: ${preset.folder}\x1b[0m`;
+      return;
+    }
+    
+    // Check if any profiles exist
+    if (profileDirs.length === 0) {
+      lastStatusMessage = `\x1b[31m✗ No profiles found. Cannot apply presets.\x1b[0m`;
+      return;
+    }
+    
+    // Ask if applying to specific user or all
+    console.clear();
+    const terminalWidth = process.stdout.columns || 80;
+    const lines = logo.split('\n');
+    const centeredLogo = lines.map(line => {
+      const padding = Math.max(0, Math.floor((terminalWidth - line.replace(/\x1b\[[0-9;]*m/g, '').length) / 2));
+      return ' '.repeat(padding) + line;
+    }).join('\n');
+    
+    console.log(centeredLogo);
+    console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
+    console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\x1b[36m              Apply Preset To:\x1b[0m');
+    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\x1b[32m(1)\x1b[0m Apply to a specific user');
+    console.log('\x1b[32m(2)\x1b[0m Apply to all users');
+    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    
+    const scopeResponse = await prompts({
+      type: 'text',
+      name: 'scope',
+      message: '\x1b[32mSelect (1 or 2):\x1b[0m',
+      validate: (value: string) => {
+        return (value === '1' || value === '2') ? true : 'Please enter 1 or 2';
+      }
+    });
+    
+    let targetProfiles: string[] = [];
+    
+    if (scopeResponse.scope === '1') {
+      // Ask for specific user
+      console.log('\n\x1b[33mAvailable profiles:\x1b[0m');
+      profileDirs.forEach((dir, index) => {
+        console.log(`\x1b[36m(${index + 1})\x1b[0m ${dir}`);
+      });
+      
+      const userResponse = await prompts({
+        type: 'text',
+        name: 'userIndex',
+        message: '\x1b[32mSelect a profile number:\x1b[0m',
+        validate: (value: string) => {
+          const num = parseInt(value);
+          return (num >= 1 && num <= profileDirs.length) ? true : `Please enter a number between 1 and ${profileDirs.length}`;
+        }
+      });
+      
+      const selectedIndex = parseInt(userResponse.userIndex) - 1;
+      targetProfiles = [profileDirs[selectedIndex]];
+    } else {
+      // Apply to all
+      targetProfiles = profileDirs;
+    }
+    
+    // Show warning
+    console.clear();
+    console.log(centeredLogo);
+    console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
+    console.log('');
+    console.log('\x1b[33m⚠  WARNING\x1b[0m');
+    console.log('');
+    const targetDisplay = targetProfiles.length === 1
+      ? targetProfiles[0]
+      : `${targetProfiles.length} profile(s)`;
+    console.log(`\x1b[33mThis will replace profile_athena.json with the "${preset.name}" preset for ${targetDisplay}.\x1b[0m`);
+    console.log(`\x1b[31mThe current profile_athena.json will be permanently deleted!\x1b[0m\n`);
+    
+    const confirmResponse = await prompts({
+      type: 'text',
+      name: 'confirm',
+      message: '\x1b[32mContinue? (Y/N):\x1b[0m',
+      validate: (value: string) => {
+        return (value.toUpperCase() === 'Y' || value.toUpperCase() === 'N') ? true : 'Please enter Y or N';
+      }
+    });
+    
+    if (confirmResponse.confirm?.toUpperCase() !== 'Y') {
+      lastStatusMessage = `\x1b[33m⚠  Cancelled preset application\x1b[0m`;
+      return;
+    }
+    
+    let appliedCount = 0;
+    let skippedCount = 0;
+    
+    for (const profileDir of targetProfiles) {
+      const profilePath = path.join(profilesDir, profileDir, 'profile_athena.json');
+      
+      // Check if profile exists
+      if (!fs.existsSync(profilePath)) {
+        skippedCount++;
+        continue;
+      }
+      
+      // Replace profile with preset
+      fs.copyFileSync(presetProfilePath, profilePath);
+      appliedCount++;
+    }
+    
+    if (appliedCount > 0) {
+      lastStatusMessage = `\x1b[32m✓ Applied "${preset.name}" to ${appliedCount} profile(s)\x1b[0m`;
+    } else {
+      lastStatusMessage = `\x1b[33m⚠  No profiles were modified (${skippedCount} skipped)\x1b[0m`;
+    }
+    
+  } catch (error) {
+    lastStatusMessage = `\x1b[31m✗ Error applying preset: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
   }
 }
 
