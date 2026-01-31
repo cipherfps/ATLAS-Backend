@@ -281,7 +281,13 @@ class _AtlasHomePageState extends State<AtlasHomePage> with WidgetsBindingObserv
     _controller = BackendController()..startPolling();
     unawaited(_initStartup());
     unawaited(_loadBackendVersion());
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdates(silent: true));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeCheckForUpdatesOnLaunch());
+  }
+
+  Future<void> _maybeCheckForUpdatesOnLaunch() async {
+    final config = await ConfigService.load();
+    if (config.disableBackendUpdateCheck) return;
+    await _checkForUpdates(silent: true);
   }
 
   Future<void> _initStartup() async {
@@ -329,6 +335,15 @@ class _AtlasHomePageState extends State<AtlasHomePage> with WidgetsBindingObserv
     final progress = ValueNotifier<double>(0);
     bool updating = false;
     String? error;
+    Future<void> restartApp() async {
+      final exePath = Platform.resolvedExecutable;
+      if (exePath.isNotEmpty) {
+        try {
+          await Process.start(exePath, const [], mode: ProcessStartMode.detached);
+        } catch (_) {}
+      }
+      exit(0);
+    }
     await _showBlurDialog<void>(
       context: context,
       barrierDismissible: !updating,
@@ -395,18 +410,16 @@ class _AtlasHomePageState extends State<AtlasHomePage> with WidgetsBindingObserv
                             updating = true;
                             error = null;
                           });
-                          final wasRunning = _controller.isRunning;
                           try {
                             await _controller.stopBackend();
                             await UpdateService.downloadAndApply(info, progress);
-                            if (wasRunning) {
-                              await _controller.startBackend();
-                            }
                             if (!mounted) return;
                             Navigator.pop(context);
                             ScaffoldMessenger.of(this.context).showSnackBar(
-                              SnackBar(content: Text('Updated to ${info.latestLabel}.')),
+                              SnackBar(content: Text('Updated to ${info.latestLabel}. Restarting...')),
                             );
+                            await Future<void>.delayed(const Duration(milliseconds: 600));
+                            await restartApp();
                           } catch (err) {
                             setState(() {
                               error = 'Update failed: $err';
