@@ -922,7 +922,7 @@ class _SidePanel extends StatelessWidget {
               label: controller.isStarting ? 'Starting...' : 'Start Backend',
               icon: Icons.play_arrow_rounded,
               color: const Color(0xFF5BE0B3),
-              onPressed: (controller.isStarting || controller.isStopping || controller.isRestarting) 
+              onPressed: (controller.isRunning || controller.isStarting || controller.isStopping || controller.isRestarting) 
                 ? null 
                 : controller.startBackend,
             ),
