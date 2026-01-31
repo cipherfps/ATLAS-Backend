@@ -5149,7 +5149,6 @@ class UpdateService {
   }
 
   static Future<Map<String, dynamic>?> _fetchRemotePackage() async {
-    final url = Uri.parse('https://raw.githubusercontent.com/$_repo/main/package.json?t=${DateTime.now().millisecondsSinceEpoch}');
     final url = Uri.parse('https://raw.githubusercontent.com/$_repo/$_branch/package.json?t=${DateTime.now().millisecondsSinceEpoch}');
     final client = HttpClient();
     try {
