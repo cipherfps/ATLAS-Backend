@@ -5139,6 +5139,7 @@ class UpdateInfo {
     required this.currentVersion,
     required this.latestVersion,
     required this.downloadUrl,
+    required this.isInstaller,
     this.notes,
     this.currentCommit,
     this.latestCommit,
@@ -5147,6 +5148,7 @@ class UpdateInfo {
   final String currentVersion;
   final String latestVersion;
   final String downloadUrl;
+  final bool isInstaller;
   final String? notes;
   final String? currentCommit;
   final String? latestCommit;
@@ -5159,6 +5161,7 @@ class UpdateService {
   static const String _repo = 'cipherfps/ATLAS-Backend';
   static const String _branch = 'gui';
   static const String _mainZipUrl = 'https://github.com/cipherfps/ATLAS-Backend/archive/refs/heads/gui.zip';
+  static const String _latestReleaseUrl = 'https://api.github.com/repos/cipherfps/ATLAS-Backend/releases/latest';
 
   static Future<UpdateInfo?> checkForUpdate() async {
     final backendRoot = getBackendRoot();
@@ -5173,10 +5176,15 @@ class UpdateService {
     final hasVersionUpdate = _isNewerVersion(latestVersion, currentVersion);
     if (!hasVersionUpdate) return null;
 
+    final releaseMsi = await _fetchLatestReleaseMsi();
+    final downloadUrl = releaseMsi ?? _mainZipUrl;
+    final isInstaller = releaseMsi != null;
+
     return UpdateInfo(
       currentVersion: currentVersion,
       latestVersion: latestVersion,
-      downloadUrl: _mainZipUrl,
+      downloadUrl: downloadUrl,
+      isInstaller: isInstaller,
       notes: null,
       currentCommit: null,
       latestCommit: null,
@@ -5184,8 +5192,42 @@ class UpdateService {
   }
 
   static Future<void> downloadAndApply(UpdateInfo info, ValueNotifier<double>? progress) async {
-    final zipFile = await _downloadZip(info.downloadUrl, progress);
-    await _applyZip(zipFile);
+    if (info.isInstaller) {
+      final msiFile = await _downloadInstaller(info.downloadUrl, progress);
+      await Process.start('msiexec', ['/i', msiFile.path], mode: ProcessStartMode.detached);
+      exit(0);
+    } else {
+      final zipFile = await _downloadZip(info.downloadUrl, progress);
+      await _applyZip(zipFile);
+    }
+  }
+
+  static Future<String?> _fetchLatestReleaseMsi() async {
+    final client = HttpClient();
+    try {
+      final request = await client.getUrl(Uri.parse(_latestReleaseUrl));
+      request.headers.set('User-Agent', 'ATLAS-GUI');
+      final response = await request.close();
+      if (response.statusCode != 200) return null;
+      final body = await response.transform(utf8.decoder).join();
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      final assets = json['assets'];
+      if (assets is! List) return null;
+      for (final asset in assets) {
+        if (asset is! Map<String, dynamic>) continue;
+        final name = asset['name']?.toString().toLowerCase() ?? '';
+        final url = asset['browser_download_url']?.toString();
+        if (url == null) continue;
+        if (name.endsWith('.msi') && name.contains('atlas')) {
+          return url;
+        }
+      }
+      return null;
+    } catch (_) {
+      return null;
+    } finally {
+      client.close();
+    }
   }
 
   static Future<Map<String, dynamic>?> _fetchRemotePackage() async {
@@ -5232,6 +5274,37 @@ class UpdateService {
         progress.value = 1;
       }
       return zipFile;
+    } finally {
+      client.close();
+    }
+  }
+
+  static Future<File> _downloadInstaller(String url, ValueNotifier<double>? progress) async {
+    final tempDir = await Directory.systemTemp.createTemp('atlas_update_');
+    final msiFile = File(joinPath([tempDir.path, 'ATLAS-Update.msi']));
+    final client = HttpClient();
+    try {
+      final request = await client.getUrl(Uri.parse(url));
+      request.headers.set('User-Agent', 'ATLAS-GUI');
+      final response = await request.close();
+      if (response.statusCode != 200) {
+        throw Exception('Download failed: HTTP ${response.statusCode}');
+      }
+      final total = response.contentLength;
+      final sink = msiFile.openWrite();
+      var received = 0;
+      await for (final chunk in response) {
+        sink.add(chunk);
+        received += chunk.length;
+        if (total > 0 && progress != null) {
+          progress.value = received / total;
+        }
+      }
+      await sink.close();
+      if (progress != null) {
+        progress.value = 1;
+      }
+      return msiFile;
     } finally {
       client.close();
     }

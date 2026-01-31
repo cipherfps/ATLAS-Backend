@@ -8,7 +8,9 @@
     UpgradeCode="8c7fecab-4ce9-43a5-9bb4-3bce5af7fb7f"
     Compressed="yes"
     Scope="perUser">
-    <MajorUpgrade DowngradeErrorMessage="A newer version of ATLAS is already installed." />
+    <MajorUpgrade
+      AllowSameVersionUpgrades="yes"
+      DowngradeErrorMessage="A newer version of ATLAS is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
     <Icon Id="AtlasIcon" SourceFile="$(var.IconPath)" />
