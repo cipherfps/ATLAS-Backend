@@ -273,6 +273,8 @@ class _AtlasHomePageState extends State<AtlasHomePage> with WidgetsBindingObserv
   bool _exitInProgress = false;
   bool _checkingUpdate = false;
   String _backendVersionLabel = '1.0.0';
+  bool _loadingReleaseHistory = false;
+  List<ReleaseInfo> _releaseHistory = const [];
 
   @override
   void initState() {
@@ -282,6 +284,7 @@ class _AtlasHomePageState extends State<AtlasHomePage> with WidgetsBindingObserv
     unawaited(_initStartup());
     unawaited(_loadBackendVersion());
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeCheckForUpdatesOnLaunch());
+    WidgetsBinding.instance.addPostFrameCallback((_) => UpdateBackupService.restoreIfNeeded(context));
   }
 
   Future<void> _maybeCheckForUpdatesOnLaunch() async {
@@ -331,7 +334,96 @@ class _AtlasHomePageState extends State<AtlasHomePage> with WidgetsBindingObserv
     await _showUpdateDialog(info);
   }
 
-  Future<void> _showUpdateDialog(UpdateInfo info) async {
+  Future<void> _showVersionHistoryMenu(BuildContext anchorContext) async {
+    if (_loadingReleaseHistory) return;
+    if (_releaseHistory.isEmpty) {
+      setState(() => _loadingReleaseHistory = true);
+      final history = await UpdateService.fetchReleaseHistory();
+      if (!mounted) return;
+      setState(() {
+        _releaseHistory = history;
+        _loadingReleaseHistory = false;
+      });
+    }
+
+    final currentVersion = _normalizeVersion(_backendVersionLabel);
+    final olderReleases = _releaseHistory
+        .where((release) => _compareVersions(_normalizeVersion(release.version), currentVersion) < 0)
+        .toList();
+
+    if (olderReleases.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No older versions available to downgrade.')),
+      );
+      return;
+    }
+
+    final overlay = Overlay.of(anchorContext).context.findRenderObject() as RenderBox;
+    final box = anchorContext.findRenderObject() as RenderBox;
+    final offset = box.localToGlobal(Offset.zero, ancestor: overlay);
+    final position = RelativeRect.fromRect(
+      Rect.fromLTWH(offset.dx, offset.dy + box.size.height, box.size.width, box.size.height),
+      Offset.zero & overlay.size,
+    );
+
+    final selected = await showMenu<ReleaseInfo>(
+      context: anchorContext,
+      position: position,
+      color: Theme.of(context).colorScheme.surface.withOpacity(0.98),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: _onSurface(context, 0.12)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      items: [
+        PopupMenuItem<ReleaseInfo>(
+          enabled: false,
+          child: Text(
+            'Current: ${_formatVersion(currentVersion)}',
+            style: TextStyle(color: _onSurface(context, 0.7)),
+          ),
+        ),
+        const PopupMenuDivider(),
+        ...olderReleases.map((release) {
+          final dateLabel = release.publishedAt == null ? null : _formatReleaseDate(release.publishedAt!);
+          return PopupMenuItem<ReleaseInfo>(
+            value: release,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_formatVersion(release.version)),
+                if (dateLabel != null)
+                  Text(
+                    dateLabel,
+                    style: TextStyle(fontSize: 12, color: _onSurface(context, 0.6)),
+                  ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+
+    if (selected == null) return;
+
+    final info = UpdateInfo(
+      currentVersion: currentVersion,
+      latestVersion: _normalizeVersion(selected.version),
+      downloadUrl: selected.downloadUrl,
+      isInstaller: true,
+      notes: selected.notes,
+      currentCommit: null,
+      latestCommit: null,
+    );
+    await _showUpdateDialog(
+      info,
+      title: 'Downgrade available',
+      actionLabel: 'Downgrade',
+    );
+  }
+
+  Future<void> _showUpdateDialog(UpdateInfo info,
+      {String title = 'An update is available', String actionLabel = 'Update now'}) async {
     final progress = ValueNotifier<double>(0);
     bool updating = false;
     String? error;
@@ -359,7 +451,7 @@ class _AtlasHomePageState extends State<AtlasHomePage> with WidgetsBindingObserv
             ],
           );
           return AlertDialog(
-            title: const Text('An update is available'),
+            title: Text(title),
             content: SizedBox(
               width: 420,
               child: Column(
@@ -412,6 +504,7 @@ class _AtlasHomePageState extends State<AtlasHomePage> with WidgetsBindingObserv
                           });
                           try {
                             await _controller.stopBackend();
+                            await UpdateBackupService.backupBeforeUpdate();
                             await UpdateService.downloadAndApply(info, progress);
                             if (!mounted) return;
                             Navigator.pop(context);
@@ -429,7 +522,7 @@ class _AtlasHomePageState extends State<AtlasHomePage> with WidgetsBindingObserv
                             progress.value = 0;
                           }
                         },
-                  child: Text(updating ? 'Updating...' : 'Update now'),
+                  child: Text(updating ? 'Updating...' : actionLabel),
                 ),
               ),
             ],
@@ -537,6 +630,7 @@ class _AtlasHomePageState extends State<AtlasHomePage> with WidgetsBindingObserv
                       statusText: _controller.statusText,
                       statusColor: _controller.statusColor,
                       versionLabel: _backendVersionLabel,
+                      onVersionPressed: _showVersionHistoryMenu,
                       onSettingsPressed: () => Navigator.of(context).push(_buildRoute(const SettingsScreen())),
                       onCheckUpdates: () => _checkForUpdates(silent: false),
                       height: 110,
@@ -578,6 +672,7 @@ class _TopBar extends StatelessWidget {
     required this.statusText,
     required this.statusColor,
     required this.versionLabel,
+    required this.onVersionPressed,
     required this.onSettingsPressed,
     required this.onCheckUpdates,
     required this.height,
@@ -587,6 +682,7 @@ class _TopBar extends StatelessWidget {
   final String statusText;
   final Color statusColor;
   final String versionLabel;
+  final void Function(BuildContext context)? onVersionPressed;
   final VoidCallback onSettingsPressed;
   final VoidCallback? onCheckUpdates;
   final double height;
@@ -654,10 +750,23 @@ class _TopBar extends StatelessWidget {
           const SizedBox(width: 8),
           _StatusPill(label: 'Backend', value: statusText, color: statusColor),
           const SizedBox(width: 16),
-          _StatusPill(
-            label: 'Version',
-            value: versionLabel,
-            color: _onSurface(context, 0.24),
+          Builder(
+            builder: (pillContext) => _HoverScale(
+              enabled: onVersionPressed != null,
+              child: GestureDetector(
+                onTap: onVersionPressed == null ? null : () => onVersionPressed!(pillContext),
+                child: _StatusPill(
+                  label: 'Version',
+                  value: versionLabel,
+                  color: _onSurface(context, 0.24),
+                  trailing: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 18,
+                    color: _onSurface(context, 0.6),
+                  ),
+                ),
+              ),
+            ),
           ),
           const SizedBox(width: 8),
           SizedBox(
@@ -679,11 +788,17 @@ class _TopBar extends StatelessWidget {
 }
 
 class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.label, required this.value, required this.color});
+  const _StatusPill({
+    required this.label,
+    required this.value,
+    required this.color,
+    this.trailing,
+  });
 
   final String label;
   final String value;
   final Color color;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -704,6 +819,10 @@ class _StatusPill extends StatelessWidget {
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
+          if (trailing != null) ...[
+            const SizedBox(width: 6),
+            trailing!,
+          ],
         ],
       ),
     );
@@ -5134,6 +5253,20 @@ class ConfigService {
   }
 }
 
+class ReleaseInfo {
+  const ReleaseInfo({
+    required this.version,
+    required this.downloadUrl,
+    this.publishedAt,
+    this.notes,
+  });
+
+  final String version;
+  final String downloadUrl;
+  final DateTime? publishedAt;
+  final String? notes;
+}
+
 class UpdateInfo {
   const UpdateInfo({
     required this.currentVersion,
@@ -5162,6 +5295,7 @@ class UpdateService {
   static const String _branch = 'gui';
   static const String _mainZipUrl = 'https://github.com/cipherfps/ATLAS-Backend/archive/refs/heads/gui.zip';
   static const String _latestReleaseUrl = 'https://api.github.com/repos/cipherfps/ATLAS-Backend/releases/latest';
+  static const String _releasesListUrl = 'https://api.github.com/repos/cipherfps/ATLAS-Backend/releases?per_page=30';
 
   static Future<UpdateInfo?> checkForUpdate() async {
     final backendRoot = getBackendRoot();
@@ -5189,6 +5323,66 @@ class UpdateService {
       currentCommit: null,
       latestCommit: null,
     );
+  }
+
+  static Future<List<ReleaseInfo>> fetchReleaseHistory() async {
+    final client = HttpClient();
+    try {
+      final request = await client.getUrl(Uri.parse(_releasesListUrl));
+      request.headers.set('User-Agent', 'ATLAS-GUI');
+      final response = await request.close();
+      if (response.statusCode != 200) return [];
+      final body = await response.transform(utf8.decoder).join();
+      final json = jsonDecode(body);
+      if (json is! List) return [];
+
+      final releases = <ReleaseInfo>[];
+      for (final entry in json) {
+        if (entry is! Map<String, dynamic>) continue;
+        if (entry['draft'] == true) continue;
+        final tag = entry['tag_name']?.toString().trim();
+        if (tag == null || tag.isEmpty) continue;
+
+        final assets = entry['assets'];
+        if (assets is! List) continue;
+        String? msiUrl;
+        for (final asset in assets) {
+          if (asset is! Map<String, dynamic>) continue;
+          final name = asset['name']?.toString().toLowerCase() ?? '';
+          final url = asset['browser_download_url']?.toString();
+          if (url == null) continue;
+          if (name.endsWith('.msi') && name.contains('atlas')) {
+            msiUrl = url;
+            break;
+          }
+        }
+        if (msiUrl == null) continue;
+
+        DateTime? published;
+        final publishedRaw = entry['published_at']?.toString();
+        if (publishedRaw != null) {
+          published = DateTime.tryParse(publishedRaw);
+        }
+
+        releases.add(
+          ReleaseInfo(
+            version: tag,
+            downloadUrl: msiUrl,
+            publishedAt: published,
+            notes: entry['body']?.toString(),
+          ),
+        );
+      }
+
+      releases.sort(
+        (a, b) => _compareVersions(_normalizeVersion(b.version), _normalizeVersion(a.version)),
+      );
+      return releases;
+    } catch (_) {
+      return [];
+    } finally {
+      client.close();
+    }
   }
 
   static Future<void> downloadAndApply(UpdateInfo info, ValueNotifier<double>? progress) async {
@@ -5361,22 +5555,181 @@ class UpdateService {
   }
 }
 
+class UpdateBackupService {
+  static const String _backupFolderName = 'update-backup';
+
+  static Future<void> backupBeforeUpdate() async {
+    final backupRoot = Directory(_resolveBackupRoot());
+    if (await backupRoot.exists()) {
+      await backupRoot.delete(recursive: true);
+    }
+    await backupRoot.create(recursive: true);
+
+    final backendRoot = getBackendRoot();
+    final entries = <_BackupEntry>[
+      _BackupEntry.dir(joinPath([backendRoot, 'static', 'profiles'])),
+      _BackupEntry.dir(joinPath([backendRoot, 'static', 'ClientSettings'])),
+      _BackupEntry.file(joinPath([backendRoot, 'static', 'hotfixes', 'DefaultGame.ini'])),
+      _BackupEntry.file(joinPath([backendRoot, 'responses', 'curves.json'])),
+      _BackupEntry.file(joinPath([backendRoot, 'responses', 'modifications-backup.json'])),
+      _BackupEntry.file(joinPath([backendRoot, 'src', 'config', 'config.ini'])),
+      _BackupEntry.dir(joinPath([backendRoot, 'public', 'items', 'custom-groups'])),
+    ];
+
+    for (final entry in entries) {
+      final target = joinPath([backupRoot.path, ...entry.relativeParts(backendRoot)]);
+      if (entry.isDir) {
+        final dir = Directory(entry.path);
+        if (!dir.existsSync()) continue;
+        await _copyDirectory(dir, Directory(target));
+      } else {
+        final file = File(entry.path);
+        if (!file.existsSync()) continue;
+        await File(target).parent.create(recursive: true);
+        await file.copy(target);
+      }
+    }
+
+    final manifest = {
+      'version': _normalizeVersion(await _readBackendVersion()),
+      'createdAt': DateTime.now().toIso8601String(),
+    };
+    await File(joinPath([backupRoot.path, 'manifest.json']))
+        .writeAsString(const JsonEncoder.withIndent('  ').convert(manifest));
+  }
+
+  static Future<void> restoreIfNeeded(BuildContext context) async {
+    final backupRoot = Directory(_resolveBackupRoot());
+    if (!backupRoot.existsSync()) return;
+
+    final backendRoot = getBackendRoot();
+    final entries = <_BackupEntry>[
+      _BackupEntry.dir(joinPath([backupRoot.path, 'static', 'profiles'])),
+      _BackupEntry.dir(joinPath([backupRoot.path, 'static', 'ClientSettings'])),
+      _BackupEntry.file(joinPath([backupRoot.path, 'static', 'hotfixes', 'DefaultGame.ini'])),
+      _BackupEntry.file(joinPath([backupRoot.path, 'responses', 'curves.json'])),
+      _BackupEntry.file(joinPath([backupRoot.path, 'responses', 'modifications-backup.json'])),
+      _BackupEntry.file(joinPath([backupRoot.path, 'src', 'config', 'config.ini'])),
+      _BackupEntry.dir(joinPath([backupRoot.path, 'public', 'items', 'custom-groups'])),
+    ];
+
+    for (final entry in entries) {
+      final target = joinPath([backendRoot, ...entry.relativeParts(backupRoot.path)]);
+      if (entry.isDir) {
+        final dir = Directory(entry.path);
+        if (!dir.existsSync()) continue;
+        await _copyDirectory(dir, Directory(target));
+      } else {
+        final file = File(entry.path);
+        if (!file.existsSync()) continue;
+        await File(target).parent.create(recursive: true);
+        await file.copy(target);
+      }
+    }
+
+    await backupRoot.delete(recursive: true);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Restored data from previous version.')));
+    }
+  }
+
+  static String _resolveBackupRoot() {
+    final localAppData = Platform.environment['LOCALAPPDATA'];
+    final base = localAppData ?? Directory.systemTemp.path;
+    return joinPath([base, 'ATLAS', _backupFolderName]);
+  }
+
+  static Future<String> _readBackendVersion() async {
+    final packageFile = File(joinPath([getBackendRoot(), 'package.json']));
+    if (!packageFile.existsSync()) return '';
+    try {
+      final json = jsonDecode(await packageFile.readAsString()) as Map<String, dynamic>;
+      return json['version']?.toString() ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  static Future<void> _copyDirectory(Directory source, Directory destination) async {
+    await destination.create(recursive: true);
+    await for (final entity in source.list(recursive: false)) {
+      final name = entity.uri.pathSegments.last;
+      final newPath = joinPath([destination.path, name]);
+      if (entity is Directory) {
+        await _copyDirectory(entity, Directory(newPath));
+      } else if (entity is File) {
+        await entity.copy(newPath);
+      }
+    }
+  }
+}
+
+class _BackupEntry {
+  _BackupEntry._(this.path, this.isDir);
+
+  final String path;
+  final bool isDir;
+
+  static _BackupEntry dir(String path) => _BackupEntry._(path, true);
+  static _BackupEntry file(String path) => _BackupEntry._(path, false);
+
+  List<String> relativeParts(String root) {
+    final normalizedRoot = root.replaceAll('\\', '/');
+    final normalizedPath = path.replaceAll('\\', '/');
+    if (!normalizedPath.startsWith(normalizedRoot)) {
+      return normalizedPath.split('/');
+    }
+    final relative = normalizedPath.substring(normalizedRoot.length).replaceFirst(RegExp('^/'), '');
+    if (relative.isEmpty) return [];
+    return relative.split('/');
+  }
+}
+
 String _formatVersion(String version) {
   final trimmed = version.trim();
   return trimmed.startsWith('v') ? trimmed : 'v$trimmed';
 }
 
-bool _isNewerVersion(String latest, String current) {
-  final latestParts = latest.split('.').map(int.tryParse).map((v) => v ?? 0).toList();
-  final currentParts = current.split('.').map(int.tryParse).map((v) => v ?? 0).toList();
-  final maxLen = latestParts.length > currentParts.length ? latestParts.length : currentParts.length;
+String _normalizeVersion(String version) {
+  final trimmed = version.trim();
+  return trimmed.startsWith('v') ? trimmed.substring(1) : trimmed;
+}
+
+int _compareVersions(String left, String right) {
+  final leftParts = left.split('.').map(int.tryParse).map((v) => v ?? 0).toList();
+  final rightParts = right.split('.').map(int.tryParse).map((v) => v ?? 0).toList();
+  final maxLen = leftParts.length > rightParts.length ? leftParts.length : rightParts.length;
   for (var i = 0; i < maxLen; i++) {
-    final l = i < latestParts.length ? latestParts[i] : 0;
-    final c = i < currentParts.length ? currentParts[i] : 0;
-    if (l > c) return true;
-    if (l < c) return false;
+    final l = i < leftParts.length ? leftParts[i] : 0;
+    final r = i < rightParts.length ? rightParts[i] : 0;
+    if (l == r) continue;
+    return l > r ? 1 : -1;
   }
-  return false;
+  return 0;
+}
+
+bool _isNewerVersion(String latest, String current) {
+  return _compareVersions(_normalizeVersion(latest), _normalizeVersion(current)) > 0;
+}
+
+String _formatReleaseDate(DateTime date) {
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  final month = months[date.month - 1];
+  return '$month ${date.day}, ${date.year}';
 }
 
 class DataService {

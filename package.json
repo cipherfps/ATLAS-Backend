@@ -1,6 +1,6 @@
 {
     "name":  "atlas",
-    "version":  "1.0.7",
+    "version": "1.0.9",
     "module":  "src/index.ts",
     "type":  "module",
     "devDependencies":  {
