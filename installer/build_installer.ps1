@@ -13,6 +13,7 @@ $guiDir = Join-Path $root "atlas_gui_flutter"
 $distDir = Join-Path $root "dist"
 $buildRoot = Join-Path $distDir "ATLAS"
 $wxsFile = Join-Path $PSScriptRoot "ATLAS.wxs"
+$licenseFile = Join-Path $PSScriptRoot "LICENSE.rtf"
 $iconPath = Join-Path $root "atlas_gui_flutter\\windows\\runner\\resources\\app_icon.ico"
 
 if (-not (Test-Path $wxsFile)) {
@@ -145,6 +146,7 @@ $msiOut = Join-Path $distDir ("ATLAS-{0}.msi" -f $Version)
 & $wixExe build $wxsFile `
   -d BuildRoot="$buildRoot" `
   -d ProductVersion="$Version" `
+  -d LicenseFile="$licenseFile" `
   -d IconPath="$iconPath" `
   -ext WixToolset.UI.wixext `
   -o "$msiOut"

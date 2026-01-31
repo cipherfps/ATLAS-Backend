@@ -83,9 +83,8 @@
       <ComponentRef Id="DesktopShortcut" />
     </Feature>
 
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch ATLAS after installation" />
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="0" />
     <Property Id="DISABLEROLLBACK" Value="1" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.LicenseFile)" />
 
     <SetProperty Id="TempFolder" Value="[LocalAppDataFolder]Temp" Before="CostInitialize" Sequence="both" />
     <SetProperty Id="TEMP" Value="[LocalAppDataFolder]Temp" Before="CostInitialize" Sequence="both" />
@@ -94,16 +93,7 @@
     <ui:WixUI Id="WixUI_InstallDir" />
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLROOT" />
 
-    <CustomAction
-      Id="LaunchApp"
-      FileRef="AtlasShortcut"
-      ExeCommand=""
-      Return="asyncNoWait" />
-    <ui:Publish
-      Dialog="ExitDialog"
-      Control="Finish"
-      Event="DoAction"
-      Value="LaunchApp">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1</ui:Publish>
+ 
 
   </Package>
 </Wix>
