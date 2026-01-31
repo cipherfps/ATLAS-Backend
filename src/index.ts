@@ -10,9 +10,11 @@ import fs from "node:fs";
 import ini from "ini";
 import { startMatchmakingWebSocket } from "./utils/matchmaking/websocket";
 
-const parsedPort = Number(process.env.ATLAS_PORT ?? 3551);
+const resolvedPortEnv = process.env.ATLAS_PORT ?? process.env.PORT ?? "3551";
+const parsedPort = Number(resolvedPortEnv);
 const PORT = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : 3551;
 export const app = new Hono({ strict: false });
+export default app;
 
 // Version: 1.0.1 - Update notification system is now working!
 

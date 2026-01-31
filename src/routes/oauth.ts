@@ -2,14 +2,59 @@ import app, { setStatusMessage } from "..";
 import { Atlas } from "../utils/handlers/errors";
 import jwt from "jsonwebtoken";
 import logger from "../utils/logger/logger";
+import fs from "node:fs";
+import path from "node:path";
 
 interface requestBody {
   [key: string]: any;
 }
 
+const authLogDir = path.join(__dirname, "../../logs");
+const authLogPath = path.join(authLogDir, "auth-debug.log");
+
+function ensureAuthLogDir() {
+  if (!fs.existsSync(authLogDir)) {
+    fs.mkdirSync(authLogDir, { recursive: true });
+  }
+}
+
+function safeValue(value: unknown) {
+  if (typeof value === "string") {
+    if (value.length > 64) {
+      return `${value.slice(0, 16)}...${value.slice(-16)}`;
+    }
+    return value;
+  }
+  return value;
+}
+
+function logAuth(message: string, data?: Record<string, unknown>) {
+  try {
+    ensureAuthLogDir();
+    const timestamp = new Date().toISOString();
+    const payload = data
+      ? JSON.stringify(
+          Object.fromEntries(
+            Object.entries(data).map(([key, value]) => [key, safeValue(value)])
+          )
+        )
+      : "";
+    fs.appendFileSync(authLogPath, `[${timestamp}] ${message} ${payload}\n`);
+  } catch (err) {
+    logger.error(`Failed to write auth debug log: ${err}`);
+  }
+}
+
 export default function () {
   app.post("/account/api/oauth/token", async (c) => {
     const body: requestBody = await c.req.parseBody();
+    const userAgent = c.req.header("user-agent") || "";
+    logAuth("oauth/token request", {
+      userAgent,
+      grantType: body.grant_type,
+      username: body.username,
+      hasPassword: typeof body.password === "string",
+    });
     let accountId = body.username || "atlas";
     if (accountId.includes("@")) {
       accountId = accountId.split("@")[0];
@@ -29,6 +74,7 @@ export default function () {
       "AtlasKey"
     );
 
+    logAuth("oauth/token issued", { accountId });
     return c.json({
       access_token: `eg1~${t}`,
       expires_in: 28800,
@@ -49,6 +95,8 @@ export default function () {
   });
 
   app.post("/auth/v1/oauth/token", async (c) => {
+    const userAgent = c.req.header("user-agent") || "";
+    logAuth("auth/v1/oauth/token request", { userAgent });
     let access_token = jwt.sign(
       {
         clientId: "ec684b8c687f479fadea3cb2ad83f5c6",
@@ -81,17 +129,27 @@ export default function () {
   });
 
   app.post("/publickey/v2/publickey", async (c) => {
+    logAuth("publickey request");
     return c.json([]);
   });
 
   app.post("/epic/oauth/v2/token", async (c) => {
     const body: any = await c.req.parseBody();
-    const JWT = body.refresh_token.replace("eg1~", "");
+    const refreshToken = body.refresh_token || "";
+    logAuth("epic/oauth/v2/token request", {
+      grantType: body.grant_type,
+      hasRefresh: typeof refreshToken === "string" && refreshToken.length > 0,
+      refreshLength: typeof refreshToken === "string" ? refreshToken.length : 0,
+    });
+    const JWT = refreshToken.replace("eg1~", "");
     let decoded;
 
     try {
       decoded = jwt.verify(JWT, "AtlasKey") as jwt.JwtPayload;
     } catch (err) {
+      logAuth("epic/oauth/v2/token verify failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
       throw err;
     }
 
@@ -177,6 +235,10 @@ export default function () {
   app.get("/account/api/oauth/verify", async (c) => {
     const body: requestBody = await c.req.parseBody();
     const authorization = c.req.header("authorization");
+    logAuth("oauth/verify request", {
+      hasAuthHeader: !!authorization,
+      username: body.username,
+    });
 
     let accountId = body.username || "Atlas";
     if (accountId.includes("@")) {
@@ -202,6 +264,7 @@ export default function () {
   });
 
   app.delete("/account/api/oauth/sessions/kill/*", async (c) => {
+    logAuth("oauth/sessions/kill");
     c.status(204);
     return c.json({});
   });
