@@ -5039,8 +5039,10 @@ class ConfigSettings {
 
 class ConfigService {
   static Future<ConfigSettings> load() async {
-    final file = File(BackendPaths.configIni);
-    if (!await file.exists()) {
+    final base = await _loadConfigFile(File(BackendPaths.configIni));
+    final gui = await _loadConfigFile(File(_guiConfigPath()));
+    final map = {...base, ...gui};
+    if (map.isEmpty) {
       return const ConfigSettings(
         rufusStage: 1,
         waterLevel: 1,
@@ -5053,14 +5055,6 @@ class ConfigService {
         backgroundBlur: 18,
         dialogBlurEnabled: true,
       );
-    }
-    final content = await file.readAsString();
-    final map = <String, String>{};
-    for (final line in content.split('\n')) {
-      final trimmed = line.trim();
-      if (trimmed.isEmpty || trimmed.startsWith('#') || !trimmed.contains('=')) continue;
-      final parts = trimmed.split('=');
-      map[parts.first.trim()] = parts.sublist(1).join('=').trim();
     }
     return ConfigSettings(
       rufusStage: int.tryParse(map['RufusStage'] ?? '') ?? 1,
@@ -5077,7 +5071,6 @@ class ConfigService {
   }
 
   static Future<void> save(ConfigSettings settings) async {
-    final file = File(BackendPaths.configIni);
     final buffer = StringBuffer()
       ..writeln('RufusStage=${settings.rufusStage}')
       ..writeln('WaterLevel=${settings.waterLevel}')
@@ -5089,7 +5082,42 @@ class ConfigService {
       ..writeln('BackgroundImagePath=${settings.backgroundImagePath}')
       ..writeln('BackgroundBlur=${settings.backgroundBlur}')
       ..writeln('DialogBlurEnabled=${settings.dialogBlurEnabled}');
-    await file.writeAsString(buffer.toString());
+    final backendFile = File(BackendPaths.configIni);
+    try {
+      await backendFile.writeAsString(buffer.toString());
+    } catch (_) {
+      // Backend config might be read-only on some installs.
+    }
+    final guiFile = File(_guiConfigPath());
+    try {
+      await guiFile.parent.create(recursive: true);
+      await guiFile.writeAsString(buffer.toString());
+    } catch (_) {}
+  }
+
+  static String _guiConfigPath() {
+    final appData = Platform.environment['APPDATA'] ?? '';
+    if (appData.isNotEmpty) {
+      return joinPath([appData, 'ATLAS', 'gui.ini']);
+    }
+    final home = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'] ?? '';
+    if (home.isNotEmpty) {
+      return joinPath([home, 'AppData', 'Roaming', 'ATLAS', 'gui.ini']);
+    }
+    return joinPath([Directory.current.path, 'gui.ini']);
+  }
+
+  static Future<Map<String, String>> _loadConfigFile(File file) async {
+    if (!await file.exists()) return {};
+    final content = await file.readAsString();
+    final map = <String, String>{};
+    for (final line in content.split('\n')) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty || trimmed.startsWith('#') || !trimmed.contains('=')) continue;
+      final parts = trimmed.split('=');
+      map[parts.first.trim()] = parts.sublist(1).join('=').trim();
+    }
+    return map;
   }
 }
 
@@ -5116,7 +5144,6 @@ class UpdateInfo {
 
 class UpdateService {
   static const String _repo = 'cipherfps/ATLAS-Backend';
-  static const String _mainZipUrl = 'https://github.com/cipherfps/ATLAS-Backend/archive/refs/heads/main.zip';
   static const String _branch = 'gui';
   static const String _mainZipUrl = 'https://github.com/cipherfps/ATLAS-Backend/archive/refs/heads/gui.zip';
 
@@ -6792,7 +6819,7 @@ class BackendController extends ChangeNotifier {
       final request = await client.getUrl(Uri.parse('http://127.0.0.1:3551/unknown'));
       final response = await request.close().timeout(const Duration(seconds: 2));
       client.close();
-      return response.statusCode == 200;
+      return response.statusCode >= 200 && response.statusCode < 500;
     } catch (_) {
       return false;
     }
