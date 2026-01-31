@@ -272,7 +272,7 @@ class _AtlasHomePageState extends State<AtlasHomePage> with WidgetsBindingObserv
   late final BackendController _controller;
   bool _exitInProgress = false;
   bool _checkingUpdate = false;
-  String _backendVersionLabel = '4.0.0';
+  String _backendVersionLabel = '1.0.0';
 
   @override
   void initState() {
@@ -5117,6 +5117,8 @@ class UpdateInfo {
 class UpdateService {
   static const String _repo = 'cipherfps/ATLAS-Backend';
   static const String _mainZipUrl = 'https://github.com/cipherfps/ATLAS-Backend/archive/refs/heads/main.zip';
+  static const String _branch = 'gui';
+  static const String _mainZipUrl = 'https://github.com/cipherfps/ATLAS-Backend/archive/refs/heads/gui.zip';
 
   static Future<UpdateInfo?> checkForUpdate() async {
     final backendRoot = getBackendRoot();
@@ -5148,6 +5150,7 @@ class UpdateService {
 
   static Future<Map<String, dynamic>?> _fetchRemotePackage() async {
     final url = Uri.parse('https://raw.githubusercontent.com/$_repo/main/package.json?t=${DateTime.now().millisecondsSinceEpoch}');
+    final url = Uri.parse('https://raw.githubusercontent.com/$_repo/$_branch/package.json?t=${DateTime.now().millisecondsSinceEpoch}');
     final client = HttpClient();
     try {
       final request = await client.getUrl(url);
