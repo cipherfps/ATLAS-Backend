@@ -19,6 +19,7 @@ This backend has features such as the following:
 - Arena Points Saving (Unfinished)
 - Arena Point Leaderboard with all Profiles
 - Game Configuration (GUI Rufus/Water Stage Editor/Water Storm Toggle)
+- Custom Cosmetic Profiles (Reboot x Retrac, Stellar, Tozo)
 
 If you want to contribute just fork this repository and make a pull request!
 

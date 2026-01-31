@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+﻿import { Hono } from "hono";
 import path from "node:path";
 import { loadRoutes } from "./utils/startup/loadRoutes";
 import { Atlas } from "./utils/handlers/errors";
@@ -54,19 +54,19 @@ export function setStatusMessage(message: string) {
 // Function to display the menu content (logo, status, options)
 function displayMenuContent() {
   const terminalWidth = process.stdout.columns || 80;
-  const logoLines = `\x1b[96m${addShadows(` █████╗ ████████╗██╗      █████╗ ███████╗
-██╔══██╗╚══██╔══╝██║     ██╔══██╗██╔════╝
-███████║   ██║   ██║     ███████║███████╗
-██╔══██║   ██║   ██║     ██╔══██║╚════██║
-██║  ██║   ██║   ███████╗██║  ██║███████║
-╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝`)}
+  const logoLines = `\x1b[96m${addShadows(` â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—      â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â•šâ•â•â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â•â•
+â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘â•šâ•â•â•â•â–ˆâ–ˆâ•‘
+â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘
+â•šâ•â•  â•šâ•â•   â•šâ•â•   â•šâ•â•â•â•â•â•â•â•šâ•â•  â•šâ•â•â•šâ•â•â•â•â•â•â•`)}
                                          
-\x1b[37m${addShadowsBackend(`██████╗  █████╗  ██████╗██╗  ██╗███████╗███╗   ██╗██████╗ 
-██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██╔════╝████╗  ██║██╔══██╗
-██████╔╝███████║██║     █████╔╝ █████╗  ██╔██╗ ██║██║  ██║
-██╔══██╗██╔══██║██║     ██╔═██╗ ██╔══╝  ██║╚██╗██║██║  ██║
-██████╔╝██║  ██║╚██████╗██║  ██╗███████╗██║ ╚████║██████╔╝
-╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚═════╝ `)}
+\x1b[37m${addShadowsBackend(`â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—  â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ•—   â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— 
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•‘ â–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—
+â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â• â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ•”â–ˆâ–ˆâ•— â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•— â–ˆâ–ˆâ•”â•â•â•  â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘
+â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘ â•šâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•
+â•šâ•â•â•â•â•â• â•šâ•â•  â•šâ•â• â•šâ•â•â•â•â•â•â•šâ•â•  â•šâ•â•â•šâ•â•â•â•â•â•â•â•šâ•â•  â•šâ•â•â•â•â•šâ•â•â•â•â•â• `)}
                                                           
 \x1b[0m`;
   
@@ -110,37 +110,37 @@ await loadRoutes(path.join(__dirname, "routes"), app);
 // Function to add gray color to shadow characters
 const addShadows = (text: string) => {
   return text
-    .replace(/╗/g, '\x1b[90m╗\x1b[96m')
-    .replace(/╔/g, '\x1b[90m╔\x1b[96m')
-    .replace(/═/g, '\x1b[90m═\x1b[96m')
-    .replace(/╚/g, '\x1b[90m╚\x1b[96m')
-    .replace(/╝/g, '\x1b[90m╝\x1b[96m')
-    .replace(/║/g, '\x1b[90m║\x1b[96m');
+    .replace(/â•—/g, '\x1b[90mâ•—\x1b[96m')
+    .replace(/â•”/g, '\x1b[90mâ•”\x1b[96m')
+    .replace(/â•/g, '\x1b[90mâ•\x1b[96m')
+    .replace(/â•š/g, '\x1b[90mâ•š\x1b[96m')
+    .replace(/â•/g, '\x1b[90mâ•\x1b[96m')
+    .replace(/â•‘/g, '\x1b[90mâ•‘\x1b[96m');
 };
 
 const addShadowsBackend = (text: string) => {
   return text
-    .replace(/╗/g, '\x1b[90m╗\x1b[37m')
-    .replace(/╔/g, '\x1b[90m╔\x1b[37m')
-    .replace(/═/g, '\x1b[90m═\x1b[37m')
-    .replace(/╚/g, '\x1b[90m╚\x1b[37m')
-    .replace(/╝/g, '\x1b[90m╝\x1b[37m')
-    .replace(/║/g, '\x1b[90m║\x1b[37m');
+    .replace(/â•—/g, '\x1b[90mâ•—\x1b[37m')
+    .replace(/â•”/g, '\x1b[90mâ•”\x1b[37m')
+    .replace(/â•/g, '\x1b[90mâ•\x1b[37m')
+    .replace(/â•š/g, '\x1b[90mâ•š\x1b[37m')
+    .replace(/â•/g, '\x1b[90mâ•\x1b[37m')
+    .replace(/â•‘/g, '\x1b[90mâ•‘\x1b[37m');
 };
 
-const logo = `\x1b[96m${addShadows(` █████╗ ████████╗██╗      █████╗ ███████╗
-██╔══██╗╚══██╔══╝██║     ██╔══██╗██╔════╝
-███████║   ██║   ██║     ███████║███████╗
-██╔══██║   ██║   ██║     ██╔══██║╚════██║
-██║  ██║   ██║   ███████╗██║  ██║███████║
-╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝`)}
+const logo = `\x1b[96m${addShadows(` â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—      â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â•šâ•â•â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â•â•
+â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘â•šâ•â•â•â•â–ˆâ–ˆâ•‘
+â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘
+â•šâ•â•  â•šâ•â•   â•šâ•â•   â•šâ•â•â•â•â•â•â•â•šâ•â•  â•šâ•â•â•šâ•â•â•â•â•â•â•`)}
                                          
-\x1b[37m${addShadowsBackend(`██████╗  █████╗  ██████╗██╗  ██╗███████╗███╗   ██╗██████╗ 
-██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██╔════╝████╗  ██║██╔══██╗
-██████╔╝███████║██║     █████╔╝ █████╗  ██╔██╗ ██║██║  ██║
-██╔══██╗██╔══██║██║     ██╔═██╗ ██╔══╝  ██║╚██╗██║██║  ██║
-██████╔╝██║  ██║╚██████╗██║  ██╗███████╗██║ ╚████║██████╔╝
-╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚═════╝ `)}
+\x1b[37m${addShadowsBackend(`â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—  â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ•—   â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— 
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•‘ â–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—
+â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â• â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ•”â–ˆâ–ˆâ•— â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•— â–ˆâ–ˆâ•”â•â•â•  â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘
+â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘ â•šâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•
+â•šâ•â•â•â•â•â• â•šâ•â•  â•šâ•â• â•šâ•â•â•â•â•â•â•šâ•â•  â•šâ•â•â•šâ•â•â•â•â•â•â•â•šâ•â•  â•šâ•â•â•â•â•šâ•â•â•â•â•â• `)}
                                                           
 \x1b[0m`;
 
@@ -231,18 +231,18 @@ async function toggleStraightBloom() {
       });
       // Clean up extra newlines
       content = content.replace(/\n\n+/g, '\n');
-      lastStatusMessage = '\x1b[32m✓ Straight Bloom disabled!\x1b[0m';
+      lastStatusMessage = '\x1b[32mâœ“ Straight Bloom disabled!\x1b[0m';
     } else {
       const ensured = ensureAssetSection(content, STRAIGHT_BLOOM_COMMENT);
       content = ensured.content;
       const insertPoint = ensured.insertPoint;
       content = content.slice(0, insertPoint) + sniperSpreadLines.join('\n') + '\n' + content.slice(insertPoint);
-      lastStatusMessage = '\x1b[32m✓ Straight Bloom enabled!\x1b[0m';
+      lastStatusMessage = '\x1b[32mâœ“ Straight Bloom enabled!\x1b[0m';
     }
     
     fs.writeFileSync(iniPath, content);
   } catch (error) {
-    lastStatusMessage = `\x1b[31m✗ Failed to toggle Straight Bloom: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
+    lastStatusMessage = `\x1b[31mâœ— Failed to toggle Straight Bloom: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
   }
 }
 
@@ -265,19 +265,19 @@ async function importCurveTables() {
     });
     
     if (iniFiles.length === 0) {
-      lastStatusMessage = '\x1b[33m✗ No .ini files found in exports/DefaultGame folder.\x1b[0m';
+      lastStatusMessage = '\x1b[33mâœ— No .ini files found in exports/DefaultGame folder.\x1b[0m';
       return;
     }
     
     // Show available files
-    console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\n\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
     console.log('\x1b[36m                 Available .ini Files\x1b[0m');
-    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
     iniFiles.forEach((file, index) => {
       console.log(`  \x1b[32m(${index + 1})\x1b[0m ${file}`);
     });
     console.log('  \x1b[32m(BACK)\x1b[0m Cancel and go back');
-    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m\n');
+    console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m\n');
     
     const fileResponse = await prompts({
       type: 'text',
@@ -304,7 +304,7 @@ async function importCurveTables() {
     const matches = [...importContent.matchAll(curveTableRegex)];
     
     if (matches.length === 0) {
-      lastStatusMessage = '\x1b[33m✗ No curvetables found in the selected file.\x1b[0m';
+      lastStatusMessage = '\x1b[33mâœ— No curvetables found in the selected file.\x1b[0m';
       return;
     }
     
@@ -330,16 +330,16 @@ async function importCurveTables() {
     });
     
     // Show found curvetables with better formatting
-    console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\n\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
     console.log(`\x1b[36m          Found ${groupedMatches.size} CurveTable(s) to Import\x1b[0m`);
-    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
     Array.from(groupedMatches.values()).forEach((group, index) => {
       const displayKey = group.key.length > 45 ? '...' + group.key.slice(-42) : group.key;
       const lineCountText = group.lines.length > 1 ? ` \x1b[90m(${group.lines.length} lines)\x1b[0m` : '';
       console.log(`  \x1b[90m${String(index + 1).padStart(2, ' ')}.\x1b[0m \x1b[96m${displayKey}\x1b[0m${lineCountText}`);
       console.log(`      \x1b[90mValue:\x1b[0m ${group.value}`);
     });
-    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m\n');
+    console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m\n');
     
     const confirmResponse = await prompts({
       type: 'text',
@@ -493,7 +493,7 @@ async function importCurveTables() {
     if (updatedCount > 0) statusParts.push(`${updatedCount} updated`);
     if (skippedCount > 0) statusParts.push(`${skippedCount} skipped (duplicates)`);
     
-    lastStatusMessage = `\x1b[32m✓ Import complete! ${statusParts.join(', ')}.\x1b[0m`;
+    lastStatusMessage = `\x1b[32mâœ“ Import complete! ${statusParts.join(', ')}.\x1b[0m`;
     
     // Optional: Ask if user wants to delete the imported file
     const deleteResponse = await prompts({
@@ -521,7 +521,7 @@ async function importCurveTables() {
     }
     
   } catch (error) {
-    lastStatusMessage = `\x1b[31m✗ Failed to import curvetables: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
+    lastStatusMessage = `\x1b[31mâœ— Failed to import curvetables: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
   }
 }
 
@@ -542,9 +542,9 @@ async function showArenaLeaderboard() {
     console.log(centeredLogo);
     console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
     
-    console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\n\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
     console.log('\x1b[36m                  Arena Leaderboard\x1b[0m');
-    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m\n');
+    console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m\n');
     
     // Load all player profiles and their arena points
     const profilesDir = path.join(__dirname, '..', 'static', 'profiles');
@@ -591,7 +591,7 @@ async function showArenaLeaderboard() {
       } else {
         // Display leaderboard
         console.log('  \x1b[90mRank  Name                                    Arena Points\x1b[0m');
-        console.log('  \x1b[36m─────────────────────────────────────────────────────────\x1b[0m');
+        console.log('  \x1b[36mâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\x1b[0m');
         
         leaderboard.forEach((player, index) => {
           const rank = String(index + 1).padStart(4, ' ');
@@ -621,7 +621,7 @@ async function showArenaLeaderboard() {
       console.log('\x1b[31m  Error loading profiles: ' + (err instanceof Error ? err.message : String(err)) + '\x1b[0m\n');
     }
     
-    console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\n\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
     
     // Wait for user to press enter
     await prompts({
@@ -688,7 +688,7 @@ async function exportData() {
       console.log(centeredLogo);
       console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
       console.log('');
-      console.log('\x1b[33m⚠  Exported data already exists!\x1b[0m');
+      console.log('\x1b[33mâš   Exported data already exists!\x1b[0m');
       console.log('\x1b[33mPlease clear exported data before exporting again.\x1b[0m');
       console.log('');
       
@@ -724,9 +724,9 @@ async function exportData() {
     const iniDestPath = path.join(defaultGameExportDir, 'DefaultGame.ini');
     if (fs.existsSync(iniSourcePath)) {
       fs.copyFileSync(iniSourcePath, iniDestPath);
-      console.log(`\x1b[32m✓\x1b[0m DefaultGame.ini exported`);
+      console.log(`\x1b[32mâœ“\x1b[0m DefaultGame.ini exported`);
     } else {
-      console.log(`\x1b[33m✗\x1b[0m DefaultGame.ini not found`);
+      console.log(`\x1b[33mâœ—\x1b[0m DefaultGame.ini not found`);
     }
     
     // Export Profiles folders
@@ -742,9 +742,9 @@ async function exportData() {
           profileCount++;
         }
       });
-      console.log(`\x1b[32m✓\x1b[0m ${profileCount} profile folder(s) exported`);
+      console.log(`\x1b[32mâœ“\x1b[0m ${profileCount} profile folder(s) exported`);
     } else {
-      console.log(`\x1b[33m✗\x1b[0m Profiles source directory not found`);
+      console.log(`\x1b[33mâœ—\x1b[0m Profiles source directory not found`);
     }
     
     // Export ClientSettings folders
@@ -760,13 +760,13 @@ async function exportData() {
           clientCount++;
         }
       });
-      console.log(`\x1b[32m✓\x1b[0m ${clientCount} ClientSettings folder(s) exported`);
+      console.log(`\x1b[32mâœ“\x1b[0m ${clientCount} ClientSettings folder(s) exported`);
     } else {
-      console.log(`\x1b[33m✗\x1b[0m ClientSettings source directory not found`);
+      console.log(`\x1b[33mâœ—\x1b[0m ClientSettings source directory not found`);
     }
     
     console.log('');
-    lastStatusMessage = '\x1b[32m✓ Data exported successfully!\x1b[0m';
+    lastStatusMessage = '\x1b[32mâœ“ Data exported successfully!\x1b[0m';
     
     await prompts({
       type: 'text',
@@ -775,7 +775,7 @@ async function exportData() {
     });
     
   } catch (error) {
-    lastStatusMessage = `\x1b[31m✗ Export failed: ${(error instanceof Error ? error.message : String(error))}\\x1b[0m`;
+    lastStatusMessage = `\x1b[31mâœ— Export failed: ${(error instanceof Error ? error.message : String(error))}\\x1b[0m`;
     await prompts({
       type: 'text',
       name: 'continue',
@@ -832,9 +832,9 @@ async function importData() {
           profileCount++;
         }
       });
-      console.log(`\x1b[32m✓\x1b[0m ${profileCount} profile folder(s) imported`);
+      console.log(`\x1b[32mâœ“\x1b[0m ${profileCount} profile folder(s) imported`);
     } else {
-      console.log(`\x1b[33m✗\x1b[0m Profiles not found in exports`);
+      console.log(`\x1b[33mâœ—\x1b[0m Profiles not found in exports`);
     }
     
     // Import ClientSettings folders
@@ -850,9 +850,9 @@ async function importData() {
           clientCount++;
         }
       });
-      console.log(`\x1b[32m✓\x1b[0m ${clientCount} ClientSettings folder(s) imported`);
+      console.log(`\x1b[32mâœ“\x1b[0m ${clientCount} ClientSettings folder(s) imported`);
     } else {
-      console.log(`\x1b[33m✗\x1b[0m ClientSettings not found in exports`);
+      console.log(`\x1b[33mâœ—\x1b[0m ClientSettings not found in exports`);
     }
     
     // Import CurveTables from DefaultGame.ini if it exists
@@ -1011,15 +1011,15 @@ async function importData() {
             fs.unlinkSync(backupPath);
           }
           
-          console.log(`\x1b[32m✓\x1b[0m ${importedCount} CurveTable(s) imported from DefaultGame.ini`);
+          console.log(`\x1b[32mâœ“\x1b[0m ${importedCount} CurveTable(s) imported from DefaultGame.ini`);
         } else {
-          console.log(`\x1b[90m○\x1b[0m No CurveTables found in DefaultGame.ini`);
+          console.log(`\x1b[90mâ—‹\x1b[0m No CurveTables found in DefaultGame.ini`);
         }
       } catch (error) {
-        console.log(`\x1b[33m✗\x1b[0m Failed to import CurveTables: ${(error instanceof Error ? error.message : String(error))}`);
+        console.log(`\x1b[33mâœ—\x1b[0m Failed to import CurveTables: ${(error instanceof Error ? error.message : String(error))}`);
       }
     } else {
-      console.log(`\x1b[90m○\x1b[0m DefaultGame.ini not found in exports`);
+      console.log(`\x1b[90mâ—‹\x1b[0m DefaultGame.ini not found in exports`);
     }
     
     // Import Straight Bloom from DefaultGame.ini if it exists
@@ -1052,18 +1052,18 @@ async function importData() {
             content = content.slice(0, insertPoint) + sniperSpreadLines.join('\n') + '\n' + content.slice(insertPoint);
             
             fs.writeFileSync(iniPath, content);
-            console.log(`\x1b[32m✓\x1b[0m Straight Bloom imported and enabled`);
+            console.log(`\x1b[32mâœ“\x1b[0m Straight Bloom imported and enabled`);
           } else {
-            console.log(`\x1b[90m○\x1b[0m Straight Bloom not found in DefaultGame.ini`);
+            console.log(`\x1b[90mâ—‹\x1b[0m Straight Bloom not found in DefaultGame.ini`);
           }
         }
       } catch (error) {
-        console.log(`\x1b[33m✗\x1b[0m Failed to import Straight Bloom: ${(error instanceof Error ? error.message : String(error))}`);
+        console.log(`\x1b[33mâœ—\x1b[0m Failed to import Straight Bloom: ${(error instanceof Error ? error.message : String(error))}`);
       }
     }
     
     console.log('');
-    lastStatusMessage = '\x1b[32m✓ Data imported successfully!\x1b[0m';
+    lastStatusMessage = '\x1b[32mâœ“ Data imported successfully!\x1b[0m';
     
     await prompts({
       type: 'text',
@@ -1072,7 +1072,7 @@ async function importData() {
     });
     
   } catch (error) {
-    lastStatusMessage = `\x1b[31m✗ Import failed: ${(error instanceof Error ? error.message : String(error))}\\x1b[0m`;
+    lastStatusMessage = `\x1b[31mâœ— Import failed: ${(error instanceof Error ? error.message : String(error))}\\x1b[0m`;
     await prompts({
       type: 'text',
       name: 'continue',
@@ -1130,17 +1130,17 @@ async function clearExportedData() {
       return;
     }
     
-    console.log('\x1b[32m✓\x1b[0m\x1b[31m Clearing exported data...\x1b[0m');
+    console.log('\x1b[32mâœ“\x1b[0m\x1b[31m Clearing exported data...\x1b[0m');
     
     if (fs.existsSync(exportsDir)) {
       deleteDirRecursive(exportsDir);
-      console.log(`\x1b[32m✓\x1b[0m Exported data cleared`);
+      console.log(`\x1b[32mâœ“\x1b[0m Exported data cleared`);
     } else {
-      console.log(`\x1b[33m✗\x1b[0m No exported data found`);
+      console.log(`\x1b[33mâœ—\x1b[0m No exported data found`);
     }
     
     console.log('');
-    lastStatusMessage = '\x1b[32m✓ Exported data cleared successfully!\x1b[0m';
+    lastStatusMessage = '\x1b[32mâœ“ Exported data cleared successfully!\x1b[0m';
     
     await prompts({
       type: 'text',
@@ -1149,7 +1149,7 @@ async function clearExportedData() {
     });
     
   } catch (error) {
-    lastStatusMessage = `\x1b[31m✗ Clear failed: ${(error instanceof Error ? error.message : String(error))}\\x1b[0m`;
+    lastStatusMessage = `\x1b[31mâœ— Clear failed: ${(error instanceof Error ? error.message : String(error))}\\x1b[0m`;
     await prompts({
       type: 'text',
       name: 'continue',
@@ -1229,7 +1229,7 @@ async function clearBackendData() {
           clearedItems++;
         }
       });
-      console.log(`\x1b[32m✓\x1b[0m Player profiles cleared`);
+      console.log(`\x1b[32mâœ“\x1b[0m Player profiles cleared`);
     }
     
     // Clear static/ClientSettings (except config folder)
@@ -1253,7 +1253,7 @@ async function clearBackendData() {
           clearedItems++;
         }
       });
-      console.log(`\x1b[32m✓\x1b[0m Client settings cleared`);
+      console.log(`\x1b[32mâœ“\x1b[0m Client settings cleared`);
     }
     
     // Remove straightbloom
@@ -1273,9 +1273,9 @@ async function clearBackendData() {
         // Clean up extra newlines
         content = content.replace(/\n\n+/g, '\n');
         fs.writeFileSync(iniPath, content);
-        console.log(`\x1b[32m✓\x1b[0m Straight Bloom removed`);
+        console.log(`\x1b[32mâœ“\x1b[0m Straight Bloom removed`);
       } else {
-        console.log(`\x1b[90m○\x1b[0m Straight Bloom was not enabled`);
+        console.log(`\x1b[90mâ—‹\x1b[0m Straight Bloom was not enabled`);
       }
     }
     
@@ -1302,14 +1302,14 @@ async function clearBackendData() {
       fs.writeFileSync(backupPath, JSON.stringify({ curveTableLines: [] }, null, 2));
       
       if (hadCurves || customEntries.length > 0) {
-        console.log(`\x1b[32m✓\x1b[0m CurveTables cleared`);
+        console.log(`\x1b[32mâœ“\x1b[0m CurveTables cleared`);
       } else {
-        console.log(`\x1b[90m○\x1b[0m No CurveTables were configured`);
+        console.log(`\x1b[90mâ—‹\x1b[0m No CurveTables were configured`);
       }
     }
     
     console.log('');
-    lastStatusMessage = `\x1b[32m✓ Backend data cleared successfully! (${clearedItems} items removed)\x1b[0m`;
+    lastStatusMessage = `\x1b[32mâœ“ Backend data cleared successfully! (${clearedItems} items removed)\x1b[0m`;
     
     await prompts({
       type: 'text',
@@ -1318,7 +1318,7 @@ async function clearBackendData() {
     });
     
   } catch (error) {
-    lastStatusMessage = `\x1b[31m✗ Clear failed: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
+    lastStatusMessage = `\x1b[31mâœ— Clear failed: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
     await prompts({
       type: 'text',
       name: 'continue',
@@ -1360,14 +1360,14 @@ async function gameConfigurationMenu() {
       const shouldUseWaterStorm = config.UseWaterStorm === 'True' || config.UseWaterStorm === true;
       const waterStormStatus = shouldUseWaterStorm ? '\x1b[32m[ON]\x1b[0m' : '\x1b[31m[OFF]\x1b[0m';
       
-      console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\n\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
       console.log('\x1b[36m                  Game Configuration\x1b[0m');
-      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
       console.log(`\x1b[32m(1)\x1b[0m Rufus Week Stage (27.11) - \x1b[32mCurrent:\x1b[0m \x1b[33m${rufusStage}\x1b[0m`);
       console.log(`\x1b[32m(2)\x1b[0m Water Level (13.X) - \x1b[32mCurrent:\x1b[0m \x1b[33m${waterLevel}\x1b[0m`);
       console.log(`\x1b[32m(3)\x1b[0m Toggle Water Storm (12.61) ${waterStormStatus}`);
       console.log('\x1b[32m(BACK)\x1b[0m Return to other settings');
-      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
       
       const response = await prompts({
         type: 'text',
@@ -1403,7 +1403,7 @@ async function gameConfigurationMenu() {
         if (stageResponse.stage) {
           config.RufusStage = stageResponse.stage;
           fs.writeFileSync(configPath, ini.stringify(config));
-          lastStatusMessage = `\x1b[32m✓ Rufus Week Stage set to ${stageResponse.stage}!\x1b[0m`;
+          lastStatusMessage = `\x1b[32mâœ“ Rufus Week Stage set to ${stageResponse.stage}!\x1b[0m`;
         }
       } else if (choice === '2') {
         // Water Level
@@ -1420,7 +1420,7 @@ async function gameConfigurationMenu() {
         if (levelResponse.level) {
           config.WaterLevel = levelResponse.level;
           fs.writeFileSync(configPath, ini.stringify(config));
-          lastStatusMessage = `\x1b[32m✓ Water Level set to ${levelResponse.level}!\x1b[0m`;
+          lastStatusMessage = `\x1b[32mâœ“ Water Level set to ${levelResponse.level}!\x1b[0m`;
         }
       }
       else if (choice === '3') {
@@ -1430,10 +1430,10 @@ async function gameConfigurationMenu() {
         config.UseWaterStorm = newValue;
         fs.writeFileSync(configPath, ini.stringify(config));
         const statusText = newValue === 'True' ? '\x1b[32mON\x1b[0m' : '\x1b[31mOFF\x1b[0m';
-        lastStatusMessage = `\x1b[32m✓ Water Storm toggled ${statusText}!\x1b[0m`;
+        lastStatusMessage = `\x1b[32mâœ“ Water Storm toggled ${statusText}!\x1b[0m`;
       }
     } catch (error) {
-      lastStatusMessage = `\x1b[31m✗ Failed to update configuration: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
+      lastStatusMessage = `\x1b[31mâœ— Failed to update configuration: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
       continueLoop = false;
     }
   }
@@ -1470,16 +1470,16 @@ async function otherSettingsMenu() {
       const arenaPointsEnabled = config.SaveArenaPoints === 'true' || config.SaveArenaPoints === true;
       const arenaStatus = arenaPointsEnabled ? '\x1b[32m[ON]\x1b[0m' : '\x1b[31m[OFF]\x1b[0m';
       
-      console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\n\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
       console.log('\x1b[36m                     Other Settings\x1b[0m');
-      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
       console.log(`\x1b[32m(1)\x1b[0m Toggle Arena Point Saving ${arenaStatus}`);
       console.log('\x1b[32m(2)\x1b[0m Arena Leaderboard');
       console.log('\x1b[32m(3)\x1b[0m Game Configuration');
       console.log('\x1b[32m(4)\x1b[0m Custom Cosmetic Profiles');
       console.log('\x1b[32m(5)\x1b[0m Manage Data');
       console.log('\x1b[32m(BACK)\x1b[0m Return to main menu');
-      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
       
       const response = await prompts({
         type: 'text',
@@ -1506,7 +1506,7 @@ async function otherSettingsMenu() {
           const newValue = !arenaPointsEnabled;
           config.SaveArenaPoints = newValue.toString();
           fs.writeFileSync(configPath, ini.stringify(config));
-          lastStatusMessage = `\x1b[32m✓ Arena Point Saving ${newValue ? 'enabled' : 'disabled'}! ${newValue ? 'Players will keep their arena points.' : 'Players will start at 0 arena points.'}\x1b[0m`;
+          lastStatusMessage = `\x1b[32mâœ“ Arena Point Saving ${newValue ? 'enabled' : 'disabled'}! ${newValue ? 'Players will keep their arena points.' : 'Players will start at 0 arena points.'}\x1b[0m`;
           break;
         case '2':
           // Show Arena Leaderboard
@@ -1533,7 +1533,7 @@ async function otherSettingsMenu() {
       }
       
     } catch (error) {
-      lastStatusMessage = `\x1b[31m✗ Failed to update settings: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
+      lastStatusMessage = `\x1b[31mâœ— Failed to update settings: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
       continueLoop = false;
     }
   }
@@ -1571,9 +1571,9 @@ async function customCosmeticProfilesMenu() {
         return fs.statSync(itemPath).isDirectory();
       });
       
-      console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\n\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
       console.log('\x1b[36m              Custom Cosmetic Profiles\x1b[0m');
-      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
       
       // Show profile accounts found
       if (profileDirs.length > 0) {
@@ -1594,7 +1594,7 @@ async function customCosmeticProfilesMenu() {
       }
       
       console.log('\x1b[32m(BACK)\x1b[0m Return to other settings');
-      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
       
       const response = await prompts({
         type: 'text',
@@ -1621,7 +1621,7 @@ async function customCosmeticProfilesMenu() {
       }
       
     } catch (error) {
-      lastStatusMessage = `\x1b[31m✗ Failed to manage cosmetic profiles: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
+      lastStatusMessage = `\x1b[31mâœ— Failed to manage cosmetic profiles: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
       continueLoop = false;
     }
   }
@@ -1636,13 +1636,13 @@ async function applyCosmeticPreset(preset: { id: string, name: string, folder: s
     
     // Check if preset profile exists
     if (!fs.existsSync(presetProfilePath)) {
-      lastStatusMessage = `\x1b[31m✗ Preset profile not found: ${preset.folder}\x1b[0m`;
+      lastStatusMessage = `\x1b[31mâœ— Preset profile not found: ${preset.folder}\x1b[0m`;
       return;
     }
     
     // Check if any profiles exist
     if (profileDirs.length === 0) {
-      lastStatusMessage = `\x1b[31m✗ No profiles found. Cannot apply presets.\x1b[0m`;
+      lastStatusMessage = `\x1b[31mâœ— No profiles found. Cannot apply presets.\x1b[0m`;
       return;
     }
     
@@ -1657,12 +1657,12 @@ async function applyCosmeticPreset(preset: { id: string, name: string, folder: s
     
     console.log(centeredLogo);
     console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
-    console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\n\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
     console.log('\x1b[36m              Apply Preset To:\x1b[0m');
-    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
     console.log('\x1b[32m(1)\x1b[0m Apply to a specific user');
     console.log('\x1b[32m(2)\x1b[0m Apply to all users');
-    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
     
     const scopeResponse = await prompts({
       type: 'text',
@@ -1704,7 +1704,7 @@ async function applyCosmeticPreset(preset: { id: string, name: string, folder: s
     console.log(centeredLogo);
     console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
     console.log('');
-    console.log('\x1b[33m⚠  WARNING\x1b[0m');
+    console.log('\x1b[33mâš   WARNING\x1b[0m');
     console.log('');
     const targetDisplay = targetProfiles.length === 1
       ? targetProfiles[0]
@@ -1722,7 +1722,7 @@ async function applyCosmeticPreset(preset: { id: string, name: string, folder: s
     });
     
     if (confirmResponse.confirm?.toUpperCase() !== 'Y') {
-      lastStatusMessage = `\x1b[33m⚠  Cancelled preset application\x1b[0m`;
+      lastStatusMessage = `\x1b[33mâš   Cancelled preset application\x1b[0m`;
       return;
     }
     
@@ -1744,13 +1744,13 @@ async function applyCosmeticPreset(preset: { id: string, name: string, folder: s
     }
     
     if (appliedCount > 0) {
-      lastStatusMessage = `\x1b[32m✓ Applied "${preset.name}" to ${appliedCount} profile(s)\x1b[0m`;
+      lastStatusMessage = `\x1b[32mâœ“ Applied "${preset.name}" to ${appliedCount} profile(s)\x1b[0m`;
     } else {
-      lastStatusMessage = `\x1b[33m⚠  No profiles were modified (${skippedCount} skipped)\x1b[0m`;
+      lastStatusMessage = `\x1b[33mâš   No profiles were modified (${skippedCount} skipped)\x1b[0m`;
     }
     
   } catch (error) {
-    lastStatusMessage = `\x1b[31m✗ Error applying preset: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
+    lastStatusMessage = `\x1b[31mâœ— Error applying preset: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
   }
 }
 
@@ -1774,15 +1774,15 @@ async function manageDataMenu() {
       console.log(centeredLogo);
       console.log(`\x1b[36m[BACKEND]\x1b[0m ATLAS started on Port ${PORT}`);
       
-      console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\n\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
       console.log('\x1b[36m                    Data Management\x1b[0m');
-      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
       console.log('\x1b[32m(1)\x1b[0m Export Data');
       console.log('\x1b[32m(2)\x1b[0m Import Data');
       console.log('\x1b[32m(3)\x1b[0m Clear Exported Data');
       console.log('\x1b[32m(4)\x1b[0m Clear Backend Data');
       console.log('\x1b[32m(BACK)\x1b[0m Return to other settings');
-      console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+      console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
       
       const response = await prompts({
         type: 'text',
@@ -1824,7 +1824,7 @@ async function manageDataMenu() {
       }
       
     } catch (error) {
-      console.log(`\x1b[31m✗ Error: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`);
+      console.log(`\x1b[31mâœ— Error: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`);
       continueLoop = false;
     }
   }
@@ -1841,19 +1841,19 @@ async function modifyCurveTables() {
     
     // Redisplay centered logo
     const terminalWidth = process.stdout.columns || 80;
-    const logoLines = `\x1b[96m${addShadows(` █████╗ ████████╗██╗      █████╗ ███████╗
-██╔══██╗╚══██╔══╝██║     ██╔══██╗██╔════╝
-███████║   ██║   ██║     ███████║███████╗
-██╔══██║   ██║   ██║     ██╔══██║╚════██║
-██║  ██║   ██║   ███████╗██║  ██║███████║
-╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝`)}
+    const logoLines = `\x1b[96m${addShadows(` â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—      â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â•šâ•â•â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â•â•
+â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘â•šâ•â•â•â•â–ˆâ–ˆâ•‘
+â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘
+â•šâ•â•  â•šâ•â•   â•šâ•â•   â•šâ•â•â•â•â•â•â•â•šâ•â•  â•šâ•â•â•šâ•â•â•â•â•â•â•`)}
                                          
-\x1b[37m${addShadowsBackend(`██████╗  █████╗  ██████╗██╗  ██╗███████╗███╗   ██╗██████╗ 
-██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██╔════╝████╗  ██║██╔══██╗
-██████╔╝███████║██║     █████╔╝ █████╗  ██╔██╗ ██║██║  ██║
-██╔══██╗██╔══██║██║     ██╔═██╗ ██╔══╝  ██║╚██╗██║██║  ██║
-██████╔╝██║  ██║╚██████╗██║  ██╗███████╗██║ ╚████║██████╔╝
-╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚═════╝ `)}
+\x1b[37m${addShadowsBackend(`â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—  â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ•—   â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— 
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•‘ â–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—
+â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â• â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ•”â–ˆâ–ˆâ•— â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•— â–ˆâ–ˆâ•”â•â•â•  â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘
+â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘ â•šâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•
+â•šâ•â•â•â•â•â• â•šâ•â•  â•šâ•â• â•šâ•â•â•â•â•â•â•šâ•â•  â•šâ•â•â•šâ•â•â•â•â•â•â•â•šâ•â•  â•šâ•â•â•â•â•šâ•â•â•â•â•â• `)}
                                                           
 \x1b[0m`;
     
@@ -1875,7 +1875,7 @@ async function modifyCurveTables() {
     
     // Check if curvetables are toggled off
     if (fs.existsSync(backupPath)) {
-      lastStatusMessage = '\x1b[33m✗ CurveTables are currently disabled. Toggle them on first to modify.\x1b[0m';
+      lastStatusMessage = '\x1b[33mâœ— CurveTables are currently disabled. Toggle them on first to modify.\x1b[0m';
       return;
     }
     
@@ -1885,9 +1885,9 @@ async function modifyCurveTables() {
     let content = fs.readFileSync(iniPath, 'utf-8');
     content = normalizeCurveTablePlacement(content);
     
-    console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\n\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
     console.log('\x1b[36m                 CurveTable Management\x1b[0m');
-    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
     console.log('\x1b[32m(1)\x1b[0m Add CurveTable');
     console.log('\x1b[32m(2)\x1b[0m Delete CurveTable');
     console.log('\x1b[32m(3)\x1b[0m List Current Values');
@@ -1895,7 +1895,7 @@ async function modifyCurveTables() {
     console.log('\x1b[32m(5)\x1b[0m Import CurveTables from .ini file');
     console.log('\x1b[32m(6)\x1b[0m Clear All CurveTables');
     console.log('\x1b[32m(BACK)\x1b[0m Return to main menu');
-    console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+    console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
     
     const actionResponse = await prompts({
       type: 'text',
@@ -1971,7 +1971,7 @@ async function modifyCurveTables() {
 
       const match = parsedLines[0].match(/^\+CurveTable=(.+?);RowUpdate;(.+?);(\d+);(.+)$/);
       if (!match) {
-        lastStatusMessage = '\x1b[31m✗ Invalid curvetable format. Expected: +CurveTable=/path;RowUpdate;key;0;value\x1b[0m';
+        lastStatusMessage = '\x1b[31mâœ— Invalid curvetable format. Expected: +CurveTable=/path;RowUpdate;key;0;value\x1b[0m';
         continue;
       }
 
@@ -2001,7 +2001,7 @@ async function modifyCurveTables() {
       content = content.slice(0, insertPoint) + curveString + '\n' + content.slice(insertPoint);
       
       fs.writeFileSync(iniPath, content);
-      lastStatusMessage = '\x1b[32m✓ Custom curvetable added successfully!\x1b[0m';
+      lastStatusMessage = '\x1b[32mâœ“ Custom curvetable added successfully!\x1b[0m';
       
       // Continue loop to show submenu again
       continue;
@@ -2050,7 +2050,7 @@ async function modifyCurveTables() {
         });
         fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
         
-        lastStatusMessage = '\x1b[32m✓ All curvetables cleared!\x1b[0m';
+        lastStatusMessage = '\x1b[32mâœ“ All curvetables cleared!\x1b[0m';
       } else {
         lastStatusMessage = '\x1b[33mCancelled.\x1b[0m';
       }
@@ -2219,7 +2219,7 @@ async function modifyCurveTables() {
         curves[curveResponse.curve] = selectedCurve;
         fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
         
-        lastStatusMessage = '\x1b[32m✓ CurveTable removed successfully!\x1b[0m';
+        lastStatusMessage = '\x1b[32mâœ“ CurveTable removed successfully!\x1b[0m';
       } else {
         lastStatusMessage = '\x1b[33mCurveTable not found in INI file.\x1b[0m';
       }
@@ -2275,7 +2275,7 @@ async function modifyCurveTables() {
           fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
         }
 
-        lastStatusMessage = '\x1b[32m✓ CurveTable added/updated successfully!\x1b[0m';
+        lastStatusMessage = '\x1b[32mâœ“ CurveTable added/updated successfully!\x1b[0m';
       } else {
         // Single-line path (existing behavior) with static-value shortcut
         let newValue: string;
@@ -2325,7 +2325,7 @@ async function modifyCurveTables() {
           fs.writeFileSync(curvesPath, JSON.stringify(curves, null, 2));
         }
 
-        lastStatusMessage = '\x1b[32m✓ CurveTable added/updated successfully!\x1b[0m';
+        lastStatusMessage = '\x1b[32mâœ“ CurveTable added/updated successfully!\x1b[0m';
       }
     }
     
@@ -2334,7 +2334,7 @@ async function modifyCurveTables() {
       // Continue loop to show submenu again after add/delete
       continue;
     } catch (error) {
-      lastStatusMessage = `\x1b[31m✗ Failed to modify CurveTables: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
+      lastStatusMessage = `\x1b[31mâœ— Failed to modify CurveTables: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
       continue;
     }
   }
@@ -2362,7 +2362,7 @@ async function toggleAllModifications() {
       
       fs.writeFileSync(iniPath, content);
       fs.unlinkSync(backupPath);
-      lastStatusMessage = '\x1b[32m✓ CurveTables restored!\x1b[0m';
+      lastStatusMessage = '\x1b[32mâœ“ CurveTables restored!\x1b[0m';
     } else {
       // Create backup and disable
       const activeLines = {
@@ -2382,10 +2382,10 @@ async function toggleAllModifications() {
       
       fs.writeFileSync(iniPath, content);
       fs.writeFileSync(backupPath, JSON.stringify(activeLines, null, 2));
-      lastStatusMessage = '\x1b[32m✓ CurveTables disabled! Backup created.\x1b[0m';
+      lastStatusMessage = '\x1b[32mâœ“ CurveTables disabled! Backup created.\x1b[0m';
     }
   } catch (error) {
-    lastStatusMessage = `\x1b[31m✗ Failed to toggle modifications: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
+    lastStatusMessage = `\x1b[31mâœ— Failed to toggle modifications: ${(error instanceof Error ? error.message : String(error))}\x1b[0m`;
   }
 }
 
@@ -2420,16 +2420,16 @@ async function runInteractiveCLI() {
   const curveTablesEnabled = !fs.existsSync(backupPath);
   const curveTableStatus = curveTablesEnabled ? '\x1b[32m[ON]\x1b[0m' : '\x1b[31m[OFF]\x1b[0m';
 
-  console.log('\n\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+  console.log('\n\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
   console.log('\x1b[36m                Available Modifications\x1b[0m');
-  console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+  console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
   console.log(`\x1b[32m(1)\x1b[0m Toggle Straight Bloom ${bloomStatus}`);
   console.log(`\x1b[32m(2)\x1b[0m Toggle CurveTables ${curveTableStatus}`);
   console.log('\x1b[32m(3)\x1b[0m Modify CurveTables');
   console.log('\x1b[32m(4)\x1b[0m Other Settings');
   console.log('\x1b[32m(5)\x1b[0m Refresh');
   console.log('\x1b[32m(6)\x1b[0m Exit');
-  console.log('\x1b[36m═══════════════════════════════════════════════════════════\x1b[0m');
+  console.log('\x1b[36mâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\x1b[0m');
 
   // Check if we should auto-refresh due to new status message
   if (shouldRefreshMenu) {
@@ -2478,23 +2478,28 @@ async function runInteractiveCLI() {
 
 // Check for updates from GitHub
 async function checkForUpdates() {
+  if ((process.env.ATLAS_DISABLE_UPDATE_CHECK || '').toLowerCase() === '1' ||
+      (process.env.ATLAS_DISABLE_UPDATE_CHECK || '').toLowerCase() === 'true') {
+    console.log('\x1b[90m[UPDATE]\x1b[0m Update check disabled. Continuing...');
+    return true;
+  }
   console.clear();
   
   // Display logo first
   const terminalWidth = process.stdout.columns || 80;
-  const logoLines = `\x1b[96m${addShadows(` █████╗ ████████╗██╗      █████╗ ███████╗
-██╔══██╗╚══██╔══╝██║     ██╔══██╗██╔════╝
-███████║   ██║   ██║     ███████║███████╗
-██╔══██║   ██║   ██║     ██╔══██║╚════██║
-██║  ██║   ██║   ███████╗██║  ██║███████║
-╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝`)}
+  const logoLines = `\x1b[96m${addShadows(` â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—      â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â•šâ•â•â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â•â•
+â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘â•šâ•â•â•â•â–ˆâ–ˆâ•‘
+â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘
+â•šâ•â•  â•šâ•â•   â•šâ•â•   â•šâ•â•â•â•â•â•â•â•šâ•â•  â•šâ•â•â•šâ•â•â•â•â•â•â•`)}
                                          
-\x1b[37m${addShadowsBackend(`██████╗  █████╗  ██████╗██╗  ██╗███████╗███╗   ██╗██████╗ 
-██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██╔════╝████╗  ██║██╔══██╗
-██████╔╝███████║██║     █████╔╝ █████╗  ██╔██╗ ██║██║  ██║
-██╔══██╗██╔══██║██║     ██╔═██╗ ██╔══╝  ██║╚██╗██║██║  ██║
-██████╔╝██║  ██║╚██████╗██║  ██╗███████╗██║ ╚████║██████╔╝
-╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚═════╝ `)}
+\x1b[37m${addShadowsBackend(`â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•—  â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ•—   â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— 
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ•‘ â–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•”â•â•â•â•â•â–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—
+â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â• â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ•”â–ˆâ–ˆâ•— â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘
+â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘     â–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•— â–ˆâ–ˆâ•”â•â•â•  â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘
+â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•—â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘ â•šâ–ˆâ–ˆâ–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•
+â•šâ•â•â•â•â•â• â•šâ•â•  â•šâ•â• â•šâ•â•â•â•â•â•â•šâ•â•  â•šâ•â•â•šâ•â•â•â•â•â•â•â•šâ•â•  â•šâ•â•â•â•â•šâ•â•â•â•â•â• `)}
                                                           
 \x1b[0m`;
   
@@ -2546,13 +2551,13 @@ async function checkForUpdates() {
         return false;
       }
     } else {
-      console.log(`\x1b[32m✓\x1b[0m Backend is up to date (v${currentVersion})`);
+      console.log(`\x1b[32mâœ“\x1b[0m Backend is up to date (v${currentVersion})`);
       console.log(`\x1b[90mContinuing in 1 second...\x1b[0m`);
       await new Promise(resolve => setTimeout(resolve, 1000));
       return true;
     }
   } catch (error) {
-    console.log(`\x1b[31m✗\x1b[0m Update check failed. Continuing...`);
+    console.log(`\x1b[31mâœ—\x1b[0m Update check failed. Continuing...`);
     await new Promise(resolve => setTimeout(resolve, 2000));
     return true;
   }
@@ -2577,3 +2582,4 @@ const startServer = async () => {
 
 // Main execution
 startServer();
+

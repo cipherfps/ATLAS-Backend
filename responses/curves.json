@@ -73,7 +73,7 @@
   },
   "15": {
     "name": "Infinite Crashpad Lifespan",
-    "key": "Default.GrapplingHoot.DisableGliderDeploy",
+    "key": "Default.AppleSun.Lifespan",
     "type": "static",
     "staticValue": "99999999999999"
   },

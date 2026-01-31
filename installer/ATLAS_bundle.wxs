@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal">
+  <Bundle
+    Name="ATLAS"
+    Manufacturer="cipherfps"
+    Version="$(var.ProductVersion)"
+    UpgradeCode="8c7fecab-4ce9-43a5-9bb4-3bce5af7fb7f">
+
+    <BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.RtfLicense">
+      <bal:WixStandardBootstrapperApplication
+        Theme="rtfLicense"
+        LicenseFile="$(var.LicenseFile)" />
+    </BootstrapperApplicationRef>
+
+    <Chain>
+      <ExePackage
+        Id="PrepConfigMsi"
+        SourceFile="cmd.exe"
+        InstallArguments="/c &quot;[#PrepScript]&quot;"
+        DetectCondition="0"
+        Vital="no"
+        PerMachine="no"
+        Permanent="yes"
+        Cache="remove">
+        <Payload Id="PrepScript" SourceFile="$(var.PrepScript)" />
+      </ExePackage>
+
+      <MsiPackage
+        Id="ATLASMsi"
+        SourceFile="$(var.MsiPath)">
+        <MsiProperty Name="TEMP" Value="[TempFolder]" />
+        <MsiProperty Name="TMP" Value="[TempFolder]" />
+      </MsiPackage>
+    </Chain>
+  </Bundle>
+</Wix>

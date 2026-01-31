@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package
+    Name="ATLAS"
+    Manufacturer="cipherfps"
+    Version="$(var.ProductVersion)"
+    UpgradeCode="8c7fecab-4ce9-43a5-9bb4-3bce5af7fb7f"
+    Compressed="yes"
+    Scope="perUser">
+    <MajorUpgrade DowngradeErrorMessage="A newer version of ATLAS is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="AtlasIcon" SourceFile="$(var.IconPath)" />
+    <Property Id="ARPPRODUCTICON" Value="AtlasIcon" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="INSTALLROOT" Name="ATLAS Backend">
+        <Directory Id="INSTALLFOLDER" Name="ATLAS Backend" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppProgramMenuFolder" Name="ATLAS" />
+    </StandardDirectory>
+
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(var.BuildRoot)\**" />
+    </ComponentGroup>
+
+    <Component Id="StartMenuShortcut" Guid="3e18f4e5-3f6b-4c1e-9b4e-9bf7fc3eec6b" Directory="AppProgramMenuFolder">
+      <Shortcut
+        Id="AtlasShortcut"
+        Name="ATLAS"
+        Target="[INSTALLFOLDER]ATLAS.exe"
+        WorkingDirectory="INSTALLFOLDER"
+        Icon="AtlasIcon" />
+      <Shortcut
+        Id="AtlasUninstallShortcut"
+        Name="Uninstall ATLAS"
+        Target="[SystemFolder]msiexec.exe"
+        Arguments="/x [ProductCode] DISABLEROLLBACK=1 MSIFASTINSTALL=7 TEMP=&quot;[LocalAppDataFolder]Temp&quot; TMP=&quot;[LocalAppDataFolder]Temp&quot;"
+        WorkingDirectory="SystemFolder"
+        Icon="AtlasIcon" />
+      <RemoveFolder Id="RemoveProgramMenuFolder" Directory="AppProgramMenuFolder" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\cipherfps\ATLAS" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="DriveRootShortcuts" Guid="b9f7b3e7-3f2e-4e7a-a2f9-4c68780b8a5c" Directory="INSTALLROOT">
+      <Shortcut
+        Id="AtlasRootShortcut"
+        Name="ATLAS"
+        Target="[INSTALLFOLDER]ATLAS.exe"
+        WorkingDirectory="INSTALLFOLDER"
+        Icon="AtlasIcon" />
+      <Shortcut
+        Id="AtlasRootUninstallShortcut"
+        Name="Uninstall ATLAS"
+        Target="[SystemFolder]msiexec.exe"
+        Arguments="/x [ProductCode] DISABLEROLLBACK=1 MSIFASTINSTALL=7 TEMP=&quot;[LocalAppDataFolder]Temp&quot; TMP=&quot;[LocalAppDataFolder]Temp&quot;"
+        WorkingDirectory="SystemFolder"
+        Icon="AtlasIcon" />
+      <RegistryValue Root="HKCU" Key="Software\cipherfps\ATLAS" Name="root_shortcuts" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <StandardDirectory Id="DesktopFolder" />
+
+    <Component Id="DesktopShortcut" Guid="3b91b1d4-64a2-4f1f-8a7c-4a3f0cb0f27e" Directory="DesktopFolder" Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1">
+      <Shortcut
+        Id="AtlasDesktopShortcut"
+        Name="ATLAS"
+        Target="[INSTALLFOLDER]ATLAS.exe"
+        WorkingDirectory="INSTALLFOLDER"
+        Icon="AtlasIcon" />
+      <RemoveFolder Id="RemoveDesktopShortcut" Directory="DesktopFolder" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\cipherfps\ATLAS" Name="desktop_shortcut" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <Feature Id="MainFeature" Title="ATLAS" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="DriveRootShortcuts" />
+      <ComponentRef Id="DesktopShortcut" />
+    </Feature>
+
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Create a desktop shortcut" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <Property Id="DISABLEROLLBACK" Value="1" />
+
+    <SetProperty Id="TempFolder" Value="[LocalAppDataFolder]Temp" Before="CostInitialize" Sequence="both" />
+    <SetProperty Id="TEMP" Value="[LocalAppDataFolder]Temp" Before="CostInitialize" Sequence="both" />
+    <SetProperty Id="TMP" Value="[LocalAppDataFolder]Temp" Before="CostInitialize" Sequence="both" />
+
+    <ui:WixUI Id="WixUI_InstallDir" />
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLROOT" />
+
+  </Package>
+</Wix>
