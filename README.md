@@ -18,7 +18,7 @@ This backend has features such as the following:
 - Arena Playlist/Points (22.40 and under)
 - Arena Points Saving (Unfinished)
 - Arena Point Leaderboard with all Profiles
-- Game Configuration (GUI Rufus/Water Stage Editor/Water Storm Toggle)
+- Game Configuration (Rufus/Water Stage Editor/Water Storm Toggle)
 - Custom Cosmetic Profiles (Reboot x Retrac, Stellar, Tozo)
 
 If you want to contribute just fork this repository and make a pull request!
