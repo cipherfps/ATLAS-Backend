@@ -85,4 +85,3 @@ If you prefer to install manually:
 ## To-Do List
 - Arena for Latest Versions
 - Fix applying MCP for Latest Versions
-- XMPP (maybe)
