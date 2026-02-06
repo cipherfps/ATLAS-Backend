@@ -1,4 +1,9 @@
 <img width="1920" height="1080" alt="ATLAS Backend Banner Transparent" src="https://github.com/user-attachments/assets/23883b15-d35d-427b-93ac-d50e3aa2ea72" />
+## Credits
+
+- [andr1ww](https://github.com/andr1ww) ATLAS is a fork of [Nexa](https://github.com/andr1ww/Nexa)
+- [Ralzify](https://github.com/Ralzify) ATLAS uses the CurveTable and Straight Bloom code from [FortBackend](https://github.com/Ralzify/FortBackend)
+- [Lawin](https://github.com/Lawin0129) For some references and code
 
 ATLAS is a Fortnite backend for all versions of fortnite designed for trickshotters!
 This backend has features such as the following:
@@ -76,11 +81,6 @@ If you prefer to install manually:
 3. **Test it by pressing** ***Start Backend***.
 - If it replies **"The backend was started correctly"**, then it worked! You're free to launch Fortnite.
 - If it replies **"Cannot ping the remote backend"**, then it didn't work; You either have the wrong IP or port.
-
-## Credits
-
-- [andr1ww](https://github.com/andr1ww) ATLAS is a fork of [Nexa](https://github.com/andr1ww/Nexa)
-- [Ralzify](https://github.com/Ralzify) ATLAS uses the CurveTable and Straight Bloom code from [FortBackend](https://github.com/Ralzify/FortBackend)
 
 ## To-Do List
 - Arena for Latest Versions
