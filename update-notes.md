@@ -14,7 +14,8 @@ Markdown Quick Key
 ---
 
 # Improvements
-- New DataTable Group: Flint-Knock
-- New Credits Tab in Settings
+- Added Extra Toggles to Impulse & Crash Pad CurveTables
+- New Victory Text Replacement Option in Modifications (ty crazy)
+- Added Exlo Profile Preset for v9.10
 
 [Full release notes](https://github.com/cipherfps/ATLAS-Backend/releases)

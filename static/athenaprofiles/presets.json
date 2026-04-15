@@ -19,6 +19,12 @@
       "pinned": null
     },
     {
+      "name": "Exlo Profile",
+      "folder": "Exlo Profile",
+      "versionTag": "v9.10",
+      "pinned": null
+    },
+    {
       "name": "Stellar Profile",
       "folder": "Stellar Profile",
       "versionTag": "v12.41",

@@ -87,7 +87,7 @@
     "staticValue": "1"
   },
   "18": {
-    "name": "Infinite Crashpad Lifespan",
+    "name": "Infinite Crash Pad Lifespan",
     "key": "Default.AppleSun.Lifespan",
     "type": "static",
     "staticValue": "99999999999999"
@@ -287,6 +287,26 @@
   "52": {
     "name": "Deadpool Dualies Heal Amount",
     "key": "Default.Donut.LifeStealMult",
+    "type": "amount"
+  },
+  "53": {
+    "name": "Crash Pad Vehicle Momentum Multiplier XY",
+    "key": "Default.AppleSun.LaunchVelocity.VehicleMultiplierXY",
+    "type": "amount"
+  },
+  "54": {
+    "name": "Crash Pad Vehicle Momentum Multiplier Z",
+    "key": "Default.AppleSun.LaunchVelocity.VehicleMultiplierZ",
+    "type": "amount"
+  },
+  "55": {
+    "name": "Crash Pad Projectile Momentum Multiplier XY",
+    "key": "Default.AppleSun.LaunchVelocity.ProjectileMultiplierXY",
+    "type": "amount"
+  },
+  "56": {
+    "name": "Crash Pad Projectile Momentum Multiplier Z",
+    "key": "Default.AppleSun.LaunchVelocity.ProjectileMultiplierZ",
     "type": "amount"
   }
 }

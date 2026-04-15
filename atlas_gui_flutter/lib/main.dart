@@ -5148,6 +5148,7 @@ class _ModificationsScreenSnapshot {
     required this.dataTablesEnabled,
     required this.backendInfiniteRenderEnabled,
     required this.swapCooldownEnabled,
+    required this.victoryTextReplacementSettings,
     required this.weapons,
   });
 
@@ -5158,6 +5159,7 @@ class _ModificationsScreenSnapshot {
   final bool dataTablesEnabled;
   final bool backendInfiniteRenderEnabled;
   final bool swapCooldownEnabled;
+  final VictoryTextReplacementSettings victoryTextReplacementSettings;
   final List<DataTableWeapon> weapons;
 }
 
@@ -5230,7 +5232,7 @@ class _ModificationsScreenCache {
 
   static Future<_ModificationsScreenSnapshot> _loadSnapshot() async {
     var completedSteps = 0;
-    const totalSteps = 8;
+    const totalSteps = 9;
     void markStepDone() {
       completedSteps += 1;
       _emitProgress(completedSteps / totalSteps);
@@ -5244,6 +5246,8 @@ class _ModificationsScreenCache {
     final backendInfiniteRenderEnabledFuture =
         DataTableService.isBackendInfiniteRenderEnabled();
     final swapCooldownEnabledFuture = DataTableService.isSwapCooldownEnabled();
+    final victoryTextReplacementSettingsFuture =
+        DataTableService.getVictoryTextReplacementSettings();
 
     final curves = await curvesFuture;
     markStepDone();
@@ -5261,6 +5265,9 @@ class _ModificationsScreenCache {
     markStepDone();
     final swapCooldownEnabled = await swapCooldownEnabledFuture;
     markStepDone();
+    final victoryTextReplacementSettings =
+        await victoryTextReplacementSettingsFuture;
+    markStepDone();
     final weapons = await weaponsFuture;
     markStepDone();
 
@@ -5272,6 +5279,7 @@ class _ModificationsScreenCache {
       dataTablesEnabled: dataTablesEnabled,
       backendInfiniteRenderEnabled: backendInfiniteRenderEnabled,
       swapCooldownEnabled: swapCooldownEnabled,
+      victoryTextReplacementSettings: victoryTextReplacementSettings,
       weapons: weapons,
     );
   }
@@ -5958,6 +5966,8 @@ class _ModificationsScreenState extends State<ModificationsScreen> {
   bool _dataTablesBusy = false;
   bool _backendInfiniteRenderEnabled = false;
   bool _swapCooldownEnabled = false;
+  VictoryTextReplacementSettings _victoryTextReplacementSettings =
+      VictoryTextReplacementSettings.defaultSettings;
   bool _dataTablesLoading = true;
   List<DataTableWeapon> _weapons = [];
   String? _selectedWeaponId;
@@ -6016,6 +6026,7 @@ class _ModificationsScreenState extends State<ModificationsScreen> {
       _dataTablesBusy = false;
       _backendInfiniteRenderEnabled = snapshot.backendInfiniteRenderEnabled;
       _swapCooldownEnabled = snapshot.swapCooldownEnabled;
+      _victoryTextReplacementSettings = snapshot.victoryTextReplacementSettings;
       _loadProgress = 1.0;
       _isLoading = false;
       _curveLoading = false;
@@ -6053,6 +6064,7 @@ class _ModificationsScreenState extends State<ModificationsScreen> {
       dataTablesEnabled: _dataTablesEnabled,
       backendInfiniteRenderEnabled: _backendInfiniteRenderEnabled,
       swapCooldownEnabled: _swapCooldownEnabled,
+      victoryTextReplacementSettings: _victoryTextReplacementSettings,
       weapons: List<DataTableWeapon>.of(_weapons),
     );
   }
@@ -6540,6 +6552,28 @@ class _ModificationsScreenState extends State<ModificationsScreen> {
     final current = await DataTableService.isSwapCooldownEnabled();
     if (!mounted) return;
     setState(() => _swapCooldownEnabled = current);
+    _storeCurrentSnapshot();
+  }
+
+  Future<void> _editVictoryTextReplacementSettings({
+    VictoryTextReplacementSettings? initialSettings,
+  }) async {
+    final updated = await _promptVictoryTextReplacementSettings(
+      context,
+      initialSettings:
+          initialSettings ??
+          (_victoryTextReplacementSettings.enabled
+              ? _victoryTextReplacementSettings
+              : VictoryTextReplacementSettings.defaultSettings.copyWith(
+                  enabled: true,
+                )),
+    );
+    if (updated == null) return;
+
+    await DataTableService.setVictoryTextReplacementSettings(updated);
+    final current = await DataTableService.getVictoryTextReplacementSettings();
+    if (!mounted) return;
+    setState(() => _victoryTextReplacementSettings = current);
     _storeCurrentSnapshot();
   }
 
@@ -7251,8 +7285,95 @@ class _ModificationsScreenState extends State<ModificationsScreen> {
               ),
             );
 
+            final victoryEditColor = Theme.of(context).colorScheme.secondary;
+            final switchTheme = Theme.of(context).switchTheme;
+            final victoryUsesDefaultText =
+                _victoryTextReplacementSettings.usesDefaultText;
+            final victoryActiveTrackColor =
+                switchTheme.trackColor?.resolve({WidgetState.selected}) ??
+                victoryEditColor.withOpacity(0.55);
+            final victoryActiveThumbColor =
+                switchTheme.thumbColor?.resolve({WidgetState.selected}) ??
+                victoryEditColor;
+            final victoryDefaultTrackColor =
+                switchTheme.trackColor?.resolve(<WidgetState>{}) ??
+                _onSurface(context, 0.22);
+            final victoryDefaultThumbColor =
+                switchTheme.thumbColor?.resolve(<WidgetState>{}) ??
+                _onSurface(context, 0.58);
+            final victoryEditBackground = victoryUsesDefaultText
+                ? victoryDefaultTrackColor
+                : victoryActiveTrackColor;
+            final victoryEditIconColor = victoryUsesDefaultText
+                ? victoryDefaultThumbColor
+                : victoryActiveThumbColor;
+            const victorySwitchSlot = Size(60, 40);
+            const victorySwitchTrack = Size(52, 32);
+            final victoryButtonOutlineColor = victoryUsesDefaultText
+                ? Colors.white.withOpacity(0.9)
+                : Colors.transparent;
+            final victoryTrackOutlineWidth = victoryUsesDefaultText
+                ? (switchTheme.trackOutlineWidth?.resolve(<WidgetState>{}) ??
+                    2.0)
+                : 0.0;
+            final victoryTextReplacementTile = ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  const Text('Victory Text Replacement'),
+                  versionTag('v11+'),
+                ],
+              ),
+              subtitle: const Text(
+                'Change the "#1 Victory Royale" placement and text.',
+              ),
+              trailing: _HoverScale(
+                enabled: !_isLoading,
+                child: SizedBox.fromSize(
+                  size: victorySwitchSlot,
+                  child: Center(
+                    child: SizedBox.fromSize(
+                      size: victorySwitchTrack,
+                      child: OutlinedButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () => _editVictoryTextReplacementSettings(),
+                        style: OutlinedButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                          fixedSize: victorySwitchTrack,
+                          minimumSize: victorySwitchTrack,
+                          maximumSize: victorySwitchTrack,
+                          shape: const StadiumBorder(),
+                          side: BorderSide(
+                            color: victoryButtonOutlineColor,
+                            width: victoryTrackOutlineWidth,
+                          ),
+                          backgroundColor: victoryEditBackground,
+                          foregroundColor: victoryEditIconColor,
+                        ),
+                        child: Icon(
+                          Icons.edit_rounded,
+                          size: 16,
+                          color: victoryEditIconColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+
+            final listPadding = EdgeInsets.only(
+              right: isWide ? 16 : 12,
+              bottom: 12,
+            );
             final togglesPanel = ListView(
-              padding: EdgeInsets.zero,
+              padding: listPadding,
               children: [
                 const _SectionTitle(title: 'Straight Bloom'),
                 straightBloomSwitch,
@@ -7264,6 +7385,7 @@ class _ModificationsScreenState extends State<ModificationsScreen> {
                 dataTablesSwitch,
                 const SizedBox(height: 20),
                 const _SectionTitle(title: 'Other'),
+                victoryTextReplacementTile,
                 backendInfiniteRenderSwitch,
                 swapCooldownSwitch,
               ],
@@ -7340,12 +7462,14 @@ class _ModificationsScreenState extends State<ModificationsScreen> {
             );
 
             final contentPanel = ListView(
+              padding: listPadding,
               children: [
                 if (!isWide) ...[
                   const _SectionTitle(title: 'Straight Bloom'),
                   straightBloomSwitch,
                   const SizedBox(height: 20),
                   const _SectionTitle(title: 'Other'),
+                  victoryTextReplacementTile,
                   backendInfiniteRenderSwitch,
                   swapCooldownSwitch,
                   const SizedBox(height: 20),
@@ -15509,6 +15633,50 @@ class DataTableSettings {
   }
 }
 
+class VictoryTextReplacementSettings {
+  const VictoryTextReplacementSettings({
+    required this.enabled,
+    required this.placement,
+    required this.victory,
+    required this.royale,
+  });
+
+  static const String defaultPlacement = '1';
+  static const String defaultVictory = 'VICTORY';
+  static const String defaultRoyale = 'ROYALE';
+  static const VictoryTextReplacementSettings defaultSettings =
+      VictoryTextReplacementSettings(
+        enabled: false,
+        placement: defaultPlacement,
+        victory: defaultVictory,
+        royale: defaultRoyale,
+      );
+
+  final bool enabled;
+  final String placement;
+  final String victory;
+  final String royale;
+
+  bool get usesDefaultText =>
+      placement == defaultPlacement &&
+      victory == defaultVictory &&
+      royale == defaultRoyale;
+
+  VictoryTextReplacementSettings copyWith({
+    bool? enabled,
+    String? placement,
+    String? victory,
+    String? royale,
+  }) {
+    return VictoryTextReplacementSettings(
+      enabled: enabled ?? this.enabled,
+      placement: placement ?? this.placement,
+      victory: victory ?? this.victory,
+      royale: royale ?? this.royale,
+    );
+  }
+}
+
 const List<CurveGroup> _baseCurveGroups = [
   CurveGroup(
     id: 'shockwave',
@@ -16611,6 +16779,28 @@ class DataTableService {
   ];
   static const String _swapCooldownLine =
       'Weapon.TryToFireRestrictedByTypeCooldowns=0';
+  static const String _victoryTextComment = '# Victory Royale Text';
+  static const List<String> _victoryPlacementKeys = [
+    'DB13D3C249748AF462C7C4BFBB31ED4A',
+    'BAFBD2E7447420DB97DD4EB958BE94DA',
+  ];
+  static const List<String> _victoryVictoryKeys = [
+    '42B31291461096DFE0F34C99B5BD5A72',
+    '4F7B9E6C47089B1CAADF259983B09563',
+  ];
+  static const List<String> _victoryRoyaleKeys = [
+    '1622E7A444CF92D16B083E9DB17907C4',
+    '71DE29354A2AB0D1C24D85895B93023C',
+  ];
+  static const String _victoryPlacementNativeString =
+      '<PlacementNumberSymbol>#</><PlacementValue>1</>';
+  static const String _victoryVictoryNativeString = '<cap>V</>ICTORY';
+  static const String _victoryRoyaleNativeString = '<cap>R</>OYALE';
+  static final Set<String> _victoryTextKeys = <String>{
+    ..._victoryPlacementKeys,
+    ..._victoryVictoryKeys,
+    ..._victoryRoyaleKeys,
+  };
 
   static String _normalizeCommentLabel(String value) {
     return value.toLowerCase().replaceAll(RegExp(r'[\s#]+'), '');
@@ -16675,6 +16865,230 @@ class DataTableService {
       targetBlocks.add(_normalizeCommentLabel(_fixesComment));
     }
     return _removeDataTableLinesFromBlocks(content, targetBlocks);
+  }
+
+  static VictoryTextReplacementSettings
+  _normalizeVictoryTextReplacementSettings(
+    VictoryTextReplacementSettings settings,
+  ) {
+    final placement = RegExp(r'^\d+$').hasMatch(settings.placement.trim())
+        ? settings.placement.trim()
+        : VictoryTextReplacementSettings.defaultPlacement;
+    final victory = _sanitizeVictoryWord(
+      settings.victory,
+      VictoryTextReplacementSettings.defaultVictory,
+    );
+    final royale = _sanitizeVictoryWord(
+      settings.royale,
+      VictoryTextReplacementSettings.defaultRoyale,
+    );
+    final usesDefaultText =
+        placement == VictoryTextReplacementSettings.defaultPlacement &&
+        victory == VictoryTextReplacementSettings.defaultVictory &&
+        royale == VictoryTextReplacementSettings.defaultRoyale;
+    return VictoryTextReplacementSettings(
+      enabled: settings.enabled && !usesDefaultText,
+      placement: placement,
+      victory: victory,
+      royale: royale,
+    );
+  }
+
+  static String _sanitizeVictoryWord(String value, String fallback) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return fallback;
+    if (RegExp(r'[\s<>]').hasMatch(trimmed) || trimmed.contains('"')) {
+      return fallback;
+    }
+    return trimmed;
+  }
+
+  static String _buildVictoryWordLocalizedString(String value) {
+    final first = value.substring(0, 1);
+    final rest = value.length > 1 ? value.substring(1) : '';
+    return '<cap>$first</>$rest';
+  }
+
+  static String _buildVictoryTextReplacementLine({
+    required String key,
+    required String nativeString,
+    required String localizedString,
+  }) {
+    return '+TextReplacements=(Category=Game, bIsMinimalPatch=True, Namespace="", Key="$key", NativeString="$nativeString", LocalizedStrings=(("en","$localizedString")))';
+  }
+
+  static List<String> _buildVictoryTextReplacementLines(
+    VictoryTextReplacementSettings settings,
+  ) {
+    final effective = settings.enabled
+        ? settings
+        : VictoryTextReplacementSettings.defaultSettings;
+    final placementLocalized =
+        '<PlacementNumberSymbol>#</><PlacementValue>${effective.placement}</>';
+    final victoryLocalized = _buildVictoryWordLocalizedString(
+      effective.victory,
+    );
+    final royaleLocalized = _buildVictoryWordLocalizedString(effective.royale);
+
+    return <String>[
+      ..._victoryPlacementKeys.map(
+        (key) => _buildVictoryTextReplacementLine(
+          key: key,
+          nativeString: _victoryPlacementNativeString,
+          localizedString: placementLocalized,
+        ),
+      ),
+      ..._victoryVictoryKeys.map(
+        (key) => _buildVictoryTextReplacementLine(
+          key: key,
+          nativeString: _victoryVictoryNativeString,
+          localizedString: victoryLocalized,
+        ),
+      ),
+      ..._victoryRoyaleKeys.map(
+        (key) => _buildVictoryTextReplacementLine(
+          key: key,
+          nativeString: _victoryRoyaleNativeString,
+          localizedString: royaleLocalized,
+        ),
+      ),
+    ];
+  }
+
+  static String? _extractVictoryTextReplacementKey(String line) {
+    final match = RegExp(r'Key="([^"]+)"').firstMatch(line);
+    return match?.group(1);
+  }
+
+  static String? _extractVictoryLocalizedString(String line) {
+    final match = RegExp(
+      r'LocalizedStrings=\(\("en","(.+)"\)\)\)\s*$',
+    ).firstMatch(line.trim());
+    return match?.group(1);
+  }
+
+  static String? _findVictoryLocalizedStringForKeys(
+    Iterable<String> lines,
+    Iterable<String> keys,
+  ) {
+    final keySet = keys.toSet();
+    for (final line in lines) {
+      final key = _extractVictoryTextReplacementKey(line);
+      if (key == null || !keySet.contains(key)) continue;
+      final localized = _extractVictoryLocalizedString(line);
+      if (localized != null && localized.isNotEmpty) {
+        return localized;
+      }
+    }
+    return null;
+  }
+
+  static String _parseVictoryPlacementValue(String? localized) {
+    if (localized == null || localized.isEmpty) {
+      return VictoryTextReplacementSettings.defaultPlacement;
+    }
+    final match = RegExp(
+      r'^<PlacementNumberSymbol>#</><PlacementValue>([^<]+)</>$',
+    ).firstMatch(localized);
+    final value = match?.group(1)?.trim() ?? '';
+    return RegExp(r'^\d+$').hasMatch(value)
+        ? value
+        : VictoryTextReplacementSettings.defaultPlacement;
+  }
+
+  static String _parseVictoryWordValue(String? localized, String fallback) {
+    if (localized == null || localized.isEmpty) {
+      return fallback;
+    }
+    final match = RegExp(r'^<cap>(.)</>(.*)$').firstMatch(localized);
+    if (match == null) return fallback;
+    final first = match.group(1) ?? '';
+    final rest = match.group(2) ?? '';
+    final combined = '$first$rest'.trim();
+    return _sanitizeVictoryWord(combined, fallback);
+  }
+
+  static VictoryTextReplacementSettings
+  _parseVictoryTextReplacementSettingsFromLines(Iterable<String> lines) {
+    final placement = _parseVictoryPlacementValue(
+      _findVictoryLocalizedStringForKeys(lines, _victoryPlacementKeys),
+    );
+    final victory = _parseVictoryWordValue(
+      _findVictoryLocalizedStringForKeys(lines, _victoryVictoryKeys),
+      VictoryTextReplacementSettings.defaultVictory,
+    );
+    final royale = _parseVictoryWordValue(
+      _findVictoryLocalizedStringForKeys(lines, _victoryRoyaleKeys),
+      VictoryTextReplacementSettings.defaultRoyale,
+    );
+    final normalized = _normalizeVictoryTextReplacementSettings(
+      VictoryTextReplacementSettings(
+        enabled: true,
+        placement: placement,
+        victory: victory,
+        royale: royale,
+      ),
+    );
+    return normalized.copyWith(
+      enabled:
+          normalized.placement !=
+              VictoryTextReplacementSettings.defaultPlacement ||
+          normalized.victory != VictoryTextReplacementSettings.defaultVictory ||
+          normalized.royale != VictoryTextReplacementSettings.defaultRoyale,
+    );
+  }
+
+  static List<String> _withVictoryTextReplacementLines(
+    Iterable<String> lines,
+    VictoryTextReplacementSettings settings,
+  ) {
+    final effective = _normalizeVictoryTextReplacementSettings(settings);
+    final output = <String>[];
+    for (final line in lines) {
+      final trimmed = line.trim();
+      final key = _extractVictoryTextReplacementKey(trimmed);
+      if (trimmed == _victoryTextComment) continue;
+      if (key != null && _victoryTextKeys.contains(key)) continue;
+      output.add(line);
+    }
+    output.add(_victoryTextComment);
+    output.addAll(_buildVictoryTextReplacementLines(effective));
+    return output;
+  }
+
+  static Future<VictoryTextReplacementSettings>
+  getVictoryTextReplacementSettings() async {
+    final iniFile = File(BackendPaths.defaultGameIni);
+    if (!await iniFile.exists()) {
+      return VictoryTextReplacementSettings.defaultSettings;
+    }
+    final lines = await iniFile.readAsLines();
+    return _parseVictoryTextReplacementSettingsFromLines(lines);
+  }
+
+  static Future<bool> isVictoryTextReplacementEnabled() async {
+    final settings = await getVictoryTextReplacementSettings();
+    return settings.enabled;
+  }
+
+  static Future<void> setVictoryTextReplacementSettings(
+    VictoryTextReplacementSettings settings, {
+    bool syncUserToggleStates = true,
+  }) async {
+    final normalized = _normalizeVictoryTextReplacementSettings(settings);
+    await ensureAtlasTextHotfixInDefaultGame(
+      overrideVictoryTextSettings: normalized,
+    );
+    if (syncUserToggleStates) {
+      await UserToggleStatesService.updateState(
+        (current) => current.copyWith(
+          victoryTextReplacementEnabled: normalized.enabled,
+          victoryTextPlacement: normalized.placement,
+          victoryTextVictory: normalized.victory,
+          victoryTextRoyale: normalized.royale,
+        ),
+      );
+    }
   }
 
   static Future<bool> isBackendInfiniteRenderEnabled() async {
@@ -16819,7 +17233,9 @@ class DataTableService {
     }
   }
 
-  static Future<void> ensureAtlasTextHotfixInDefaultGame() async {
+  static Future<void> ensureAtlasTextHotfixInDefaultGame({
+    VictoryTextReplacementSettings? overrideVictoryTextSettings,
+  }) async {
     final iniFile = File(BackendPaths.defaultGameIni);
     if (!await iniFile.exists()) return;
 
@@ -16877,9 +17293,15 @@ class DataTableService {
       addUnique(line);
     }
 
+    final victoryTextReplacementSettings =
+        overrideVictoryTextSettings ??
+        _parseVictoryTextReplacementSettingsFromLines(existingSectionLines);
     final sectionBlockLines = <String>[
       _textHotfixSection,
-      ...mergedSectionLines,
+      ..._withVictoryTextReplacementLines(
+        mergedSectionLines,
+        victoryTextReplacementSettings,
+      ),
     ];
     final firstAssetHotfixIndex = lines.indexWhere(
       (line) => line.trim() == '[AssetHotfix]',
@@ -17444,6 +17866,10 @@ class UserToggleStates {
     required this.startBackendOnLaunch,
     required this.backendInfiniteRenderEnabled,
     required this.swapCooldownEnabled,
+    required this.victoryTextReplacementEnabled,
+    required this.victoryTextPlacement,
+    required this.victoryTextVictory,
+    required this.victoryTextRoyale,
     required this.disableBackendUpdateCheck,
     required this.useDarkMode,
     required this.backgroundImagePath,
@@ -17464,6 +17890,10 @@ class UserToggleStates {
   final bool startBackendOnLaunch;
   final bool backendInfiniteRenderEnabled;
   final bool swapCooldownEnabled;
+  final bool victoryTextReplacementEnabled;
+  final String victoryTextPlacement;
+  final String victoryTextVictory;
+  final String victoryTextRoyale;
   final bool disableBackendUpdateCheck;
   final bool useDarkMode;
   final String backgroundImagePath;
@@ -17504,6 +17934,10 @@ class UserToggleStates {
     bool? startBackendOnLaunch,
     bool? backendInfiniteRenderEnabled,
     bool? swapCooldownEnabled,
+    bool? victoryTextReplacementEnabled,
+    String? victoryTextPlacement,
+    String? victoryTextVictory,
+    String? victoryTextRoyale,
     bool? disableBackendUpdateCheck,
     bool? useDarkMode,
     String? backgroundImagePath,
@@ -17525,6 +17959,11 @@ class UserToggleStates {
       backendInfiniteRenderEnabled:
           backendInfiniteRenderEnabled ?? this.backendInfiniteRenderEnabled,
       swapCooldownEnabled: swapCooldownEnabled ?? this.swapCooldownEnabled,
+      victoryTextReplacementEnabled:
+          victoryTextReplacementEnabled ?? this.victoryTextReplacementEnabled,
+      victoryTextPlacement: victoryTextPlacement ?? this.victoryTextPlacement,
+      victoryTextVictory: victoryTextVictory ?? this.victoryTextVictory,
+      victoryTextRoyale: victoryTextRoyale ?? this.victoryTextRoyale,
       disableBackendUpdateCheck:
           disableBackendUpdateCheck ?? this.disableBackendUpdateCheck,
       useDarkMode: useDarkMode ?? this.useDarkMode,
@@ -17552,6 +17991,10 @@ class UserToggleStates {
       'startBackendOnLaunch': startBackendOnLaunch,
       'backendInfiniteRenderEnabled': backendInfiniteRenderEnabled,
       'swapCooldownEnabled': swapCooldownEnabled,
+      'victoryTextReplacementEnabled': victoryTextReplacementEnabled,
+      'victoryTextPlacement': victoryTextPlacement,
+      'victoryTextVictory': victoryTextVictory,
+      'victoryTextRoyale': victoryTextRoyale,
       'disableBackendUpdateCheck': disableBackendUpdateCheck,
       'useDarkMode': useDarkMode,
       'backgroundImagePath': backgroundImagePath,
@@ -17610,6 +18053,22 @@ class UserToggleStates {
       swapCooldownEnabled: readBool(
         'swapCooldownEnabled',
         fallback.swapCooldownEnabled,
+      ),
+      victoryTextReplacementEnabled: readBool(
+        'victoryTextReplacementEnabled',
+        fallback.victoryTextReplacementEnabled,
+      ),
+      victoryTextPlacement: readString(
+        'victoryTextPlacement',
+        fallback.victoryTextPlacement,
+      ),
+      victoryTextVictory: readString(
+        'victoryTextVictory',
+        fallback.victoryTextVictory,
+      ),
+      victoryTextRoyale: readString(
+        'victoryTextRoyale',
+        fallback.victoryTextRoyale,
       ),
       disableBackendUpdateCheck: readBool(
         'disableBackendUpdateCheck',
@@ -17670,6 +18129,10 @@ class UserToggleStatesService {
       startBackendOnLaunch: config.startBackendOnLaunch,
       backendInfiniteRenderEnabled: config.backendInfiniteRenderEnabled,
       swapCooldownEnabled: config.swapCooldownEnabled,
+      victoryTextReplacementEnabled: false,
+      victoryTextPlacement: VictoryTextReplacementSettings.defaultPlacement,
+      victoryTextVictory: VictoryTextReplacementSettings.defaultVictory,
+      victoryTextRoyale: VictoryTextReplacementSettings.defaultRoyale,
       disableBackendUpdateCheck: config.disableBackendUpdateCheck,
       useDarkMode: config.useDarkMode,
       backgroundImagePath: config.backgroundImagePath,
@@ -17696,6 +18159,8 @@ class UserToggleStatesService {
     final backendInfiniteRenderEnabled =
         await DataTableService.isBackendInfiniteRenderEnabled();
     final swapCooldownEnabled = await DataTableService.isSwapCooldownEnabled();
+    final victoryTextSettings =
+        await DataTableService.getVictoryTextReplacementSettings();
 
     return UserToggleStates(
       rufusStage: config.rufusStage,
@@ -17708,6 +18173,10 @@ class UserToggleStatesService {
       straightBloomEnabled: straightBloomEnabled,
       backendInfiniteRenderEnabled: backendInfiniteRenderEnabled,
       swapCooldownEnabled: swapCooldownEnabled,
+      victoryTextReplacementEnabled: victoryTextSettings.enabled,
+      victoryTextPlacement: victoryTextSettings.placement,
+      victoryTextVictory: victoryTextSettings.victory,
+      victoryTextRoyale: victoryTextSettings.royale,
       disableBackendUpdateCheck: config.disableBackendUpdateCheck,
       useDarkMode: config.useDarkMode,
       backgroundImagePath: config.backgroundImagePath,
@@ -17946,6 +18415,15 @@ class UserToggleStatesService {
     );
     await DataTableService.setSwapCooldownEnabled(
       state.swapCooldownEnabled,
+      syncUserToggleStates: false,
+    );
+    await DataTableService.setVictoryTextReplacementSettings(
+      VictoryTextReplacementSettings(
+        enabled: state.victoryTextReplacementEnabled,
+        placement: state.victoryTextPlacement,
+        victory: state.victoryTextVictory,
+        royale: state.victoryTextRoyale,
+      ),
       syncUserToggleStates: false,
     );
     await ManagedHotfixService.rebuildDefaultGame();
@@ -20321,6 +20799,157 @@ Future<Map<String, String>?> _promptAdvancedSettings(
     controller.dispose();
   }
 
+  return result;
+}
+
+Future<VictoryTextReplacementSettings?> _promptVictoryTextReplacementSettings(
+  BuildContext context, {
+  required VictoryTextReplacementSettings initialSettings,
+}) async {
+  bool isValidWord(String value) =>
+      value.isNotEmpty &&
+      !RegExp(r'[\s<>]').hasMatch(value) &&
+      !value.contains('"');
+
+  final placementController = TextEditingController();
+  final victoryController = TextEditingController();
+  final royaleController = TextEditingController();
+
+  final result = await _showBlurDialog<VictoryTextReplacementSettings>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Victory Text Replacement'),
+      content: SizedBox(
+        width: 420,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: placementController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(
+                  labelText: 'Placement',
+                  hintText: initialSettings.placement,
+                  hintStyle: TextStyle(color: Colors.grey.shade600),
+                  prefixText: '#',
+                  prefixStyle: Theme.of(dialogContext).textTheme.bodyLarge
+                      ?.copyWith(
+                        color: Theme.of(dialogContext).colorScheme.onSurface,
+                      ),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: victoryController,
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r'[\s"<>]')),
+                ],
+                decoration: InputDecoration(
+                  labelText: 'Word 1',
+                  hintText: initialSettings.victory,
+                  hintStyle: TextStyle(color: Colors.grey.shade600),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: royaleController,
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r'[\s"<>]')),
+                ],
+                decoration: InputDecoration(
+                  labelText: 'Word 2',
+                  hintText: initialSettings.royale,
+                  hintStyle: TextStyle(color: Colors.grey.shade600),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        if (initialSettings.enabled || !initialSettings.usesDefaultText)
+          _HoverScale(
+            child: TextButton(
+              onPressed: () => Navigator.pop(
+                dialogContext,
+                VictoryTextReplacementSettings.defaultSettings,
+              ),
+              child: const Text('Reset'),
+            ),
+          ),
+        _HoverScale(
+          child: TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+        ),
+        _HoverScale(
+          child: ElevatedButton(
+            onPressed: () {
+              final placementInput = placementController.text.trim();
+              final victoryInput = victoryController.text.trim();
+              final royaleInput = royaleController.text.trim();
+              final placement = placementInput.isEmpty
+                  ? initialSettings.placement
+                  : placementInput;
+              final victory = victoryInput.isEmpty
+                  ? initialSettings.victory
+                  : victoryInput;
+              final royale = royaleInput.isEmpty
+                  ? initialSettings.royale
+                  : royaleInput;
+
+              if (!RegExp(r'^\d+$').hasMatch(placement)) {
+                showAtlasSnackBar(
+                  context,
+                  const SnackBar(content: Text('Placement must be a number.')),
+                );
+                return;
+              }
+              if (!isValidWord(victory)) {
+                showAtlasSnackBar(
+                  context,
+                  const SnackBar(
+                    content: Text('Victory text cannot contain spaces.'),
+                  ),
+                );
+                return;
+              }
+              if (!isValidWord(royale)) {
+                showAtlasSnackBar(
+                  context,
+                  const SnackBar(
+                    content: Text('Royale text cannot contain spaces.'),
+                  ),
+                );
+                return;
+              }
+
+              Navigator.pop(
+                dialogContext,
+                VictoryTextReplacementSettings(
+                  enabled: true,
+                  placement: placement,
+                  victory: victory,
+                  royale: royale,
+                ),
+              );
+            },
+            child: const Text('Save'),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  placementController.dispose();
+  victoryController.dispose();
+  royaleController.dispose();
   return result;
 }
 
