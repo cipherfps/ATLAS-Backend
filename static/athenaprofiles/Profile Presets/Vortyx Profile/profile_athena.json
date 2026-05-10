@@ -125,8 +125,8 @@
           }
         },
         "use_count": 0,
-        "banner_icon_template": "FounderTier5Banner2",
-        "banner_color_template": "DefaultColor4",
+        "banner_icon_template": "InfluencerBanner2",
+        "banner_color_template": "DefaultColor15",
         "locker_name": "",
         "item_seen": false,
         "favorite": false
