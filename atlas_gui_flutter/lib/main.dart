@@ -122,7 +122,6 @@ Future<void> _seedInstalledDataDirectory(Directory atlasDataDir) async {
     ['static', 'hotfixes', 'DefaultGame Data'],
     ['static', 'profiles'],
     ['static', 'ClientSettings', 'config'],
-    ['static', 'athenaprofiles', 'Profile Presets'],
     ['public', 'gameconfig'],
     ['public', 'images'],
     ['public', 'items'],
@@ -155,6 +154,21 @@ Future<void> _seedInstalledDataDirectory(Directory atlasDataDir) async {
     File(joinPath([installRoot, 'static', 'athenaprofiles', 'presets.json'])),
     File(
       joinPath([atlasDataDir.path, 'static', 'athenaprofiles', 'presets.json']),
+    ),
+  );
+  // Built-in profile presets are shipped templates, so refresh them from the
+  // current install while leaving extra custom preset folders in AppData.
+  await _copyDirectoryContentsReplacingFiles(
+    Directory(
+      joinPath([installRoot, 'static', 'athenaprofiles', 'Profile Presets']),
+    ),
+    Directory(
+      joinPath([
+        atlasDataDir.path,
+        'static',
+        'athenaprofiles',
+        'Profile Presets',
+      ]),
     ),
   );
 
