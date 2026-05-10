@@ -53,6 +53,12 @@
       "folder": "Twine Profile",
       "versionTag": "v14.40",
       "pinned": null
+    },
+    {
+      "name": "Vortyx Profile",
+      "folder": "Vortyx Profile",
+      "versionTag": "v14.40",
+      "pinned": null
     }
   ],
   "hidden": [],
@@ -63,6 +69,7 @@
     { "from": "Reboot X Stellar Profile", "to": "Stellar Profile" },
     { "from": "Reboot X Tozo Profile", "to": "Tozo Profile" },
     { "from": "Reboot X Retrac Profile", "to": "Retrac Profile" },
-    { "from": "Reboot X Twine Profile", "to": "Twine Profile" }
+    { "from": "Reboot X Twine Profile", "to": "Twine Profile" },
+    { "from": "Reboot X Vortyx Profile", "to": "Vortyx Profile" }
   ]
 }

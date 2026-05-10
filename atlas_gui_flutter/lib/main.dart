@@ -395,6 +395,7 @@ Future<void> _migrateLegacyPresetFolders(Directory atlasDataDir) async {
       {'from': 'Reboot X Tozo Profile', 'to': 'Tozo Profile'},
       {'from': 'Reboot X Retrac Profile', 'to': 'Retrac Profile'},
       {'from': 'Reboot X Twine Profile', 'to': 'Twine Profile'},
+      {'from': 'Reboot X Vortyx Profile', 'to': 'Vortyx Profile'},
     ];
   }
 
