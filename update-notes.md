@@ -14,8 +14,6 @@ Markdown Quick Key
 ---
 
 # Improvements
-- Added Extra Toggles to Impulse & Crash Pad CurveTables
-- New Victory Text Replacement Option in Modifications (ty crazy)
-- Added Exlo Profile Preset for v9.10
+- Added Backend Connection Matchmaking via [Radmin VPN](https://www.radmin-vpn.com/)
 
 [Full release notes](https://github.com/cipherfps/ATLAS-Backend/releases)
