@@ -14,8 +14,6 @@ Markdown Quick Key
 ---
 
 # Improvements
-- Added Backend Connection Matchmaking via [Radmin VPN](https://www.radmin-vpn.com/)
-- Updated Retrac Pak Profile Preset
-- Added Vortyx Profile Preset
+- Better launcher and backend compatibility
 
 [Full release notes](https://github.com/cipherfps/ATLAS-Backend/releases)

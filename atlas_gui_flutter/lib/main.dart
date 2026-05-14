@@ -1666,11 +1666,13 @@ class _AtlasHomePageState extends State<AtlasHomePage>
 
   Future<void> _initStartup() async {
     final config = await ConfigService.load();
+    final forceStartFromLauncher =
+        Platform.environment['ATLAS_START_BACKEND_ON_LAUNCH'] == '1';
     await DataTableService.setBackendInfiniteRenderEnabled(
       config.backendInfiniteRenderEnabled,
     );
     await DataTableService.setSwapCooldownEnabled(config.swapCooldownEnabled);
-    if (config.startBackendOnLaunch) {
+    if (config.startBackendOnLaunch || forceStartFromLauncher) {
       await _controller.ensureStoppedOnLaunch();
       await _controller.startBackend();
     } else {
@@ -3395,14 +3397,9 @@ class _SidePanel extends StatelessWidget {
               label: controller.isStarting ? 'Starting...' : 'Start Backend',
               icon: Icons.play_arrow_rounded,
               color: const Color(0xFF5BE0B3),
-              onPressed:
-                  (controller.isRunning ||
-                      controller.isStarting ||
-                      controller.isStopping ||
-                      controller.isRestarting ||
-                      controller.hasProcess)
-                  ? null
-                  : controller.startBackend,
+              onPressed: controller.canStartBackend
+                  ? controller.startBackend
+                  : null,
             ),
             const SizedBox(height: 12),
             _ActionButton(
@@ -3411,25 +3408,18 @@ class _SidePanel extends StatelessWidget {
                   : 'Restart Backend',
               icon: Icons.refresh_rounded,
               color: const Color(0xFF7CC0FF),
-              onPressed:
-                  (!controller.isRunning ||
-                      controller.isStarting ||
-                      controller.isStopping ||
-                      controller.isRestarting)
-                  ? null
-                  : controller.restartBackend,
+              onPressed: controller.canRestartBackend
+                  ? controller.restartBackend
+                  : null,
             ),
             const SizedBox(height: 12),
             _ActionButton(
               label: controller.isStopping ? 'Stopping...' : 'Stop Backend',
               icon: Icons.stop_circle_outlined,
               color: const Color(0xFFFF6A8C),
-              onPressed:
-                  (controller.isStopping ||
-                      controller.isRestarting ||
-                      (!controller.isRunning && !controller.hasProcess))
-                  ? null
-                  : controller.stopBackend,
+              onPressed: controller.canStopBackend
+                  ? controller.stopBackend
+                  : null,
             ),
             const SizedBox(height: 12),
             _ActionButton(
@@ -22278,6 +22268,16 @@ class BackendController extends ChangeNotifier {
   List<String> get recentLogs => _logStore.recentLogs;
   List<String> get allLogs => _logStore.allLogs;
   bool get hasProcess => _process != null;
+  bool get canStartBackend =>
+      !isRunning &&
+      !isStarting &&
+      !isStopping &&
+      !isRestarting &&
+      _process == null;
+  bool get canRestartBackend =>
+      isRunning && !isStarting && !isStopping && !isRestarting;
+  bool get canStopBackend =>
+      !isStopping && !isRestarting && (isRunning || _process != null);
   String get activeProfilesLabel => '28';
   String get exportsLabel => '1,024 files';
   String get lastSyncLabel => '2 minutes ago';
@@ -22320,6 +22320,8 @@ class BackendController extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    await _killBackendOnPort(3551);
+    await Future.delayed(const Duration(milliseconds: 250));
     isStarting = true;
     _logStore.clear();
     _backendStartedAt = null;
@@ -22375,6 +22377,7 @@ class BackendController extends ChangeNotifier {
     }
     env['ATLAS_DATA_ROOT'] = backendRoot;
     env['ATLAS_INSTALL_ROOT'] = installRoot;
+    env['ATLAS_PORT'] = '3551';
     final runtimeNodeModulesPath = joinPath([backendRoot, 'node_modules']);
     if (Directory(runtimeNodeModulesPath).existsSync()) {
       final existingNodePath = env['NODE_PATH']?.trim();
@@ -22392,26 +22395,23 @@ class BackendController extends ChangeNotifier {
         environment: env,
         mode: ProcessStartMode.detachedWithStdio,
       );
-      _ensureBackendJobObject();
-      _addProcessToBackendJob(_process!.pid);
+      try {
+        _ensureBackendJobObject();
+        _addProcessToBackendJob(_process!.pid);
+      } catch (error) {
+        _addLog('Backend process tracking unavailable; continuing: $error');
+      }
       _backendStartedAt = DateTime.now();
       _setStatus('Starting...', Colors.orangeAccent);
       notifyListeners();
       try {
-        _process?.stdout.transform(utf8.decoder).listen(_addLog);
-        _process?.stderr.transform(utf8.decoder).listen(_addLog);
+        const logDecoder = Utf8Decoder(allowMalformed: true);
+        _process?.stdout.transform(logDecoder).listen(_addLog);
+        _process?.stderr.transform(logDecoder).listen(_addLog);
       } catch (_) {
         // Detached process may not expose stdio on some platforms.
       }
-      _process?.exitCode.then((code) {
-        _addLog('Backend exited with code $code');
-        _process = null;
-        isRunning = false;
-        isStarting = false;
-        _backendStartedAt = null;
-        _setStatus('Offline', Colors.redAccent);
-        notifyListeners();
-      });
+      _attachBackendExitListener(_process!);
 
       // Avoid the perceived "startup lag" caused by the 3s poll cadence.
       // Ping aggressively for a short window so the UI flips to Running asap.
@@ -22422,27 +22422,53 @@ class BackendController extends ChangeNotifier {
         _backendStartedAt ??= DateTime.now();
         _setStatus('Running', Colors.greenAccent);
         notifyListeners();
-      }
-    } catch (error) {
-      _backendStartedAt = null;
-      if (_process != null) {
-        // Suppress detached process warning in GUI logs.
-        isRunning = false;
-        isStarting = false;
-        _setStatus('Starting...', Colors.orangeAccent);
-        notifyListeners();
       } else {
-        _addLog('Failed to start backend: $error');
+        _addLog(
+          'Backend did not answer http://127.0.0.1:3551/unknown within 30 seconds.',
+        );
+        final process = _process;
+        _process = null;
+        process?.kill();
+        await _killBackendOnPort(3551);
         isRunning = false;
         isStarting = false;
+        _backendStartedAt = null;
         _setStatus('Start failed', Colors.redAccent);
         notifyListeners();
       }
+    } catch (error) {
+      _backendStartedAt = null;
+      _process = null;
+      _addLog('Failed to start backend: $error');
+      isRunning = false;
+      isStarting = false;
+      _setStatus('Start failed', Colors.redAccent);
+      notifyListeners();
+    }
+  }
+
+  void _attachBackendExitListener(Process process) {
+    try {
+      process.exitCode.then((code) {
+        if (!identical(_process, process)) return;
+        _addLog('Backend exited with code $code');
+        _process = null;
+        isRunning = false;
+        isStarting = false;
+        _backendStartedAt = null;
+        _setStatus('Offline', Colors.redAccent);
+        notifyListeners();
+      });
+    } on StateError {
+      // detachedWithStdio exposes logs but not exitCode. Health polling below
+      // owns status changes for detached backend processes.
+    } catch (error) {
+      _addLog('Backend exit tracking unavailable; continuing: $error');
     }
   }
 
   Future<bool> _waitForBackendReady({
-    Duration timeout = const Duration(seconds: 8),
+    Duration timeout = const Duration(seconds: 30),
   }) async {
     final deadline = DateTime.now().add(timeout);
     while (DateTime.now().isBefore(deadline)) {
@@ -22475,17 +22501,14 @@ class BackendController extends ChangeNotifier {
     bool exited = false;
     try {
       process.kill(ProcessSignal.sigterm);
-      await process.exitCode.timeout(const Duration(seconds: 4));
-      exited = true;
+      exited = await _waitForProcessExit(process);
     } catch (_) {
       exited = false;
     }
 
     if (!exited) {
       await Process.run('taskkill', ['/PID', pid.toString(), '/T', '/F']);
-      try {
-        await process.exitCode.timeout(const Duration(seconds: 4));
-      } catch (_) {}
+      await _waitForProcessExit(process);
     }
 
     _process = null;
@@ -22495,6 +22518,17 @@ class BackendController extends ChangeNotifier {
     _backendStartedAt = null;
     _setStatus('Offline', Colors.redAccent);
     notifyListeners();
+  }
+
+  Future<bool> _waitForProcessExit(Process process) async {
+    try {
+      await process.exitCode.timeout(const Duration(seconds: 4));
+      return true;
+    } on StateError {
+      return false;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> closeFortnite() async {
@@ -22561,8 +22595,16 @@ class BackendController extends ChangeNotifier {
       }
     } else if (!ok && isRunning && !isStarting) {
       isRunning = false;
+      _process = null;
       _backendStartedAt = null;
       _setStatus('Offline', Colors.redAccent);
+      notifyListeners();
+    } else if (!ok &&
+        _process != null &&
+        !isStarting &&
+        !isStopping &&
+        !isRestarting) {
+      _process = null;
       notifyListeners();
     }
   }
