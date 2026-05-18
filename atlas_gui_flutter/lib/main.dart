@@ -2429,7 +2429,8 @@ class _AtlasHomePageState extends State<AtlasHomePage>
       icon: Icons.settings_suggest,
       accent: Color(0xFF5BF2B3),
       actions: [
-        MenuAction(title: 'Rufus Week Stage', description: 'Set 1-4.'),
+        MenuAction(title: 'Remix Week Stage', description: 'Set 1-4.'),
+        MenuAction(title: 'OG Week Stage', description: 'Set 1-4.'),
         MenuAction(title: 'Water Level', description: 'Set 1-8.'),
         MenuAction(title: 'Water Storm', description: 'Toggle storm events.'),
       ],
@@ -4475,11 +4476,7 @@ Widget _aboutCreatorAvatarFallback(BuildContext context) {
 
 Widget _aboutCreatorAvatarFallbackPlaceholder(BuildContext context) {
   return Container(
-    color: _adaptiveScrimColor(
-      context,
-      darkAlpha: 0.18,
-      lightAlpha: 0.08,
-    ),
+    color: _adaptiveScrimColor(context, darkAlpha: 0.18, lightAlpha: 0.08),
     alignment: Alignment.center,
     child: Icon(
       Icons.person_rounded,
@@ -7319,7 +7316,7 @@ class _ModificationsScreenState extends State<ModificationsScreen> {
                 : Colors.transparent;
             final victoryTrackOutlineWidth = victoryUsesDefaultText
                 ? (switchTheme.trackOutlineWidth?.resolve(<WidgetState>{}) ??
-                    2.0)
+                      2.0)
                 : 0.0;
             final victoryTextReplacementTile = ListTile(
               contentPadding: EdgeInsets.zero,
@@ -9732,6 +9729,7 @@ class GameConfigurationScreen extends StatefulWidget {
 class _GameConfigurationScreenState extends State<GameConfigurationScreen> {
   bool _loading = true;
   double _loadProgress = 0.0;
+  int _remixStage = 4;
   int _rufusStage = 1;
   int _waterLevel = 1;
   bool _useWaterStorm = false;
@@ -9762,6 +9760,7 @@ class _GameConfigurationScreenState extends State<GameConfigurationScreen> {
     final config = await ConfigService.load();
     if (!mounted) return;
     setState(() {
+      _remixStage = config.remixStage;
       _rufusStage = config.rufusStage;
       _waterLevel = config.waterLevel;
       _useWaterStorm = config.useWaterStorm;
@@ -9775,6 +9774,7 @@ class _GameConfigurationScreenState extends State<GameConfigurationScreen> {
     setState(() => _saving = true);
     final existing = await ConfigService.load();
     final config = ConfigSettings(
+      remixStage: _remixStage,
       rufusStage: _rufusStage,
       waterLevel: _waterLevel,
       saveArenaPoints: existing.saveArenaPoints,
@@ -9805,6 +9805,15 @@ class _GameConfigurationScreenState extends State<GameConfigurationScreen> {
     });
   }
 
+  String _remixStageLabel() {
+    return switch (_remixStage) {
+      1 => 'Phase 1 - Doggpound',
+      2 => 'Phase 2 - Eminem Grotto',
+      3 => 'Phase 3 - Ice Isle',
+      _ => 'Phase 4 - Juice WRLD',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return _BaseScreen(
@@ -9828,22 +9837,22 @@ class _GameConfigurationScreenState extends State<GameConfigurationScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const _SectionTitleWithTag(
-                        title: 'Rufus Week Stage',
-                        tag: 'v27.11',
+                        title: 'Remix Week Stage',
+                        tag: 'v32.11',
                       ),
                       MouseRegion(
                         onEnter: (_) => setState(
-                          () => _preview = _GameConfigPreview.rufusStage,
+                          () => _preview = _GameConfigPreview.remixStage,
                         ),
                         child: Slider(
-                          value: _rufusStage.toDouble(),
+                          value: _remixStage.toDouble(),
                           min: 1,
                           max: 4,
                           divisions: 3,
-                          label: 'Stage $_rufusStage',
+                          label: _remixStageLabel(),
                           onChanged: (value) => setState(() {
-                            _rufusStage = value.round();
-                            _preview = _GameConfigPreview.rufusStage;
+                            _remixStage = value.round();
+                            _preview = _GameConfigPreview.remixStage;
                             _scheduleSave();
                           }),
                         ),
@@ -9856,6 +9865,38 @@ class _GameConfigurationScreenState extends State<GameConfigurationScreen> {
                   context,
                   menuKey: menuKey,
                   index: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _SectionTitleWithTag(
+                        title: 'OG Week Stage',
+                        tag: 'v27.11',
+                      ),
+                      MouseRegion(
+                        onEnter: (_) => setState(
+                          () => _preview = _GameConfigPreview.ogStage,
+                        ),
+                        child: Slider(
+                          value: _rufusStage.toDouble(),
+                          min: 1,
+                          max: 4,
+                          divisions: 3,
+                          label: 'Stage $_rufusStage',
+                          onChanged: (value) => setState(() {
+                            _rufusStage = value.round();
+                            _preview = _GameConfigPreview.ogStage;
+                            _scheduleSave();
+                          }),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _menuEntrance(
+                  context,
+                  menuKey: menuKey,
+                  index: 2,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -9889,7 +9930,7 @@ class _GameConfigurationScreenState extends State<GameConfigurationScreen> {
                 _menuEntrance(
                   context,
                   menuKey: menuKey,
-                  index: 2,
+                  index: 3,
                   child: MouseRegion(
                     onEnter: (_) => setState(
                       () => _preview = _GameConfigPreview.waterStorm,
@@ -9934,7 +9975,7 @@ class _GameConfigurationScreenState extends State<GameConfigurationScreen> {
                   _menuEntrance(
                     context,
                     menuKey: menuKey,
-                    index: 3,
+                    index: 4,
                     child: preview,
                   ),
                   const SizedBox(height: 16),
@@ -9951,7 +9992,7 @@ class _GameConfigurationScreenState extends State<GameConfigurationScreen> {
                   child: _menuEntrance(
                     context,
                     menuKey: menuKey,
-                    index: 3,
+                    index: 4,
                     child: preview,
                   ),
                 ),
@@ -9966,8 +10007,10 @@ class _GameConfigurationScreenState extends State<GameConfigurationScreen> {
   String _gameConfigImagePath() {
     final base = joinPath([getBackendRoot(), 'public', 'gameconfig']);
     switch (_preview) {
-      case _GameConfigPreview.rufusStage:
-        return joinPath([base, 'stage$_rufusStage.webp']);
+      case _GameConfigPreview.remixStage:
+        return joinPath([base, 'remixstage$_remixStage.webp']);
+      case _GameConfigPreview.ogStage:
+        return joinPath([base, 'ogstage$_rufusStage.webp']);
       case _GameConfigPreview.waterLevel:
         for (var level = _waterLevel; level >= 1; level--) {
           final candidate = joinPath([base, 'waterlevel$level.webp']);
@@ -9984,7 +10027,7 @@ class _GameConfigurationScreenState extends State<GameConfigurationScreen> {
   }
 }
 
-enum _GameConfigPreview { none, rufusStage, waterLevel, waterStorm }
+enum _GameConfigPreview { none, remixStage, ogStage, waterLevel, waterStorm }
 
 class _GameConfigPreviewImage extends StatelessWidget {
   const _GameConfigPreviewImage({
@@ -13969,6 +14012,8 @@ class UserValuesService {
 class ProfileService {
   static const String _profileTemplateBackupDirName = '.defaults';
   static const String _hostAccountId = 'host';
+  static const String _defaultLockerDeploymentId =
+      '62a9473a2dca46b29ccf17577fcf42d7';
   static const Set<String> _profileTemplateFiles = {
     'profile_campaign.json',
     'profile_collections.json',
@@ -13979,6 +14024,71 @@ class ProfileService {
     'profile_outpost0.json',
     'profile_profile0.json',
     'profile_theater0.json',
+  };
+  static const Map<String, List<String>> _lockerLoadoutSlots = {
+    'CosmeticLoadout:LoadoutSchema_Character': [
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Character',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Backpack',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Pickaxe',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Glider',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Contrails',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Aura',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Shoes',
+    ],
+    'CosmeticLoadout:LoadoutSchema_Emotes': [
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Emote_0',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Emote_1',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Emote_2',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Emote_3',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Emote_4',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Emote_5',
+    ],
+    'CosmeticLoadout:LoadoutSchema_Platform': [
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Banner_Icon',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Banner_Color',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_LobbyMusic',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_LoadingScreen',
+    ],
+    'CosmeticLoadout:LoadoutSchema_Wraps': [
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Wrap_0',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Wrap_1',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Wrap_2',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Wrap_3',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Wrap_4',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Wrap_5',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Wrap_6',
+    ],
+    'CosmeticLoadout:LoadoutSchema_Vehicle': [
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Body',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Booster',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_DriftSmoke',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Wheel',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Skin',
+    ],
+    'CosmeticLoadout:LoadoutSchema_Sparks': [
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Bass',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Guitar',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Drum',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Keyboard',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Microphone',
+    ],
+    'CosmeticLoadout:LoadoutSchema_Jam': [
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_JamSong0',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_JamSong1',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_JamSong2',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_JamSong3',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_JamSong4',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_JamSong5',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_JamSong6',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_JamSong7',
+    ],
+    'CosmeticLoadout:LoadoutSchema_Vehicle_SUV': [
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Body_SUV',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Skin_SUV',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Wheel_SUV',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_DriftSmoke_SUV',
+      'CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Booster_SUV',
+    ],
   };
 
   static String _basename(String path) {
@@ -13991,6 +14101,38 @@ class ProfileService {
 
   static bool _isHostAccountId(String accountId) {
     return accountId.trim().toLowerCase() == _hostAccountId;
+  }
+
+  static Map<String, dynamic> _createDefaultLocker(String accountId) {
+    final now = DateTime.now().toUtc().toIso8601String();
+    final loadouts = <String, dynamic>{
+      for (final entry in _lockerLoadoutSlots.entries)
+        entry.key: {
+          'loadoutSlots': [
+            for (final slotTemplate in entry.value)
+              {
+                'slotTemplate': slotTemplate,
+                'equippedItemId': '',
+                'itemCustomizations': [],
+              },
+          ],
+          'shuffleType': 'DISABLED',
+        },
+    };
+
+    return {
+      'activeLoadoutGroup': {
+        'accountId': accountId,
+        'deploymentId': _defaultLockerDeploymentId,
+        'athenaItemId': 'atlas-loadout',
+        'creationTime': now,
+        'updatedTime': now,
+        'loadouts': loadouts,
+        'shuffleType': 'DISABLED',
+      },
+      'loadoutGroupPresets': [],
+      'loadoutPresets': [],
+    };
   }
 
   static Future<bool> userExists(String accountId) async {
@@ -14051,6 +14193,10 @@ class ProfileService {
       joinPath([profileDir.path, 'profile_athena.json']),
     );
     await presetPath.copy(profilePath.path);
+    final lockerPath = File(joinPath([profileDir.path, 'locker-v4.json']));
+    await lockerPath.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(_createDefaultLocker(trimmed)),
+    );
     try {
       final client = HttpClient();
       final request = await client.postUrl(
@@ -17865,6 +18011,7 @@ class DataTableService {
 class UserToggleStates {
   const UserToggleStates({
     required this.rufusStage,
+    required this.remixStage,
     required this.waterLevel,
     required this.saveArenaPoints,
     required this.useWaterStorm,
@@ -17889,6 +18036,7 @@ class UserToggleStates {
   });
 
   final int rufusStage;
+  final int remixStage;
   final int waterLevel;
   final bool saveArenaPoints;
   final bool useWaterStorm;
@@ -17914,6 +18062,7 @@ class UserToggleStates {
   ConfigSettings toConfigSettings() {
     return ConfigSettings(
       rufusStage: rufusStage,
+      remixStage: remixStage,
       waterLevel: waterLevel,
       saveArenaPoints: saveArenaPoints,
       useWaterStorm: useWaterStorm,
@@ -17933,6 +18082,7 @@ class UserToggleStates {
 
   UserToggleStates copyWith({
     int? rufusStage,
+    int? remixStage,
     int? waterLevel,
     bool? saveArenaPoints,
     bool? useWaterStorm,
@@ -17957,6 +18107,7 @@ class UserToggleStates {
   }) {
     return UserToggleStates(
       rufusStage: rufusStage ?? this.rufusStage,
+      remixStage: remixStage ?? this.remixStage,
       waterLevel: waterLevel ?? this.waterLevel,
       saveArenaPoints: saveArenaPoints ?? this.saveArenaPoints,
       useWaterStorm: useWaterStorm ?? this.useWaterStorm,
@@ -17990,6 +18141,7 @@ class UserToggleStates {
   Map<String, dynamic> toJson() {
     return {
       'rufusStage': rufusStage,
+      'remixStage': remixStage,
       'waterLevel': waterLevel,
       'saveArenaPoints': saveArenaPoints,
       'useWaterStorm': useWaterStorm,
@@ -18044,6 +18196,10 @@ class UserToggleStates {
 
     return UserToggleStates(
       rufusStage: readInt('rufusStage', fallback.rufusStage),
+      remixStage: readInt(
+        'remixStage',
+        readBool('useRemixContent', true) ? fallback.remixStage : 1,
+      ).clamp(1, 4).toInt(),
       waterLevel: readInt('waterLevel', fallback.waterLevel),
       saveArenaPoints: readBool('saveArenaPoints', fallback.saveArenaPoints),
       useWaterStorm: readBool('useWaterStorm', fallback.useWaterStorm),
@@ -18128,6 +18284,7 @@ class UserToggleStatesService {
     final config = ConfigService.defaultSettings;
     return UserToggleStates(
       rufusStage: config.rufusStage,
+      remixStage: config.remixStage,
       waterLevel: config.waterLevel,
       saveArenaPoints: config.saveArenaPoints,
       useWaterStorm: config.useWaterStorm,
@@ -18169,6 +18326,7 @@ class UserToggleStatesService {
 
     return UserToggleStates(
       rufusStage: config.rufusStage,
+      remixStage: config.remixStage,
       waterLevel: config.waterLevel,
       saveArenaPoints: config.saveArenaPoints,
       useWaterStorm: config.useWaterStorm,
@@ -18443,6 +18601,7 @@ class UserToggleStatesService {
 class ConfigSettings {
   const ConfigSettings({
     required this.rufusStage,
+    required this.remixStage,
     required this.waterLevel,
     required this.saveArenaPoints,
     required this.useWaterStorm,
@@ -18460,6 +18619,7 @@ class ConfigSettings {
   });
 
   final int rufusStage;
+  final int remixStage;
   final int waterLevel;
   final bool saveArenaPoints;
   final bool useWaterStorm;
@@ -18477,6 +18637,7 @@ class ConfigSettings {
 
   ConfigSettings copyWith({
     int? rufusStage,
+    int? remixStage,
     int? waterLevel,
     bool? saveArenaPoints,
     bool? useWaterStorm,
@@ -18494,6 +18655,7 @@ class ConfigSettings {
   }) {
     return ConfigSettings(
       rufusStage: rufusStage ?? this.rufusStage,
+      remixStage: remixStage ?? this.remixStage,
       waterLevel: waterLevel ?? this.waterLevel,
       saveArenaPoints: saveArenaPoints ?? this.saveArenaPoints,
       useWaterStorm: useWaterStorm ?? this.useWaterStorm,
@@ -18520,6 +18682,7 @@ class ConfigSettings {
 class ConfigService {
   static const ConfigSettings defaultSettings = ConfigSettings(
     rufusStage: 4,
+    remixStage: 4,
     waterLevel: 1,
     saveArenaPoints: false,
     useWaterStorm: false,
@@ -18559,6 +18722,13 @@ class ConfigService {
       'BackendInfiniteRenderEnabled',
     );
     final hasGuiSwapCooldown = gui.containsKey('SwapCooldownEnabled');
+    final hasGuiRemixStage = gui.containsKey('RemixStage');
+    final hasLegacySeason32Timeline = map.containsKey('Season32Timeline');
+    final season32Timeline = (map['Season32Timeline'] ?? 'remix').toLowerCase();
+    final resolvedRemixStage = _normalizeRemixStage(
+      int.tryParse(map['RemixStage'] ?? '') ??
+          (season32Timeline == 'base' ? 1 : 4),
+    );
     var resolvedBackendInfiniteRender =
         (map['BackendInfiniteRenderEnabled'] ?? 'true').toLowerCase() == 'true';
     var resolvedSwapCooldown =
@@ -18582,6 +18752,7 @@ class ConfigService {
 
     final settings = ConfigSettings(
       rufusStage: int.tryParse(map['RufusStage'] ?? '') ?? 1,
+      remixStage: resolvedRemixStage,
       waterLevel: resolvedWaterLevel,
       saveArenaPoints: (map['SaveArenaPoints'] ?? '').toLowerCase() == 'true',
       useWaterStorm: (map['UseWaterStorm'] ?? '').toLowerCase() == 'true',
@@ -18603,6 +18774,8 @@ class ConfigService {
     );
     if (!hasGuiBackendInfiniteRender ||
         !hasGuiSwapCooldown ||
+        !hasGuiRemixStage ||
+        hasLegacySeason32Timeline ||
         shouldPersistWaterLevel ||
         shouldPersistDarkMode) {
       await save(settings, syncUserToggleStates: false);
@@ -18616,6 +18789,7 @@ class ConfigService {
   }) async {
     final buffer = StringBuffer()
       ..writeln('RufusStage=${settings.rufusStage}')
+      ..writeln('RemixStage=${settings.remixStage}')
       ..writeln('WaterLevel=${settings.waterLevel}')
       ..writeln('SaveArenaPoints=${settings.saveArenaPoints}')
       ..writeln('UseWaterStorm=${settings.useWaterStorm}')
@@ -18667,6 +18841,10 @@ class ConfigService {
   }) {
     final normalized = zeroIndexed ? storedLevel + 1 : storedLevel;
     return normalized.clamp(1, 7).toInt();
+  }
+
+  static int _normalizeRemixStage(int storedStage) {
+    return storedStage.clamp(1, 4).toInt();
   }
 
   static Future<Map<String, String>> _loadConfigFile(File file) async {

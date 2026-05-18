@@ -31,11 +31,23 @@ function normalizeWaterLevel(rawConfig: Record<string, any>) {
   return guiLevel - 1;
 }
 
+function normalizeRemixStage(rawConfig: Record<string, any>) {
+  const parsedStage = parseInt(String(rawConfig.RemixStage ?? ""), 10);
+  if (Number.isFinite(parsedStage)) {
+    return Math.max(1, Math.min(4, parsedStage));
+  }
+
+  return String(rawConfig.Season32Timeline ?? "remix").toLowerCase() === "base"
+    ? 1
+    : 4;
+}
+
 function getEvents(ver: any) {
   // Reload config on each call to get the latest values
   const rawConfig = readConfig();
   const config = {
     RufusStage: parseInt(String(rawConfig.RufusStage ?? ""), 10) || 1,
+    RemixStage: normalizeRemixStage(rawConfig),
     WaterLevel: normalizeWaterLevel(rawConfig),
     UseWaterStorm: rawConfig.UseWaterStorm === 'true' || rawConfig.UseWaterStorm === 'True' || rawConfig.UseWaterStorm === true,
     SaveArenaPoints: rawConfig.SaveArenaPoints === 'true' || rawConfig.SaveArenaPoints === 'True' || rawConfig.SaveArenaPoints === true,
@@ -210,6 +222,17 @@ function getEvents(ver: any) {
     }
     if (config.RufusStage == 4) {
       events.push(createEvent("RufusWeek4"));
+    }
+  }
+
+  if (Math.abs(ver.build - 32.11) < 0.01 || ver.season == 32) {
+    if (config.RemixStage >= 2) {
+      events.push(createEvent(`Week${config.RemixStage}`));
+    }
+
+    if (config.RemixStage === 4) {
+      events.push(createEvent("KL2"));
+      events.push(createEvent("ClydeSeason3Part1"));
     }
   }
 

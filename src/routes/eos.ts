@@ -1,4 +1,4 @@
-import app from "..";
+import { app } from "..";
 import fs from "node:fs";
 import { atlasDataReadPath } from "../config/paths";
 

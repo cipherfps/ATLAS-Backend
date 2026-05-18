@@ -19,7 +19,6 @@ const PORT = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : 3551;
 const DEFAULT_CURVE_PATH = "/Game/Athena/Balance/DataTables/AthenaGameData";
 
 export const app = new Hono({ strict: false });
-export default app;
 
 ensureAtlasDataLayout();
 ensureConfigFile();

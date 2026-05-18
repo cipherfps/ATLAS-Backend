@@ -1,4 +1,4 @@
-import app from "..";
+import { app } from "..";
 import getVersion from "../utils/handlers/getVersion";
 import fs from "node:fs";
 import path from "node:path";
@@ -6,6 +6,31 @@ import { readConfig } from "../config/config";
 import { atlasDataPath } from "../config/paths";
 
 export default function () {
+  app.get("/api/v1/games/fortnite/tracks/activeBy/:activeBy", async (c) => {
+    const now = new Date().toISOString();
+    return c.json({
+      results: [
+        {
+          gameId: "fortnite",
+          trackguid: "00000000-0000-0000-0000-000000000032",
+          rankingType: "ranked-br",
+          activeUntil: "9999-12-31T23:59:59.999Z",
+          beginTime: "1970-01-01T00:00:00.000Z",
+          endTime: "9999-12-31T23:59:59.999Z",
+          lastUpdated: now,
+        },
+      ],
+      hasMore: false,
+    });
+  });
+
+  app.get("/api/v1/lfg/Fortnite/users/:accountId/settings", async (c) => {
+    return c.json({
+      accountId: c.req.param("accountId"),
+      settings: {},
+    });
+  });
+
   app.get("/api/v1/games/fortnite/trackprogress/:accountId", async (c) => {
     // Get game version - ranked was added in Season 24.40
     const ver = getVersion(c);
@@ -57,7 +82,7 @@ export default function () {
       // Profile doesn't exist or error reading, use defaults
     }
     
-    return c.json([
+    const progress = [
       {
         gameId: "fortnite",
         trackguid: "hEKWqj",
@@ -80,6 +105,17 @@ export default function () {
         promotionProgress: promotionProgress,
         currentPlayerRanking: null,
       },
-    ]);
+    ];
+
+    if (ver.season >= 29) {
+      return c.json({
+        results: progress,
+        progress,
+        rankedProgress: progress,
+        trackProgresses: progress,
+      });
+    }
+
+    return c.json(progress);
   });
 }

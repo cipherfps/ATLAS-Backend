@@ -8,6 +8,7 @@ export type AtlasConfig = Record<string, AtlasConfigValue>;
 
 export const DEFAULT_CONFIG: Readonly<Record<string, string>> = Object.freeze({
   RufusStage: "1",
+  RemixStage: "4",
   WaterLevel: "1",
   SaveArenaPoints: "false",
   UseWaterStorm: "false",

@@ -1,4 +1,4 @@
-import app from "..";
+import { app } from "..";
 
 // DO NOT CHANGE ANY OF THIS
 export default function () {

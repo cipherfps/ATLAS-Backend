@@ -26,8 +26,8 @@ export function startMatchmakingWebSocket(port: number = getConfiguredMatchmaker
         
         // Generate IDs
         const ticketId = crypto.randomUUID().replace(/-/gi, "").toUpperCase();
-        const matchId = crypto.randomUUID().replace(/-/gi, "").toUpperCase();
         const sessionId = crypto.randomUUID().replace(/-/gi, "").toUpperCase();
+        const matchId = sessionId;
         
         // Voltronite's matchmaking sequence
         const events = [
@@ -60,7 +60,7 @@ export function startMatchmakingWebSocket(port: number = getConfiguredMatchmaker
           {
             delay: 8000,
             name: "Play",
-            payload: { matchId, sessionId, joinDelaySec: 1 },
+            payload: { matchId, sessionId, joinDelaySec: 0 },
           },
         ];
 

@@ -1,10 +1,10 @@
-import app from "..";
+import { app } from "..";
 import fs from "node:fs";
 import path from "node:path";
 import { v4 as uuidv4 } from "uuid";
 import getVersion from "../utils/handlers/getVersion";
 import { Atlas } from "../utils/handlers/errors";
-import { atlasDataPath } from "../config/paths";
+import { atlasDataPath, atlasDataReadPath } from "../config/paths";
 import {
   loadBattlePassData,
   isBattlePassOffer,
@@ -14,9 +14,103 @@ import {
 
 const userpath = new Set();
 const profilesDir = atlasDataPath("static", "profiles");
+const MAP_DISCOVERY_QUEST_IDS = [
+  "Quest:quest_s11_discover_landmarks",
+  "Quest:quest_s11_discover_namedlocations",
+  "Quest:quest_ch5s5_discover_landmarks",
+  "Quest:quest_ch5s5_discover_namedlocations",
+  "Quest:quest_rufus_discover_namedlocations",
+] as const;
+let mapDiscoveryQuestTemplates: Record<string, any> | null = null;
 
 function parseJson(raw: string): any {
   return JSON.parse(raw.replace(/^\uFEFF/, ""));
+}
+
+function cloneDeep<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function isPlainObject(value: unknown): value is Record<string, any> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function getMapDiscoveryQuestTemplates(): Record<string, any> {
+  if (mapDiscoveryQuestTemplates) {
+    return mapDiscoveryQuestTemplates;
+  }
+
+  mapDiscoveryQuestTemplates = {};
+
+  try {
+    const templatePath = atlasDataReadPath("static", "profiles", "profile_athena.json");
+    const template = parseJson(fs.readFileSync(templatePath, "utf8"));
+    const templateItems = isPlainObject(template?.items) ? template.items : {};
+
+    for (const questId of MAP_DISCOVERY_QUEST_IDS) {
+      const quest = templateItems[questId];
+      if (isPlainObject(quest)) {
+        mapDiscoveryQuestTemplates[questId] = quest;
+      }
+    }
+  } catch (err) {
+    console.error("[MCP] Failed to load map discovery quest templates:", err);
+  }
+
+  return mapDiscoveryQuestTemplates;
+}
+
+function ensureMapDiscoveryQuests(profile: any): boolean {
+  if (!isPlainObject(profile)) return false;
+  if (!isPlainObject(profile.items)) profile.items = {};
+
+  const templates = getMapDiscoveryQuestTemplates();
+  let changed = false;
+
+  for (const questId of MAP_DISCOVERY_QUEST_IDS) {
+    const template = templates[questId];
+    if (!isPlainObject(template)) continue;
+
+    const current = profile.items[questId];
+    if (!isPlainObject(current)) {
+      profile.items[questId] = cloneDeep(template);
+      changed = true;
+      continue;
+    }
+
+    if (current.templateId !== template.templateId) {
+      current.templateId = template.templateId;
+      changed = true;
+    }
+
+    if (current.quantity !== template.quantity) {
+      current.quantity = template.quantity;
+      changed = true;
+    }
+
+    const templateAttributes = isPlainObject(template.attributes) ? template.attributes : {};
+    if (!isPlainObject(current.attributes)) {
+      current.attributes = cloneDeep(templateAttributes);
+      changed = true;
+      continue;
+    }
+
+    for (const [attributeName, templateValue] of Object.entries(templateAttributes)) {
+      const isDiscoveryCompletion =
+        attributeName.startsWith("completion_visit_") ||
+        attributeName.startsWith("completion_quest_");
+      if (!isDiscoveryCompletion && Object.prototype.hasOwnProperty.call(current.attributes, attributeName)) {
+        continue;
+      }
+
+      if (JSON.stringify(current.attributes[attributeName]) !== JSON.stringify(templateValue)) {
+        current.attributes[attributeName] = cloneDeep(templateValue);
+        changed = true;
+      }
+    }
+  }
+
+  return changed;
 }
 
 // In-memory cache to avoid repeated file reads
@@ -150,10 +244,275 @@ export default function () {
           }));
       };
 
+      const parseLoadoutAttributes = (value: any): any => {
+        if (typeof value === "string") {
+          try {
+            const parsed = JSON.parse(value);
+            if (parsed && typeof parsed === "object") {
+              if (!Array.isArray(parsed.slots)) parsed.slots = [];
+              return parsed;
+            }
+          } catch {
+            return { slots: [] };
+          }
+        }
+
+        if (value && typeof value === "object") {
+          const parsed = JSON.parse(JSON.stringify(value));
+          if (!Array.isArray(parsed.slots)) parsed.slots = [];
+          return parsed;
+        }
+
+        return { slots: [] };
+      };
+
+      const getModularSlotTemplates = (category: string, slotIndex = 0): string[] => {
+        switch (category) {
+          case "Character":
+            return ["CosmeticLoadoutSlotTemplate:LoadoutSlot_Character"];
+          case "Backpack":
+            return ["CosmeticLoadoutSlotTemplate:LoadoutSlot_Backpack"];
+          case "Pickaxe":
+            return ["CosmeticLoadoutSlotTemplate:LoadoutSlot_Pickaxe"];
+          case "Glider":
+            return ["CosmeticLoadoutSlotTemplate:LoadoutSlot_Glider"];
+          case "SkyDiveContrail":
+          case "Contrails":
+            return ["CosmeticLoadoutSlotTemplate:LoadoutSlot_Contrails"];
+          case "MusicPack":
+            return ["CosmeticLoadoutSlotTemplate:LoadoutSlot_LobbyMusic"];
+          case "LoadingScreen":
+            return ["CosmeticLoadoutSlotTemplate:LoadoutSlot_LoadingScreen"];
+          case "Dance":
+            return [`CosmeticLoadoutSlotTemplate:LoadoutSlot_Emote_${Math.max(0, Math.min(5, slotIndex))}`];
+          case "ItemWrap":
+            if (slotIndex === -1) {
+              return Array.from({ length: 7 }, (_, index) => `CosmeticLoadoutSlotTemplate:LoadoutSlot_Wrap_${index}`);
+            }
+            return [`CosmeticLoadoutSlotTemplate:LoadoutSlot_Wrap_${Math.max(0, Math.min(6, slotIndex))}`];
+          default:
+            return [`CosmeticLoadoutSlotTemplate:LoadoutSlot_${category}`];
+        }
+      };
+
+      const getLoadoutTypeForCategory = (category: string): string => {
+        switch (category) {
+          case "Character":
+          case "Backpack":
+          case "Pickaxe":
+          case "Glider":
+          case "SkyDiveContrail":
+          case "Contrails":
+            return "CosmeticLoadout:LoadoutSchema_Character";
+          case "Dance":
+            return "CosmeticLoadout:LoadoutSchema_Emotes";
+          case "MusicPack":
+          case "LoadingScreen":
+            return "CosmeticLoadout:LoadoutSchema_Platform";
+          case "ItemWrap":
+            return "CosmeticLoadout:LoadoutSchema_Wraps";
+          default:
+            return "";
+        }
+      };
+
+      const getPresetLoadoutId = (loadoutType: string, presetId = "0"): string => {
+        const presets = profile.stats.attributes.loadout_presets;
+        const preset = presets?.[loadoutType];
+        const value = preset?.[presetId] ?? preset?.[0];
+        return typeof value === "string" ? value : "";
+      };
+
+      const buildSlotCustomizations = (variantPayload: Array<{ channel: string; active: any }>) =>
+        variantPayload.map((variant) => ({
+          channelTag: variant.channel,
+          variantTag: String(variant.active),
+          additionalData: "",
+        }));
+
+      const writeModularLockerSlot = (
+        lockerItem: any,
+        category: string,
+        slotIndex: number,
+        itemToSlotTemplate: string,
+        variantPayload: Array<{ channel: string; active: any }>,
+      ): boolean => {
+        if (!lockerItem?.attributes) lockerItem.attributes = {};
+        if (!Array.isArray(lockerItem.attributes.slots)) lockerItem.attributes.slots = [];
+
+        const slots = lockerItem.attributes.slots;
+        const slotTemplates = getModularSlotTemplates(category, slotIndex);
+        const itemCustomizations = buildSlotCustomizations(variantPayload);
+
+        for (const slotTemplate of slotTemplates) {
+          let slot = slots.find((entry: any) => entry?.slot_template === slotTemplate || entry?.slotTemplate === slotTemplate);
+          if (!slot) {
+            slot = { slot_template: slotTemplate };
+            slots.push(slot);
+          }
+
+          slot.slot_template = slotTemplate;
+          slot.slotTemplate = slotTemplate;
+          slot.equipped_item = itemToSlotTemplate;
+          slot.equippedItemId = itemToSlotTemplate;
+
+          if (itemCustomizations.length > 0) {
+            slot.itemCustomizations = itemCustomizations;
+            slot.item_customizations = itemCustomizations;
+            slot.active_variants = [{ variants: variantPayload }];
+          }
+        }
+
+        return slotTemplates.length > 0;
+      };
+
+      const getActiveLegacyLoadoutId = (): string => {
+        const loadouts = profile.stats.attributes.loadouts;
+        const index = Number.isInteger(profile.stats.attributes.active_loadout_index)
+          ? profile.stats.attributes.active_loadout_index
+          : 0;
+
+        return (
+          profile.stats.attributes.last_applied_loadout ||
+          (Array.isArray(loadouts) ? loadouts[index] || loadouts[0] : "") ||
+          "atlas-loadout"
+        );
+      };
+
+      const writeLegacyLockerSlot = (
+        category: string,
+        slotIndex: number,
+        itemToSlotTemplate: string,
+        itemRef: string,
+        variantPayload: Array<{ channel: string; active: any }>,
+      ): boolean => {
+        const legacyLoadoutId = getActiveLegacyLoadoutId();
+        const legacyLoadout = profile.items[legacyLoadoutId];
+        const lockerSlots = legacyLoadout?.attributes?.locker_slots_data?.slots;
+        if (!lockerSlots) return false;
+
+        const setSingleSlot = (slotName: string, favoriteKey: string) => {
+          if (!lockerSlots[slotName]) lockerSlots[slotName] = { items: [""] };
+          lockerSlots[slotName].items = [itemToSlotTemplate];
+          profile.stats.attributes[favoriteKey] = itemRef;
+
+          if (variantPayload.length > 0) {
+            lockerSlots[slotName].activeVariants = [{ variants: variantPayload }];
+          }
+        };
+
+        switch (category) {
+          case "Character":
+            setSingleSlot("Character", "favorite_character");
+            break;
+          case "Backpack":
+            setSingleSlot("Backpack", "favorite_backpack");
+            break;
+          case "Pickaxe":
+            setSingleSlot("Pickaxe", "favorite_pickaxe");
+            break;
+          case "Glider":
+            setSingleSlot("Glider", "favorite_glider");
+            break;
+          case "SkyDiveContrail":
+          case "Contrails":
+            setSingleSlot("SkyDiveContrail", "favorite_skydivecontrail");
+            break;
+          case "MusicPack":
+            setSingleSlot("MusicPack", "favorite_musicpack");
+            break;
+          case "LoadingScreen":
+            setSingleSlot("LoadingScreen", "favorite_loadingscreen");
+            break;
+          case "Dance":
+            if (!lockerSlots.Dance) lockerSlots.Dance = { items: ["", "", "", "", "", ""] };
+            if (!Array.isArray(lockerSlots.Dance.items)) lockerSlots.Dance.items = ["", "", "", "", "", ""];
+            if (!Array.isArray(profile.stats.attributes.favorite_dance)) profile.stats.attributes.favorite_dance = [];
+            if (slotIndex >= 0 && slotIndex <= 5) {
+              lockerSlots.Dance.items[slotIndex] = itemToSlotTemplate;
+              profile.stats.attributes.favorite_dance[slotIndex] = itemRef;
+            }
+            break;
+          case "ItemWrap":
+            if (!lockerSlots.ItemWrap) lockerSlots.ItemWrap = { items: ["", "", "", "", "", "", ""], activeVariants: [] };
+            if (!Array.isArray(lockerSlots.ItemWrap.items)) lockerSlots.ItemWrap.items = ["", "", "", "", "", "", ""];
+            if (!Array.isArray(profile.stats.attributes.favorite_itemwraps)) profile.stats.attributes.favorite_itemwraps = [];
+            if (slotIndex === -1) {
+              for (let i = 0; i < 7; i++) {
+                lockerSlots.ItemWrap.items[i] = itemToSlotTemplate;
+                profile.stats.attributes.favorite_itemwraps[i] = itemRef;
+              }
+            } else if (slotIndex >= 0 && slotIndex <= 6) {
+              lockerSlots.ItemWrap.items[slotIndex] = itemToSlotTemplate;
+              profile.stats.attributes.favorite_itemwraps[slotIndex] = itemRef;
+            }
+
+            if (variantPayload.length > 0) {
+              if (!Array.isArray(lockerSlots.ItemWrap.activeVariants)) lockerSlots.ItemWrap.activeVariants = [];
+              const packed = { variants: variantPayload };
+              if (slotIndex === -1) {
+                for (let i = 0; i < 7; i++) lockerSlots.ItemWrap.activeVariants[i] = packed;
+              } else if (slotIndex >= 0 && slotIndex <= 6) {
+                lockerSlots.ItemWrap.activeVariants[slotIndex] = packed;
+              }
+            }
+            break;
+          default:
+            return false;
+        }
+
+        profileChanges.push({
+          changeType: "itemAttrChanged",
+          itemId: legacyLoadoutId,
+          attributeName: "locker_slots_data",
+          attributeValue: legacyLoadout.attributes.locker_slots_data,
+        });
+
+        return true;
+      };
+
+      const syncLegacyFromModularLoadout = (loadoutType: string, loadoutAttributes: any) => {
+        if (!Array.isArray(loadoutAttributes?.slots)) return;
+
+        const slotMappings: Record<string, { category: string; index?: number }> = {
+          "CosmeticLoadoutSlotTemplate:LoadoutSlot_Character": { category: "Character" },
+          "CosmeticLoadoutSlotTemplate:LoadoutSlot_Backpack": { category: "Backpack" },
+          "CosmeticLoadoutSlotTemplate:LoadoutSlot_Pickaxe": { category: "Pickaxe" },
+          "CosmeticLoadoutSlotTemplate:LoadoutSlot_Glider": { category: "Glider" },
+          "CosmeticLoadoutSlotTemplate:LoadoutSlot_Contrails": { category: "SkyDiveContrail" },
+          "CosmeticLoadoutSlotTemplate:LoadoutSlot_LobbyMusic": { category: "MusicPack" },
+          "CosmeticLoadoutSlotTemplate:LoadoutSlot_LoadingScreen": { category: "LoadingScreen" },
+        };
+
+        for (let i = 0; i < 6; i++) {
+          slotMappings[`CosmeticLoadoutSlotTemplate:LoadoutSlot_Emote_${i}`] = { category: "Dance", index: i };
+        }
+        for (let i = 0; i < 7; i++) {
+          slotMappings[`CosmeticLoadoutSlotTemplate:LoadoutSlot_Wrap_${i}`] = { category: "ItemWrap", index: i };
+        }
+
+        for (const slot of loadoutAttributes.slots) {
+          const slotTemplate = slot?.slot_template ?? slot?.slotTemplate;
+          const mapping = slotMappings[slotTemplate];
+          const equippedItem = slot?.equipped_item ?? slot?.equippedItemId;
+          if (!mapping || typeof equippedItem !== "string") continue;
+
+          const variantPayload = Array.isArray(slot?.active_variants?.[0]?.variants)
+            ? slot.active_variants[0].variants
+            : [];
+          const itemId = resolveItemId(equippedItem);
+          writeLegacyLockerSlot(mapping.category, mapping.index ?? 0, equippedItem, itemId || equippedItem, variantPayload);
+        }
+      };
+
       BaseRevision = profile ? profile.rvn : 0;
 
       switch (c.req.param("operation")) {
         case "QueryProfile":
+          if (profileId.toLowerCase() === "athena") {
+            ensureMapDiscoveryQuests(profile);
+          }
+
           // Clean any stale gift boxes from common_core profiles
           if (profile.items) {
             for (const [itemId, item] of Object.entries(profile.items)) {
@@ -174,6 +533,9 @@ export default function () {
         case "SetMtxPlatform":
           break;
         case "ClientQuestLogin":
+          if (profileId.toLowerCase() === "athena") {
+            ensureMapDiscoveryQuests(profile);
+          }
           break;
         case "RefreshExpeditions":
           break;
@@ -842,6 +1204,89 @@ export default function () {
             const lockerItem = profile.items[body.lockerItem];
             const lockerSlots = lockerItem?.attributes?.locker_slots_data?.slots;
             if (!lockerSlots) {
+              if (!lockerItem?.templateId?.startsWith("CosmeticLoadout:")) {
+                break;
+              }
+
+              const slotIndex = Number.isInteger(body.slotIndex) ? body.slotIndex : 0;
+              let itemToSlot = body.itemToSlot;
+
+              if (itemToSlot === undefined || itemToSlot === null) {
+                const slotTemplate = getModularSlotTemplates(body.category, slotIndex)[0];
+                const existingSlot = lockerItem.attributes?.slots?.find(
+                  (slot: any) => slot?.slot_template === slotTemplate || slot?.slotTemplate === slotTemplate,
+                );
+                itemToSlot = existingSlot?.equipped_item ?? existingSlot?.equippedItemId ?? "";
+              }
+
+              const itemToSlotID = itemToSlot ? resolveItemId(itemToSlot) : "";
+              const itemToSlotTemplate =
+                itemToSlotID && profile.items[itemToSlotID]?.templateId
+                  ? profile.items[itemToSlotID].templateId
+                  : itemToSlot || "";
+
+              const variantPayload = getVariantPayload(body.variantUpdates);
+              if (Array.isArray(body.variantUpdates) && itemToSlotID) {
+                const item = profile.items[itemToSlotID];
+                if (item) {
+                  if (!item.attributes) item.attributes = {};
+                  if (!Array.isArray(item.attributes.variants)) item.attributes.variants = [];
+
+                  for (const variant of body.variantUpdates) {
+                    if (typeof variant !== "object" || !variant?.channel || !variant?.active) continue;
+
+                    const index = item.attributes.variants.findIndex(
+                      (entry: any) => entry.channel === variant.channel,
+                    );
+
+                    if (index === -1) {
+                      item.attributes.variants.push({
+                        channel: variant.channel,
+                        active: variant.active,
+                        owned: variant.owned || [],
+                      });
+                    } else {
+                      item.attributes.variants[index].active = variant.active;
+                    }
+                  }
+
+                  profileChanges.push({
+                    changeType: "itemAttrChanged",
+                    itemId: itemToSlotID,
+                    attributeName: "variants",
+                    attributeValue: item.attributes.variants,
+                  });
+                }
+              }
+
+              const changed = writeModularLockerSlot(
+                lockerItem,
+                body.category,
+                slotIndex,
+                itemToSlotTemplate,
+                variantPayload,
+              );
+
+              writeLegacyLockerSlot(
+                body.category,
+                slotIndex,
+                itemToSlotTemplate,
+                itemToSlotID || itemToSlotTemplate,
+                variantPayload,
+              );
+
+              if (changed) {
+                profile.rvn += 1;
+                profile.commandRevision += 1;
+
+                profileChanges.push({
+                  changeType: "itemAttrChanged",
+                  itemId: body.lockerItem,
+                  attributeName: "slots",
+                  attributeValue: lockerItem.attributes.slots,
+                });
+              }
+
               break;
             }
 
@@ -1056,6 +1501,25 @@ export default function () {
                 break;
             }
 
+            const modularLoadoutType = getLoadoutTypeForCategory(body.category);
+            const modularLoadoutId = modularLoadoutType ? getPresetLoadoutId(modularLoadoutType) : "";
+            if (modularLoadoutId && profile.items[modularLoadoutId]) {
+              writeModularLockerSlot(
+                profile.items[modularLoadoutId],
+                body.category,
+                slotIndex,
+                itemToSlotTemplate,
+                variantPayload,
+              );
+
+              profileChanges.push({
+                changeType: "itemAttrChanged",
+                itemId: modularLoadoutId,
+                attributeName: "slots",
+                attributeValue: profile.items[modularLoadoutId].attributes.slots,
+              });
+            }
+
             profile.rvn += 1;
             profile.commandRevision += 1;
 
@@ -1071,7 +1535,16 @@ export default function () {
         case "ClaimMfaEnabled":
           break;
         case "PutModularCosmeticLoadout": // br locker 3
-          const { loadoutType, presetId, loadoutData } = await c.req.json();
+          const loadoutType = typeof body.loadoutType === "string" ? body.loadoutType : "";
+          const presetId = body.presetId !== undefined && body.presetId !== null ? String(body.presetId) : "0";
+          const loadoutAttributes = parseLoadoutAttributes(
+            body.loadoutData ?? body.attributes ?? (Array.isArray(body.slots) ? { slots: body.slots } : undefined),
+          );
+
+          if (!loadoutType) {
+            break;
+          }
+
           if (!profile.stats.attributes.hasOwnProperty("loadout_presets")) {
             profile.stats.attributes.loadout_presets = {};
 
@@ -1112,10 +1585,35 @@ export default function () {
             });
           }
 
+          if (!profile.stats.attributes.loadout_presets[loadoutType].hasOwnProperty(presetId)) {
+            const newLoadout = uuidv4();
+
+            profile.items[newLoadout] = {
+              templateId: loadoutType,
+              attributes: {},
+              quantity: 1,
+            };
+
+            profile.stats.attributes.loadout_presets[loadoutType][presetId] = newLoadout;
+
+            profileChanges.push({
+              changeType: "itemAdded",
+              itemId: newLoadout,
+              item: profile.items[newLoadout],
+            });
+
+            profileChanges.push({
+              changeType: "statModified",
+              name: "loadout_presets",
+              value: profile.stats.attributes.loadout_presets,
+            });
+          }
+
           const loadoutID =
             profile.stats.attributes.loadout_presets[loadoutType][presetId];
           if (profile.items[loadoutID]) {
-            profile.items[loadoutID].attributes = JSON.parse(loadoutData);
+            profile.items[loadoutID].attributes = loadoutAttributes;
+            syncLegacyFromModularLoadout(loadoutType, loadoutAttributes);
 
             profileChanges.push({
               changeType: "itemAttrChanged",
@@ -1123,6 +1621,9 @@ export default function () {
               attributeName: "slots",
               attributeValue: profile.items[loadoutID].attributes.slots,
             });
+
+            profile.rvn += 1;
+            profile.commandRevision += 1;
           }
           break;
         default:

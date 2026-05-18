@@ -1,4 +1,4 @@
-import app from "..";
+import { app } from "..";
 import getVersion from "../utils/handlers/getVersion";
 import { Atlas } from "../utils/handlers/errors";
 import { atlasDataReadPath } from "../config/paths";
@@ -36,6 +36,347 @@ function readJsonFile(...parts: string[]): any {
 
 function cloneDeep<T>(value: T): T {
   return JSON.parse(JSON.stringify(value));
+}
+
+type GeneratedPlaylistDefinition = {
+  assetName: string;
+  title: string;
+  squadSize: number;
+  gameType?: string;
+  gameData?: string;
+  lootTierData?: string;
+  lootPackages?: string;
+  missionGen?: string;
+  minPlayers?: number;
+  maxPlayers?: number;
+  maxTeamCount?: number;
+  allowSquadFill?: boolean;
+  enforceSquadFill?: boolean;
+  limitedTime?: boolean;
+  defaultPlaylist?: boolean;
+  releaseVersion?: string;
+  gameplayTags?: string[];
+  assetDataOverrides?: Record<string, any>;
+};
+
+const DEFAULT_BR_PLAYLIST_DATA = {
+  gameData: "/Game/Athena/Playlists/AthenaCompositeGameData.AthenaCompositeGameData",
+  lootTierData: "/Game/Athena/Playlists/AthenaCompositeLTD.AthenaCompositeLTD",
+  lootPackages: "/Game/Athena/Playlists/AthenaCompositeLP.AthenaCompositeLP",
+  missionGen: "/Game/World/MissionGens/Athena/MissionGen_Athena.MissionGen_Athena_C",
+};
+
+const GENERATED_PLAYLIST_DEFINITIONS: Record<string, GeneratedPlaylistDefinition> = {
+  playlist_defaultsolo: {
+    assetName: "Playlist_DefaultSolo",
+    title: "Solo",
+    squadSize: 1,
+    minPlayers: 20,
+    defaultPlaylist: true,
+  },
+  playlist_defaultduo: {
+    assetName: "Playlist_DefaultDuo",
+    title: "Duos",
+    squadSize: 2,
+    minPlayers: 20,
+    defaultPlaylist: true,
+  },
+  playlist_trios: {
+    assetName: "Playlist_Trios",
+    title: "Trios",
+    squadSize: 3,
+    minPlayers: 20,
+    maxTeamCount: 33,
+    defaultPlaylist: true,
+  },
+  playlist_defaultsquad: {
+    assetName: "Playlist_DefaultSquad",
+    title: "Squads",
+    squadSize: 4,
+    minPlayers: 20,
+    maxTeamCount: 25,
+    defaultPlaylist: true,
+  },
+  playlist_quail: {
+    assetName: "Playlist_Quail",
+    title: "Remix: The Finale",
+    squadSize: 1,
+    minPlayers: 20,
+    maxTeamCount: 100,
+    limitedTime: false,
+    defaultPlaylist: false,
+    gameplayTags: [
+      "Athena.Playlist.DefaultXP",
+      "Athena.Playlist.Core",
+      "Athena.Playlist.Solo",
+    ],
+    assetDataOverrides: {
+      LootLevel: "1",
+      MaxHumanAndBotParticipants: "100",
+      RatingType: "fun",
+      CustomGameChannel: "Squad",
+      FriendlyFireType: "Off",
+      MaxSquads: "-1",
+      bIsTournament: false,
+      RewardsPlacementThreshold: "3",
+      EndOfMatchXpMultiplier: "20",
+      bIsLargeTeamGame: false,
+      bIsRankedMode: false,
+      PlaylistId: "2",
+      UIDisplaySubName: {
+        Category: "Game",
+        NativeCulture: "",
+        Namespace: "",
+        LocalizedStrings: [],
+        bIsMinimalPatch: false,
+        NativeString: "",
+        Key: "",
+      },
+    },
+  },
+  playlist_showdownalt_solo: {
+    assetName: "Playlist_ShowdownAlt_Solo",
+    title: "Arena Solo",
+    squadSize: 1,
+    gameType: "BRArena",
+    minPlayers: 80,
+    allowSquadFill: false,
+    enforceSquadFill: false,
+    gameData: "/Game/Athena/Playlists/Showdown/AthenaCompositeGD_Showdown.AthenaCompositeGD_Showdown",
+    lootTierData: "/Game/Athena/Playlists/Showdown/AthenaCompositeLTD_Showdown.AthenaCompositeLTD_Showdown",
+    lootPackages: "/Game/Athena/Playlists/Showdown/AthenaCompositeLP_Showdown.AthenaCompositeLP_Showdown",
+    releaseVersion: "6.30",
+  },
+  playlist_showdownalt_duos: {
+    assetName: "Playlist_ShowdownAlt_Duos",
+    title: "Arena Duos",
+    squadSize: 2,
+    gameType: "BRArena",
+    minPlayers: 80,
+    allowSquadFill: false,
+    enforceSquadFill: false,
+    gameData: "/Game/Athena/Playlists/Showdown/AthenaCompositeGD_Showdown.AthenaCompositeGD_Showdown",
+    lootTierData: "/Game/Athena/Playlists/Showdown/AthenaCompositeLTD_Showdown.AthenaCompositeLTD_Showdown",
+    lootPackages: "/Game/Athena/Playlists/Showdown/AthenaCompositeLP_Showdown.AthenaCompositeLP_Showdown",
+    releaseVersion: "6.30",
+  },
+  playlist_showdownalt_trios: {
+    assetName: "Playlist_ShowdownAlt_Trios",
+    title: "Arena Trios",
+    squadSize: 3,
+    gameType: "BRArena",
+    minPlayers: 80,
+    maxTeamCount: 33,
+    allowSquadFill: false,
+    enforceSquadFill: false,
+    gameData: "/Game/Athena/Playlists/Showdown/AthenaCompositeGD_Showdown.AthenaCompositeGD_Showdown",
+    lootTierData: "/Game/Athena/Playlists/Showdown/AthenaCompositeLTD_Showdown.AthenaCompositeLTD_Showdown",
+    lootPackages: "/Game/Athena/Playlists/Showdown/AthenaCompositeLP_Showdown.AthenaCompositeLP_Showdown",
+    releaseVersion: "6.30",
+  },
+};
+
+function shouldGenerateFortPlaylistAthenaAssets(ver: ReturnType<typeof getVersion>): boolean {
+  return Math.abs(ver.build - 32.11) < 0.01 || ver.season === 32;
+}
+
+function requestPathLooksLikeSeason32(c: any): boolean {
+  const path = c.req.path ?? "";
+  return /(?:Release-|\/)32(?:[./-]|$)/i.test(path);
+}
+
+function normalizePlaylistAssetKey(name: string): string {
+  return name.replace(/^FortPlaylistAthena:/i, "").toLowerCase();
+}
+
+function toPlaylistAssetName(name: string): string {
+  const cleaned = name.replace(/^FortPlaylistAthena:/i, "");
+  const known = Object.values(GENERATED_PLAYLIST_DEFINITIONS).find(
+    (definition) => definition.assetName.toLowerCase() === cleaned.toLowerCase(),
+  );
+  if (known) {
+    return known.assetName;
+  }
+
+  if (/^playlist_/i.test(cleaned)) {
+    const suffix = cleaned.slice("playlist_".length);
+    return `Playlist_${suffix
+      .split("_")
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join("_")}`;
+  }
+
+  return `Playlist_${cleaned
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("_")}`;
+}
+
+function inferPlaylistSquadSize(name: string): number {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes("solo")) {
+    return 1;
+  }
+  if (lowerName.includes("duo")) {
+    return 2;
+  }
+  if (lowerName.includes("trio")) {
+    return 3;
+  }
+  if (lowerName.includes("squad")) {
+    return 4;
+  }
+
+  return 1;
+}
+
+function titleFromPlaylistAssetName(assetName: string): string {
+  const words = assetName
+    .replace(/^Playlist_/i, "")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .split("_")
+    .filter(Boolean);
+
+  return words.length > 0 ? words.join(" ") : "Battle Royale";
+}
+
+function getGeneratedPlaylistDefinition(name: string): GeneratedPlaylistDefinition {
+  const key = normalizePlaylistAssetKey(name);
+  const knownDefinition =
+    GENERATED_PLAYLIST_DEFINITIONS[key] ??
+    Object.values(GENERATED_PLAYLIST_DEFINITIONS).find(
+      (definition) => definition.assetName.toLowerCase() === key,
+    );
+
+  if (knownDefinition) {
+    return knownDefinition;
+  }
+
+  const assetName = toPlaylistAssetName(name);
+  return {
+    assetName,
+    title: titleFromPlaylistAssetName(assetName),
+    squadSize: inferPlaylistSquadSize(assetName),
+    defaultPlaylist: assetName.toLowerCase().includes("default"),
+    limitedTime: !assetName.toLowerCase().includes("default"),
+  };
+}
+
+function buildPlaylistTextProperty(text: string): Record<string, any> {
+  return {
+    Category: "Game",
+    NativeCulture: "",
+    Namespace: "",
+    LocalizedStrings: [],
+    bIsMinimalPatch: false,
+    NativeString: text,
+    Key: "",
+  };
+}
+
+function buildGeneratedFortPlaylistAthenaAsset(playlistName: string): Record<string, any> {
+  const definition = getGeneratedPlaylistDefinition(playlistName);
+  const maxPlayers = definition.maxPlayers ?? 100;
+  const maxTeamCount = definition.maxTeamCount ?? Math.max(1, Math.floor(maxPlayers / definition.squadSize));
+  const allowSquadFill = definition.allowSquadFill ?? true;
+
+  return {
+    meta: {
+      revision: 2,
+      headRevision: 2,
+      revisedAt: "2023-11-27T06:41:57.818Z",
+      promotion: 3,
+      promotedAt: "2023-11-27T06:43:00.452Z",
+    },
+    assetData: {
+      PlaylistName: definition.assetName,
+      UIDisplayName: buildPlaylistTextProperty(definition.title),
+      UIDisplaySubName: buildPlaylistTextProperty(definition.title),
+      UIDescription: buildPlaylistTextProperty(definition.title),
+      MinPlayers: `${definition.minPlayers ?? 1}`,
+      MaxPlayers: `${maxPlayers}`,
+      MaxSquadSize: `${definition.squadSize}`,
+      MaxTeamSize: `${definition.squadSize}`,
+      MaxTeamCount: `${maxTeamCount}`,
+      MaxSocialPartySize: `${definition.squadSize}`,
+      GameType: definition.gameType ?? "BR",
+      GameData: definition.gameData ?? DEFAULT_BR_PLAYLIST_DATA.gameData,
+      LootTierData: definition.lootTierData ?? DEFAULT_BR_PLAYLIST_DATA.lootTierData,
+      LootPackages: definition.lootPackages ?? DEFAULT_BR_PLAYLIST_DATA.lootPackages,
+      PlaylistMissionGen: definition.missionGen ?? DEFAULT_BR_PLAYLIST_DATA.missionGen,
+      bIsDefaultPlaylist: definition.defaultPlaylist ?? false,
+      bLimitedTimeMode: definition.limitedTime ?? false,
+      bAllowSquadFillOption: allowSquadFill,
+      EnforceSquadFill: definition.enforceSquadFill ?? allowSquadFill,
+      bAllowInGameMatchMaking: true,
+      bAllowJoinInProgress: false,
+      bAllowBackfill: false,
+      bPreloadAthenaMapsForMatchmaking: true,
+      bEnableCreativeMode: false,
+      bRequireCrossplayEnabled: true,
+      bRequirePickaxeInStartingInventory: true,
+      bRewardsAllowXPProgression: true,
+      bShouldSpreadTeams: true,
+      bSkipAircraft: false,
+      bUseDefaultSupplyDrops: true,
+      primaryAssetId: `FortPlaylistAthena:${definition.assetName}`,
+      FortReleaseVersion: {
+        VersionName: definition.releaseVersion ?? "Legacy",
+      },
+      GameplayTagContainer: {
+        GameplayTags: (definition.gameplayTags ?? [
+          `Athena.Playlist.${definition.assetName.replace(/^Playlist_/i, "")}`,
+        ]).map((TagName) => ({ TagName })),
+      },
+      ...(definition.assetDataOverrides ?? {}),
+    },
+  };
+}
+
+function buildFortPlaylistAthenaAssets(ver: ReturnType<typeof getVersion>): Record<string, any> {
+  const assets: Record<string, any> = {};
+  const playlistNames = new Set<string>();
+
+  for (const playlistName of Object.keys(GENERATED_PLAYLIST_DEFINITIONS)) {
+    playlistNames.add(playlistName);
+  }
+
+  for (const link of getMnemonicLinks(ver)) {
+    const overridePlaylist = link?.metadata?.matchmaking?.override_playlist;
+    if (typeof overridePlaylist === "string") {
+      playlistNames.add(overridePlaylist);
+    }
+    if (link?.linkType === "BR:Playlist" && typeof link?.mnemonic === "string") {
+      playlistNames.add(link.mnemonic);
+    }
+  }
+
+  for (const playlistName of playlistNames) {
+    const asset = buildGeneratedFortPlaylistAthenaAsset(playlistName);
+    assets[asset.assetData.PlaylistName] = asset;
+  }
+
+  return assets;
+}
+
+function buildFortPlaylistAthenaDirectoryResponse(
+  ver: ReturnType<typeof getVersion>,
+  force = false,
+): Record<string, any> {
+  if (!force && !shouldGenerateFortPlaylistAthenaAssets(ver)) {
+    return {};
+  }
+
+  return {
+    FortPlaylistAthena: {
+      meta: {
+        promotion: 9,
+      },
+      assets: buildFortPlaylistAthenaAssets(ver),
+    },
+  };
 }
 
 function getNormalDiscoverySurface(): DiscoverySurface {
@@ -518,8 +859,21 @@ export default function () {
     return c.json(buildApiV2SurfaceResponse(getVersion(c)));
   });
 
+  app.get("/api/v1/assets/Fortnite/:version/:cl/FortPlaylistAthena/:playlist", async (c) => {
+    const ver = getVersion(c);
+    if (!shouldGenerateFortPlaylistAthenaAssets(ver) && !requestPathLooksLikeSeason32(c)) {
+      return c.notFound();
+    }
+
+    const playlistName = c.req.param("playlist").replace(/[^a-zA-Z0-9_.-]/g, "");
+    return c.json(buildGeneratedFortPlaylistAthenaAsset(playlistName));
+  });
+
   app.post("/api/v1/assets/Fortnite/*", async (c) => {
+    const ver = getVersion(c);
+    const playlistAssets = buildFortPlaylistAthenaDirectoryResponse(ver, requestPathLooksLikeSeason32(c));
     const assets = {
+      ...playlistAssets,
       FortCreativeDiscoverySurface: {
         meta: {
           promotion: 26,

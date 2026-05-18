@@ -1,4 +1,4 @@
-import app from "..";
+import { app } from "..";
 import getVersion from "../utils/handlers/getVersion";
 import fs from 'node:fs'
 import path from 'node:path'

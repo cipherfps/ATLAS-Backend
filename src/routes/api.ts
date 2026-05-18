@@ -1,7 +1,168 @@
-import app from "..";
+import { app } from "..";
 import axios from "axios";
 import path from "node:path";
 import fs from "node:fs";
+import { getConfiguredGameServer, getRadminVpnIp } from "../utils/matchmaking/config";
+import { atlasDataPath } from "../config/paths";
+
+const lockerFileName = "locker-v4.json";
+
+const lockerLoadoutSlots: Record<string, string[]> = {
+  "CosmeticLoadout:LoadoutSchema_Character": [
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Character",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Backpack",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Pickaxe",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Glider",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Contrails",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Aura",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Shoes",
+  ],
+  "CosmeticLoadout:LoadoutSchema_Emotes": Array.from(
+    { length: 6 },
+    (_, index) => `CosmeticLoadoutSlotTemplate:LoadoutSlot_Emote_${index}`,
+  ),
+  "CosmeticLoadout:LoadoutSchema_Platform": [
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Banner_Icon",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Banner_Color",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_LobbyMusic",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_LoadingScreen",
+  ],
+  "CosmeticLoadout:LoadoutSchema_Wraps": Array.from(
+    { length: 7 },
+    (_, index) => `CosmeticLoadoutSlotTemplate:LoadoutSlot_Wrap_${index}`,
+  ),
+  "CosmeticLoadout:LoadoutSchema_Vehicle": [
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Body",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Booster",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_DriftSmoke",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Wheel",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Skin",
+  ],
+  "CosmeticLoadout:LoadoutSchema_Sparks": [
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Bass",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Guitar",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Drum",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Keyboard",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Microphone",
+  ],
+  "CosmeticLoadout:LoadoutSchema_Jam": Array.from(
+    { length: 8 },
+    (_, index) => `CosmeticLoadoutSlotTemplate:LoadoutSlot_JamSong${index}`,
+  ),
+  "CosmeticLoadout:LoadoutSchema_Vehicle_SUV": [
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Body_SUV",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Skin_SUV",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Wheel_SUV",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_DriftSmoke_SUV",
+    "CosmeticLoadoutSlotTemplate:LoadoutSlot_Vehicle_Booster_SUV",
+  ],
+};
+
+function lockerPath(accountId: string): string {
+  return atlasDataPath("static", "profiles", accountId, lockerFileName);
+}
+
+function createDefaultLocker(accountId: string, deploymentId: string): any {
+  const now = new Date().toISOString();
+  const loadouts = Object.fromEntries(
+    Object.entries(lockerLoadoutSlots).map(([loadoutType, slotTemplates]) => [
+      loadoutType,
+      {
+        loadoutSlots: slotTemplates.map((slotTemplate) => ({
+          slotTemplate,
+          equippedItemId: "",
+          itemCustomizations: [],
+        })),
+        shuffleType: "DISABLED",
+      },
+    ]),
+  );
+
+  return {
+    activeLoadoutGroup: {
+      accountId,
+      deploymentId,
+      athenaItemId: "atlas-loadout",
+      creationTime: now,
+      updatedTime: now,
+      loadouts,
+      shuffleType: "DISABLED",
+    },
+    loadoutGroupPresets: [],
+    loadoutPresets: [],
+  };
+}
+
+function ensureDefaultLockerShape(accountId: string, deploymentId: string, locker: any): any {
+  const defaults = createDefaultLocker(accountId, deploymentId);
+  const defaultLoadouts = defaults.activeLoadoutGroup.loadouts as Record<
+    string,
+    { loadoutSlots: Array<{ slotTemplate: string; equippedItemId: string; itemCustomizations: any[] }>; shuffleType: string }
+  >;
+
+  if (!locker || typeof locker !== "object") {
+    return defaults;
+  }
+
+  if (!locker.activeLoadoutGroup || typeof locker.activeLoadoutGroup !== "object") {
+    locker.activeLoadoutGroup = defaults.activeLoadoutGroup;
+  }
+
+  if (!locker.activeLoadoutGroup.loadouts || typeof locker.activeLoadoutGroup.loadouts !== "object") {
+    locker.activeLoadoutGroup.loadouts = defaults.activeLoadoutGroup.loadouts;
+  }
+
+  for (const [loadoutType, defaultLoadout] of Object.entries(defaultLoadouts)) {
+    const loadout = locker.activeLoadoutGroup.loadouts[loadoutType];
+    if (!loadout || typeof loadout !== "object") {
+      locker.activeLoadoutGroup.loadouts[loadoutType] = defaultLoadout;
+      continue;
+    }
+
+    if (!Array.isArray(loadout.loadoutSlots)) {
+      loadout.loadoutSlots = [];
+    }
+
+    const existingSlots = new Set(
+      loadout.loadoutSlots
+        .map((slot: any) => slot?.slotTemplate)
+        .filter((slotTemplate: unknown) => typeof slotTemplate === "string"),
+    );
+
+    for (const defaultSlot of defaultLoadout.loadoutSlots) {
+      if (!existingSlots.has(defaultSlot.slotTemplate)) {
+        loadout.loadoutSlots.push(defaultSlot);
+      }
+    }
+
+    if (loadout.shuffleType === undefined) {
+      loadout.shuffleType = "DISABLED";
+    }
+  }
+
+  if (!Array.isArray(locker.loadoutGroupPresets)) locker.loadoutGroupPresets = [];
+  if (!Array.isArray(locker.loadoutPresets)) locker.loadoutPresets = [];
+
+  return locker;
+}
+
+async function readLocker(accountId: string, deploymentId: string): Promise<any> {
+  const filePath = lockerPath(accountId);
+  try {
+    const raw = await fs.promises.readFile(filePath, "utf8");
+    return ensureDefaultLockerShape(accountId, deploymentId, JSON.parse(raw));
+  } catch {
+    const locker = createDefaultLocker(accountId, deploymentId);
+    await writeLocker(accountId, deploymentId, locker);
+    return locker;
+  }
+}
+
+async function writeLocker(accountId: string, deploymentId: string, locker: any): Promise<void> {
+  const filePath = lockerPath(accountId);
+  await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.promises.writeFile(filePath, JSON.stringify(locker, null, 2));
+}
 
 export default function () {
   app.post("/datarouter/api/v1/public/data", async (c) => {
@@ -50,6 +211,28 @@ export default function () {
     });
   });
 
+  app.post("/api/v1/fortnite-br/interactions", async (c) => {
+    return c.json({});
+  });
+
+  app.post("/api/v1/:namespace/channel/motd/target", async (c) => {
+    return c.json({
+      contentType: "collection",
+      contentId: "fortnite-br-br-motd-collection",
+      tcId: "atlas-br-motd-collection-tc",
+      contentItems: [],
+    });
+  });
+
+  app.post("/api/v1/:namespace/surfaces/:gameMode/target", async (c) => {
+    return c.json({
+      contentType: "collection",
+      contentId: "fortnite-br-br-motd-collection",
+      tcId: "atlas-br-motd-collection-tc",
+      contentItems: [],
+    });
+  });
+
   app.get("/fortnite/api/game/v2/world/info", async (c) => {
     return c.json({});
   });
@@ -58,11 +241,56 @@ export default function () {
     return c.json([]);
   });
 
+  app.get("/app_installation/status", async (c) => {
+    return c.json({
+      status: "UP",
+      backend: "atlas",
+    });
+  });
+
+  app.get("/region", async (c) => {
+    return c.json({
+      continent: "NA",
+      country: "US",
+      region: "NAE",
+    });
+  });
+
+  app.get("/api/local-ip", async (c) => {
+    return c.json({
+      ip: getRadminVpnIp() ?? getConfiguredGameServer().host,
+    });
+  });
+
+  app.get("/gs", async (c) => {
+    const server = getConfiguredGameServer();
+    return c.json({
+      host: server.host,
+      port: server.port,
+      address: `${server.host}:${server.port}`,
+    });
+  });
+
   app.get("/api/v2/interactions/aggregated/Fortnite/:accountId", async (c) => {
     return c.json([]);
   });
 
-  // Return 404 so game treats parental controls as unavailable → no lock on privacy settings
+  app.get("/api/v2/interactions/latest/Fortnite/:accountId", async (c) => {
+    return c.json({
+      results: [],
+      interactions: [],
+    });
+  });
+
+  app.get("/api/content/v2/launch-data", async (c) => {
+    return c.json({
+      results: [],
+      items: [],
+      data: {},
+    });
+  });
+
+  // Keep parental controls permissive so privacy settings are not locked.
   app.get("/content-controls/:accountId", async (c) => {
     return c.json({
       data: {
@@ -102,6 +330,22 @@ export default function () {
     });
   });
 
+  app.all("/profile/play_region", async (c) => {
+    return c.body(null, 204);
+  });
+
+  app.all("/profile/languages", async (c) => {
+    return c.body(null, 204);
+  });
+
+  app.all("/profile/privacy_settings", async (c) => {
+    return c.body(null, 204);
+  });
+
+  app.all("/v1/rebootrally/eligibility/friends", async (c) => {
+    return c.body(null, 204);
+  });
+
   app.get("/fortnite/api/game/v2/br-inventory/account", async (c) => {
     return c.json({
       stash: {
@@ -138,6 +382,10 @@ export default function () {
 
   app.get("/presence/api/v1/_/:accountId/settings/subscriptions", async (c) => {
     return c.json([]);
+  });
+
+  app.get("/presence/api/v1/_/:accountId/last-online", async (c) => {
+    return c.json({});
   });
 
   app.all("/presence/api/v1/*", async (c) => {
@@ -189,6 +437,10 @@ export default function () {
   app.post("/fortnite/api/game/v2/grant_access/*", async (c) => {
     c.json({});
     return c.status(204);
+  });
+
+  app.post("/fortnite/api/game/v2/profileToken/verify/:accountId", async (c) => {
+    return c.body(null, 204);
   });
 
   app.get("/fortnite/api/game/v2/enabled_features", async (c) => {
@@ -254,6 +506,65 @@ export default function () {
     });
   });
 
+  app.post("/api/v1/links/history/:accountId/:mnemonic", async (c) => {
+    return c.json({
+      accountId: c.req.param("accountId"),
+      mnemonic: c.req.param("mnemonic"),
+      success: true,
+    });
+  });
+
+  app.get("/statsproxy/api/statsv2/account/:accountId", async (c) => {
+    return c.json({
+      startTime: 0,
+      endTime: 0,
+      stats: {},
+      accountId: c.req.param("accountId"),
+    });
+  });
+
+  app.get("/api/locker/v4/:deploymentId/account/:accountId/items", async (c) => {
+    const accountId = c.req.param("accountId");
+    const deploymentId = c.req.param("deploymentId");
+    const locker = await readLocker(accountId, deploymentId);
+    const now = new Date().toISOString();
+
+    locker.activeLoadoutGroup.accountId = accountId;
+    locker.activeLoadoutGroup.deploymentId = deploymentId;
+    locker.activeLoadoutGroup.updatedTime = now;
+
+    await writeLocker(accountId, deploymentId, locker);
+    return c.json(locker);
+  });
+
+  app.put("/api/locker/v4/:deploymentId/account/:accountId/active-loadout-group", async (c) => {
+    const accountId = c.req.param("accountId");
+    const deploymentId = c.req.param("deploymentId");
+    const body = await c.req.json().catch(() => ({} as any));
+    const locker = await readLocker(accountId, deploymentId);
+    const now = new Date().toISOString();
+
+    locker.activeLoadoutGroup.accountId = accountId;
+    locker.activeLoadoutGroup.deploymentId = deploymentId;
+    locker.activeLoadoutGroup.updatedTime = now;
+
+    if (body?.equippedPresetId !== undefined) {
+      locker.activeLoadoutGroup.equippedPresetId = body.equippedPresetId;
+    }
+
+    if (body?.shuffleType !== undefined) {
+      locker.activeLoadoutGroup.shuffleType = body.shuffleType;
+    }
+
+    const loadouts = body?.loadouts ?? body?.activeLoadoutGroup?.loadouts;
+    if (loadouts && typeof loadouts === "object") {
+      locker.activeLoadoutGroup.loadouts = loadouts;
+    }
+
+    await writeLocker(accountId, deploymentId, locker);
+    return c.json(locker.activeLoadoutGroup);
+  });
+
   app.get("/fortnite/api/receipts/v1/account/*/receipts", async (c) => {
     return c.json([]);
   });
@@ -271,6 +582,58 @@ export default function () {
   app.get("/socialban/api/public/v1/:accountId", async (c) => {
     return c.json({});
   });
+
+  app.post("/auth/v1/turn/credentials", async (c) => {
+    const username = c.req.query("username") || "atlas";
+    return c.json({
+      username,
+      password: "local-turn-password",
+      ttl: 86400,
+      uris: [
+        "stun:127.0.0.1:3478",
+        "turn:127.0.0.1:3478?transport=udp",
+        "turn:127.0.0.1:3478?transport=tcp",
+      ],
+    });
+  });
+
+  app.get("/api/v1/public/accounts", async (c) => {
+    const accountId = c.req.query("accountId") || "atlas";
+    return c.json({
+      accounts: [
+        {
+          accountId,
+          tags: [],
+        },
+      ],
+    });
+  });
+
+  app.get(
+    "/party/api/v1/Fortnite/user/:accountId/notifications/undelivered/count",
+    async (c) => {
+      return c.json({
+        count: 0,
+      });
+    }
+  );
+
+  app.get(
+    "/party/api/v1/Fortnite/user/:accountId/settings/privacy",
+    async (c) => {
+      const accountId = c.req.param("accountId");
+      return c.json({
+        accountId,
+        partyType: "Public",
+        inviteRestriction: "AnyMember",
+        onlyLeaderFriendsCanJoin: false,
+        presencePermission: "Anyone",
+        invitePermission: "Anyone",
+        acceptingMembers: true,
+        privacy: "PUBLIC",
+      });
+    }
+  );
 
   app.get(
     "/eulatracking/api/public/agreements/fn/account/:accountId",

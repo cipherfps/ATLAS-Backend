@@ -125,7 +125,7 @@ export function getConfiguredGameServer(): ParsedEndpoint {
   }
 
   return {
-    host: getDefaultMatchmakingHost(),
+    host: getRadminVpnIp() ?? DEFAULT_GAME_SERVER_HOST,
     port: DEFAULT_GAME_SERVER_PORT,
   };
 }

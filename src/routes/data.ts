@@ -1,4 +1,4 @@
-import app from "../index";
+import { app } from "../index";
 import axios from "axios";
 import getVersion from "../utils/handlers/getVersion";
 import fs from "fs";
@@ -98,6 +98,8 @@ const atlasBannerSlimImage =
 const atlasNoticeBody =
   '@cipherfps\nDiscord: https://discord.gg/GqgakxU6bm\nClick (F8) and type "open 127.0.0.1" to join.';
 const atlasNewsBody = "@cipherfps\nDiscord: https://discord.gg/GqgakxU6bm\nClick (F8) and type \"open 127.0.0.1\" to join.";
+const remixSeason32LobbyBackground =
+  "https://cdn2.unrealengine.com/mkart-fnbr-quail-lobby-3264x1836-b157b2252db6.jpg";
 
 function createDynamicMotdCollection(targetIslandCode: string): any {
   const contentId = "atlas-br-motd-item";
@@ -262,6 +264,74 @@ function applyAtlasLobbyMessaging(content: any): void {
   battleroyalenewsv2.lastModified = "9999-12-31T23:59:59.999Z";
   battleroyalenewsv2._locale = "en-US";
   content.battleroyalenewsv2 = battleroyalenewsv2;
+}
+
+function applyRemixShopCmsFallback(content: any): void {
+  const sectionNames = ["Featured", "Daily"];
+  const shopSections = sectionNames.map((name) => ({
+    _type: "ShopSection",
+    sectionId: name,
+    sectionDisplayName: name,
+    landingPriority: name === "Featured" ? 0 : 1,
+    bEnableToastNotification: true,
+    bHidden: false,
+    bShowIneligibleOffers: true,
+    bShowIneligibleOffersIfGiftable: true,
+    bShowTimer: true,
+    bSortOffersByOwnership: false,
+    background: {
+      _type: "DynamicBackground",
+      key: "vault",
+      stage: "default",
+    },
+  }));
+  const mpSections = sectionNames.map((name) => ({
+    _type: "MP Item Shop - Section",
+    sectionID: name,
+    sectionName: name,
+    bShowTimer: true,
+    offerGroups: [],
+  }));
+
+  if (!content.shopSections) {
+    content.shopSections = {
+      _title: "shop-sections",
+      sectionList: {
+        _type: "ShopSectionList",
+        sections: shopSections,
+      },
+      _noIndex: false,
+      _activeDate: "1970-01-01T00:00:00.000Z",
+      lastModified: "9999-12-31T23:59:59.999Z",
+      _locale: "en-US",
+      _templateName: "FortniteGameShopSections",
+    };
+  } else {
+    content.shopSections.sectionList = {
+      _type: "ShopSectionList",
+      sections: shopSections,
+    };
+  }
+
+  if (!content.mpItemShop) {
+    content.mpItemShop = {
+      shopData: {
+        _type: "MP Item Shop - Data Root",
+        sections: mpSections,
+      },
+      _title: "mpItemShop",
+      _noIndex: false,
+      _activeDate: "1970-01-01T00:00:00.000Z",
+      lastModified: "9999-12-31T23:59:59.999Z",
+      _locale: "en-US",
+      _templateName: "FortniteGameMPItemShop",
+    };
+  } else {
+    content.mpItemShop.shopData = {
+      _type: "MP Item Shop - Data Root",
+      sections: mpSections,
+    };
+  }
 }
 
 function setCmsNoCacheHeaders(c: any): void {
@@ -523,6 +593,9 @@ function applySeasonSpecificBackground(
         "https://cdn2.unrealengine.com/ch5s4-lobbybg-final-2136x1202-e5885322faf1.jpg"
       );
       return;
+    case 32:
+      setPrimary("defaultnotris", remixSeason32LobbyBackground);
+      return;
     default:
       setPrimary("", "");
   }
@@ -727,8 +800,77 @@ export default function () {
 
     applyAtlasLobbyMessaging(content);
     applySeasonSpecificBackground(content, version, userAgent);
+    if (season === 32) {
+      applyRemixShopCmsFallback(content);
+    }
 
     return sendCmsResponse(c, content, version, userAgent, "live-fortnite-game");
+  });
+
+  app.get("/content/api/pages/ALL", async (c) => {
+    const version = getVersion(c);
+    const userAgent = c.req.header("user-agent") ?? "";
+    const content = {
+      _title: "ALL",
+      _noIndex: false,
+      _activeDate: "1970-01-01T00:00:00.000Z",
+      lastModified: new Date().toISOString(),
+      _locale: "en-US",
+    };
+    return sendCmsResponse(c, content, version, userAgent, "contentpages-all");
+  });
+
+  app.get("/content/api/pages/fortnite-game/spark-tracks", async (c) => {
+    const version = getVersion(c);
+    const userAgent = c.req.header("user-agent") ?? "";
+    const content = {
+      _title: "spark-tracks",
+      _noIndex: false,
+      tracks: [],
+      _activeDate: "1970-01-01T00:00:00.000Z",
+      lastModified: new Date().toISOString(),
+      _locale: "en-US",
+    };
+    return sendCmsResponse(c, content, version, userAgent, "spark-tracks");
+  });
+
+  app.get("/content/api/pages/fortnite-game/media-events-v2", async (c) => {
+    const version = getVersion(c);
+    const userAgent = c.req.header("user-agent") ?? "";
+    const season = getResolvedSeason(version, userAgent) || 32;
+    const now = new Date().toISOString();
+    const content: any = {
+      _title: "media-events-v2",
+      _noIndex: false,
+      _activeDate: "2022-01-12T01:43:01.626Z",
+      lastModified: now,
+      _locale: "en-US",
+      _templateName: "FortniteMediaEvents",
+      _suggestedPrefetch: [],
+    };
+    const soloEventId = `epicgames_Arena_S${season}_Solo`;
+    const duosEventId = `epicgames_Arena_S${season}_Duos`;
+    content[`arenaS${season}Solo`] = {
+      _type: "Fortnite - Media Event",
+      _title: `arenaS${season}Solo`,
+      _noIndex: false,
+      _activeDate: "2020-01-01T00:00:00.000Z",
+      lastModified: now,
+      _locale: "en-US",
+      eventId: soloEventId,
+      event_id: soloEventId,
+    };
+    content[`arenaS${season}Duos`] = {
+      _type: "Fortnite - Media Event",
+      _title: `arenaS${season}Duos`,
+      _noIndex: false,
+      _activeDate: "2020-01-01T00:00:00.000Z",
+      lastModified: now,
+      _locale: "en-US",
+      eventId: duosEventId,
+      event_id: duosEventId,
+    };
+    return sendCmsResponse(c, content, version, userAgent, "media-events-v2");
   });
 
   app.get("/content/api/pages/*", async (c) => {
@@ -771,6 +913,9 @@ export default function () {
     const content: any = game.data;
     applyAtlasLobbyMessaging(content);
     applySeasonSpecificBackground(content, version, userAgent);
+    if (season === 32) {
+      applyRemixShopCmsFallback(content);
+    }
     return sendCmsResponse(c, content, version, userAgent, "wildcard-live");
   });
   // credits to neonite / hybridfnbr

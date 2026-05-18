@@ -1,4 +1,4 @@
-import app from "..";
+import { app } from "..";
 
 const emptyList: unknown[] = [];
 const defaultSettings = {
@@ -23,5 +23,18 @@ export default function () {
 
   app.get("/friends/api/v1/:accountId/settings", async (c) => {
     return c.json(defaultSettings);
+  });
+
+  app.get("/friends/api/v1/:accountId/summary", async (c) => {
+    const accountId = c.req.param("accountId");
+    return c.json({
+      accountId,
+      friends: [],
+      incoming: [],
+      outgoing: [],
+      blocklist: [],
+      suggested: [],
+      settings: defaultSettings,
+    });
   });
 }

@@ -1,4 +1,4 @@
-import app from "..";
+import { app } from "..";
 
 export default function () {
   // Newer Fortnite versions request this endpoint during boot.

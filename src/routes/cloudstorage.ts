@@ -1,9 +1,10 @@
-import app from "..";
+import { app } from "..";
 import crypto from "crypto";
 import fs from "node:fs";
 import path from "node:path";
 import getVersion from "../utils/handlers/getVersion";
 import { atlasDataPath, atlasInstallPath } from "../config/paths";
+import { readConfig } from "../config/config";
 // Cache for hotfix files to avoid repeated disk reads
 const hotfixCache = new Map<
   string,
@@ -30,6 +31,45 @@ const ATLAS_TEXT_REPLACEMENTS = [
   '+TextReplacements=(Category=Game, bIsMinimalPatch=True, Namespace="PartyContext", Key="BattleRoyaleInLobby", NativeString="Battle Royale - In Lobby", LocalizedStrings=(("en","ATLAS - Lobby")))',
   '+TextReplacements=(Category=Game, bIsMinimalPatch=True, Namespace="OnlineAccount", Key="TokenExpired", NativeString="Login Expired or Logged In Elsewhere", LocalizedStrings=(("en","Backend Restarted... Restart your game")))',
 ] as const;
+
+const REMIX_QUAIL_FRONTEND_PLAYLIST =
+  "+FrontEndPlaylistData=(PlaylistName=Playlist_Quail, PlaylistAccess=(bEnabled=True, bIsDefaultPlaylist=true, bVisibleWhenDisabled=false, bDisplayAsNew=false, CategoryIndex=0, bDisplayAsLimitedTime=false, DisplayPriority=5))";
+
+function getConfiguredRemixStage(): number {
+  const rawConfig = readConfig();
+  const parsedStage = parseInt(String(rawConfig.RemixStage ?? ""), 10);
+  if (Number.isFinite(parsedStage)) {
+    return Math.max(1, Math.min(4, parsedStage));
+  }
+
+  return String(rawConfig.Season32Timeline ?? "remix").toLowerCase() === "base"
+    ? 1
+    : 4;
+}
+
+function insertFrontEndPlaylistData(defaultGameIni: string, playlistLine: string): string {
+  if (defaultGameIni.includes(playlistLine)) {
+    return defaultGameIni;
+  }
+
+  const newline = defaultGameIni.includes("\r\n") ? "\r\n" : "\n";
+  const lines = defaultGameIni.split(/\r?\n/);
+  const clearArrayIndex = lines.findIndex((line) => line.trim() === "!FrontEndPlaylistData=ClearArray");
+  if (clearArrayIndex === -1) {
+    return `${defaultGameIni}${defaultGameIni.endsWith(newline) ? "" : newline}${playlistLine}${newline}`;
+  }
+
+  let insertIndex = clearArrayIndex + 1;
+  while (
+    insertIndex < lines.length &&
+    lines[insertIndex].trim().startsWith("+FrontEndPlaylistData=")
+  ) {
+    insertIndex += 1;
+  }
+
+  lines.splice(insertIndex, 0, playlistLine);
+  return lines.join(newline);
+}
 
 function getBackendVersion(): string {
   if (process.env.npm_package_version) {
@@ -327,6 +367,28 @@ export default function () {
             replacement.find,
             replacement.replace
           );
+        }
+
+        if (version.season === 32 && getConfiguredRemixStage() === 4) {
+          fileContent = insertFrontEndPlaylistData(
+            fileContent,
+            REMIX_QUAIL_FRONTEND_PLAYLIST
+          );
+        }
+      }
+
+      if (fileName === "DefaultEngine.ini" && version.build >= 32.1 && version.build < 33) {
+        const beaconPatch = [
+          "",
+          "[ConsoleVariables]",
+          "FortMatchmakingV2.ContentBeaconFailureCancelsMatchmaking=0",
+          "Fort.ShutdownWhenContentBeaconFails=0",
+          "FortMatchmakingV2.EnableContentBeacon=0",
+          "",
+        ].join("\n");
+
+        if (!fileContent.includes("FortMatchmakingV2.EnableContentBeacon=0")) {
+          fileContent += beaconPatch;
         }
       }
 

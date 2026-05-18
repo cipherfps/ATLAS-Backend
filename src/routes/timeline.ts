@@ -1,4 +1,4 @@
-import app from "..";
+import { app } from "..";
 import eventsManager from '../utils/handlers/events'
 import getVersion from "../utils/handlers/getVersion";
 
